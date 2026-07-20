@@ -1,0 +1,26 @@
+local_branch_name=$(git rev-parse --abbrev-ref HEAD)
+
+valid_branch_regex="^(feature|fix|hotfix|chore|refactor)\/[a-z0-9._-]+$"
+
+if [ "$local_branch_name" != "main" ] && [ "$local_branch_name" != "master" ] && [ "$local_branch_name" != "develop" ] && [[ ! $local_branch_name =~ $valid_branch_regex ]]; then
+    echo "=========================================================="
+    echo " 🚨 [GIT ERROR]: 你的本地分支名称校验失败！"
+    echo " 👉 当前分支: $local_branch_name"
+    echo " ✅ 正确格式: {行为类别}/{短描述} (例如 feature/payment-flow)"
+    echo " 💡 可选类别: feature, fix, hotfix, chore, refactor"
+    echo "=========================================================="
+    exit 1
+fi
+
+echo "=========================================================="
+echo " 🛡️ [PRE-PUSH SECURITY]: 运行本地完整质量防线"
+echo "=========================================================="
+
+echo "➡️ Running local verify pipeline..."
+pnpm run verify:local || {
+    echo "❌ [Quality Gate Error]: 本地质量校验未通过，禁止带病提交！"
+    exit 1
+}
+
+echo "✅ All defenses cleared! Enjoy your push!"
+exit 0

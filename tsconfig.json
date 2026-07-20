@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx" /* React 17+ 新 JSX 转换。无需 import React | 自动注入 jsx() 函数 */,
+
+    /* Modules */
+    "module": "ESNext",
+    "rootDir": "./",
+    "moduleResolution": "bundler" /* 模块解析规则，适用现代打包工具。支持无扩展名导入 | 支持多种解析路径（路径映射、绝对路径、静态资源） */,
+    "baseUrl": "./" /* 非相对路径 -> 导入模块的查找起始位置 */,
+    "paths": {
+      "@/*": ["src/*"],
+      "~/*": ["./"] /* 项目根目录别名 */
+    },
+    "resolveJsonModule": true,
+
+    /* JavaScript Support */
+    "allowJs": true,
+
+    /* Emit */
+    "outDir": "./dist",
+
+    /* Interop Constraints */
+    "isolatedModules": true /* 每个文件独立编译。禁用跨文件类型推断 | 适配 Babel/SWC/esbuild */,
+    "allowSyntheticDefaultImports": true /* 允许默认导入 CommonJS 模块。import React from 'react' | 即使模块无 default export */,
+    "esModuleInterop": true /* ES 模块与 CommonJS 互操作。自动启用 allowSyntheticDefaultImports | 生成兼容代码 */,
+    "forceConsistentCasingInFileNames": true /* 强制文件名大小写一致。import './Components' 和 import './components' 视为不同 */,
+
+    /* Type Checking */
+    "strict": true,
+    "noImplicitReturns": true /* 函数所有分支必须有返回值 | 防止漏 return */,
+    "noFallthroughCasesInSwitch": true /* 禁止 switch 穿透 | 防止遗漏 break */,
+    "noUncheckedIndexedAccess": true /* 索引访问安全检查。arr[0] 类型为 T | undefined | 防止越界访问 */,
+
+    /* Completeness */
+    "skipLibCheck": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["dist", "node_modules"]
+}
