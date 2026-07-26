@@ -1,4 +1,4 @@
-/** 命名约束 — naming-convention + AST 级别命名校验 */
+/** 命名约束 — naming-convention + 自研命名规则 */
 export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -52,7 +52,7 @@ export default [
           },
         },
         {
-          // 数组/集合禁止 Array 类型后缀（List 作领域集合名放行，与 review-code R2.10 的 flightList 等一致）
+          // 数组/集合禁止 Array 类型后缀（List 作领域集合名放行）
           selector: 'variable',
           types: ['array'],
           format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
@@ -81,15 +81,22 @@ export default [
           },
         },
       ],
-
-      // AST 节点级别命名校验分离，防止与其它领域配置相互覆盖
-      'ast/naming': 'error',
     },
   },
   {
+    // 自研命名规则：统一作用于 src 源码并豁免测试，与 isExemptFile 的约定一致，
+    // 避免对测试桩（mock 的 handleXxx、桩数据的 data 参数等）与仓库配置文件产生噪音。
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
+      // 函数/变量禁 handle 前缀
+      'custom/no-handle-prefix': 'error',
+      // 参数禁泛化命名（data/params/callback/options）
+      'custom/no-generic-param-name': 'error',
+      // useRef 变量必须以 Ref 结尾
+      'custom/ref-suffix-naming': 'error',
+      // on 前缀仅用于 Props 回调，内部函数禁用
+      'custom/no-internal-on-prefix': 'error',
       // 文件名禁用实现类后缀（-modal/-type/-enum/-config/-util(s) 等）与纯实现整名（columns/form-config）；业务集合名如 review-list 放行
       'custom/no-implementation-suffix-filename': 'error',
       // 数据/异步状态字段强制后缀式命名（isLoadingXxx / xxxError）

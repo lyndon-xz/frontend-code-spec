@@ -1,16 +1,14 @@
-root: true
-rules:
-  kebab-case: /^[a-z0-9]+(-[a-z0-9]+)*$/
-  use-camel-case: /^use[A-Z][A-Za-z0-9]*\.(ts|tsx)$/
+# ls-lint 2.x：.* 覆盖该目录下所有扩展名（含 .test.ts 等）
+ls:
+  eslint:
+    .dir: kebab-case | regex:__tests__
+    .*: kebab-case
+
+  src:
+    .dir: kebab-case | regex:__tests__
+    .*: kebab-case | regex:use[A-Z][A-Za-z0-9]*
+
 ignore:
-  - node_modules
   - dist
   - coverage
-folders:
-  eslint: kebab-case
-  src: kebab-case
-files:
-  eslint: kebab-case
-  src: kebab-case
-  src/**/use*.ts: use-camel-case
-  src/**/use*.tsx: use-camel-case
+  - node_modules

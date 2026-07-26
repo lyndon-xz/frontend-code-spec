@@ -1,6 +1,5 @@
 export default {
   extends: ['stylelint-config-standard-scss', 'stylelint-config-css-modules'],
-  plugins: ['stylelint-order'],
   rules: {
     // 强制 CSS 变量使用 kebab-case
     'custom-property-pattern': [

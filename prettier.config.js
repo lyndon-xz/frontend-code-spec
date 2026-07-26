@@ -1,6 +1,6 @@
 export default {
   // 单行代码的最大长度
-  printWidth: 120,
+  printWidth: 100,
 
   // 缩进空格数
   tabWidth: 2,

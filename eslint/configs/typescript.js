@@ -1,6 +1,8 @@
 /** TypeScript 类型系统约束 */
 export default [
   {
+    // 全部 TS/TSX 同一 scope，统一放在一个 config 对象内（与其它领域「一个 scope 一个对象」的约定一致）；
+    // 其中类型感知的正确性规则依赖 parserOptions.project，自研规则按约定排在末尾。
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       // 关闭原生规则，避免与 TS 规则冲突
@@ -13,10 +15,6 @@ export default [
 
       // 类型定义一致性
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-      '@typescript-eslint/consistent-type-assertions': [
-        'error',
-        { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
-      ],
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', disallowTypeAnnotations: false },
@@ -41,15 +39,9 @@ export default [
           allowAny: false,
         },
       ],
-    },
-  },
-  {
-    // 类型感知的正确性规则（依赖 parserOptions.project）：把 review-code 中原本只能靠人审的
-    // 业务正确性/副作用/类型收窄维度，尽可能前移为可 CI 拦截的强 lint，从源头挡住运行时错误。
-    files: ['**/*.ts', '**/*.tsx'],
-    rules: {
-      // —— 异步正确性（对应 G1.5 副作用、G5.3 async/await 统一）——
-      // Promise 必须被 await / catch / void，杜绝「忘了 await」导致的丢错误、竞态、未处理拒绝
+
+      // —— 类型感知的正确性规则（依赖 parserOptions.project）：把原本只能靠人审的 业务正确性/副作用/类型收窄维度，尽可能前移为可 CI 拦截的强 lint，从源头挡住运行时错误。——
+      // —— 异步正确性 —— Promise 必须被 await / catch / void，杜绝「忘了 await」导致的丢错误、竞态、未处理拒绝
       '@typescript-eslint/no-floating-promises': 'error',
       // 禁止把返回 Promise 的函数误用在期望 void 的位置（如 onClick、条件判断），async 逻辑静默失效的高发点
       '@typescript-eslint/no-misused-promises': 'error',
@@ -59,23 +51,27 @@ export default [
       '@typescript-eslint/require-await': 'error',
       // try/catch 中的 return await 保留，确保异常能被本地 catch 捕获
       '@typescript-eslint/return-await': ['error', 'in-try-catch'],
-
-      // —— 冗余断言（对应 T1.7）——
-      // 已是目标类型仍写 as，属冗余断言，删除以免掩盖真实类型
-      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-      // switch 覆盖联合/枚举的所有分支，漏分支即报错（对应 G1.1 状态机/映射漏项）
+      // switch 覆盖联合/枚举的所有分支，漏分支即报错
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
-
       // —— 字符串化陷阱（避免 `${obj}` 得到 [object Object] 一类的展示 bug）——
       '@typescript-eslint/no-base-to-string': 'error',
-      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBoolean: true }],
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        { allowNumber: true, allowBoolean: true },
+      ],
+
+      // 自研规则：禁止自动递增枚举，每个成员必须显式赋值
+      'custom/require-enum-initializer': 'error',
     },
   },
   {
+    // 类型断言禁令单独一个 scope：测试文件豁免（测试常用 `as unknown as Mock` 造桩，全量禁断言会大量误报）。
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
-      // 禁止自动递增枚举，每个成员必须显式赋值 (AST 分离)
-      'ast/typescript': 'error',
+      // 禁止用 as / <T> 断言替代类型收窄（assertionStyle: never 始终放行 as const）；请用 typeof / in / 可辨识联合等收窄。
+      // 已整体禁止 as（冗余断言场景亦在其中），故不再叠加 @typescript-eslint/no-unnecessary-type-assertion，避免对同一处双重报错。
+      '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
     },
   },
 ];
