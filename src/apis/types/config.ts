@@ -64,8 +64,6 @@ export interface EnhancedRequestConfig extends AxiosRequestConfig {
 export interface InstanceConfig extends AxiosRequestConfig {
   /** 服务编码，用于生成 baseURL */
   serviceCode: string;
-  /** 请求拦截器列表 */
   reqInterceptors: ReqInterceptor[];
-  /** 响应拦截器列表 */
   resInterceptors: ResInterceptor[];
 }

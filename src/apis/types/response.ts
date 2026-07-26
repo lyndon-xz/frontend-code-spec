@@ -8,11 +8,9 @@
 export interface BusinessResponse<T = unknown> {
   /** 业务状态码，0 表示成功 */
   code: number;
-  /** 响应信息 */
   message: string;
   /** 响应时间戳（毫秒） */
   timestamp: number;
-  /** 业务数据 */
   data: T;
 }
 

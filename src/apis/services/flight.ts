@@ -10,7 +10,6 @@ export type CabinClass = 'economy' | 'business' | 'first';
 export interface Flight {
   /** 航班号，如 CA1234 */
   flightNo: string;
-  /** 航空公司名称 */
   airline: string;
   /** 出发机场三字码，如 PEK */
   departureAirport: string;
@@ -32,37 +31,28 @@ export interface FlightListParams {
   arrivalCity: string;
   /** 出发日期（YYYY-MM-DD） */
   departureDate: string;
-  /** 排序方式 */
   sortBy: FlightSortBy;
 }
 
 /** 航班列表查询结果 */
 export interface FlightListResult {
-  /** 航班列表 */
   list: Flight[];
-  /** 总条数 */
   total: number;
 }
 
 /** 舱位报价 */
 export interface FareOption {
-  /** 报价 ID */
   fareId: string;
-  /** 舱位等级 */
   cabinClass: CabinClass;
   /** 该舱位售价（单位：分） */
   price: number;
-  /** 剩余座位数 */
   seatsLeft: number;
-  /** 退改签说明 */
   refundPolicy: string;
 }
 
 /** 航班详情 */
 export interface FlightDetail {
-  /** 航班号 */
   flightNo: string;
-  /** 航空公司名称 */
   airline: string;
   /** 出发机场三字码 */
   departureAirport: string;
@@ -74,31 +64,25 @@ export interface FlightDetail {
   arrivalTime: number;
   /** 机型，如 Boeing 737 */
   aircraftModel: string;
-  /** 可选舱位报价 */
   fares: FareOption[];
 }
 
 /** 乘机人信息 */
 export interface Passenger {
-  /** 乘机人姓名 */
   fullName: string;
-  /** 证件号 */
   idNumber: string;
 }
 
 /** 机票预订入参 */
 export interface BookFlightPayload {
-  /** 航班号 */
   flightNo: string;
   /** 选中的舱位报价 ID */
   fareId: string;
-  /** 乘机人列表 */
   passengers: Passenger[];
 }
 
 /** 机票预订结果 */
 export interface BookFlightResult {
-  /** 订单号 */
   orderId: string;
 }
 
