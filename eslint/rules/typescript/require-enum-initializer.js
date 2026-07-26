@@ -1,6 +1,3 @@
-/**
- * 禁止自动递增枚举，每个枚举成员必须显式赋值。
- */
 export default {
   meta: {
     type: 'problem',

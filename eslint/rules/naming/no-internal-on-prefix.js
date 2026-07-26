@@ -1,10 +1,8 @@
 import { isFunctionNode } from '../../utils/is-function-node.js';
 
 /**
- * on 前缀仅用于 Props 回调声明，内部函数禁止 on 前缀，强制语义化动词。
- * 覆盖内部函数定义的四种形态：函数声明、函数型变量、类方法、类箭头字段。
- * 刻意不覆盖对象属性与接口/类型成员：on 前缀在 Props 回调声明处合法，而这些位置常正是回调 Props 的声明处
- * （如 { onClick } 配置对象、interface Props { onClick: () => void }），覆盖会误报合法用法。
+ * 覆盖内部函数的四种形态：函数声明、函数型变量、类方法、类箭头字段。
+ * 刻意不覆盖对象属性与接口/类型成员：那里常是回调 Props 的合法声明处（如 { onClick }、interface Props { onClick }），覆盖会误报。
  */
 export default {
   meta: {

@@ -3,12 +3,8 @@ import path from 'path';
 import { normalizePath } from '../../utils/normalize-path.js';
 
 /**
- * 模块内部使用相对路径，跨模块引用使用 @/ 别名。
- *
  * 与 import/order 的 fix 关系：本规则只改写 import 源字符串（@/x ↔ ./x），import/order 只调整
- * import 语句顺序，二者作用在正交维度上，互不覆盖对方的 fix 结果。改写是幂等的（相对/别名一旦
- * 落到目标形态就不会再被本规则触碰），因此在 ESLint 多轮 fix 下必然收敛：先由本规则定形路径，
- * import/order 再据最终路径归组排序，不会来回抖动或死循环。
+ * import 语句顺序，二者正交、互不覆盖。改写幂等，故 ESLint 多轮 fix 必然收敛，不会抖动或死循环。
  */
 export default {
   meta: {

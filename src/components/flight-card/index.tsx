@@ -9,7 +9,6 @@ export interface FlightCardProps {
   onSelect: MouseEventHandler<HTMLButtonElement>;
 }
 
-// 价格展示保留的小数位数
 const PRICE_FRACTION_DIGITS = 2;
 
 /**

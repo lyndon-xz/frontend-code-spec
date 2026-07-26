@@ -44,7 +44,6 @@ class RequestInstance {
       ...restConfig,
       headers,
       timeout,
-      // 跨域请求时需要设置凭证（默认 true）
       withCredentials,
       baseURL: generateBaseUrl(serviceCode),
     });

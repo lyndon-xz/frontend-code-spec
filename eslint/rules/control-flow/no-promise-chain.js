@@ -1,6 +1,3 @@
-/**
- * 禁止 .then()/.catch() 链式调用，统一使用 async/await。
- */
 export default {
   meta: {
     type: 'problem',

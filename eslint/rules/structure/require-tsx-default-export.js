@@ -1,9 +1,6 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
 
-/**
- * TSX 文件必须包含 export default 导出。
- * 测试/mock/类型声明/配置文件豁免。
- */
+/** 测试 / mock / 类型声明 / 配置文件豁免。 */
 export default {
   meta: {
     type: 'problem',

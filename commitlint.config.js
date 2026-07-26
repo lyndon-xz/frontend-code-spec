@@ -35,22 +35,13 @@ export default {
       ],
     ],
 
-    // 提交类型必须是小写
     'type-case': [2, 'always', 'lower-case'],
-
-    // 提交类型不能为空
     'type-empty': [2, 'never'],
-
-    // 限制提交信息头部（type + scope + subject）的最大长度
-    'header-max-length': [2, 'always', 120],
-
-    // 提交主题不能为空
     'subject-empty': [2, 'never'],
-
-    // 提交信息正文前必须有空行
     'body-leading-blank': [2, 'always'],
-
-    // 提交信息页脚前必须有空行
     'footer-leading-blank': [2, 'always'],
+
+    // 头部（type + scope + subject）最大长度
+    'header-max-length': [2, 'always', 120],
   },
 };

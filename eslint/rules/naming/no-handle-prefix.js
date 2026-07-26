@@ -1,10 +1,8 @@
 import { isFunctionNode } from '../../utils/is-function-node.js';
 
 /**
- * 禁止函数/变量使用 handle 前缀，强制语义化动词。
- * 覆盖：顶层函数声明与函数型变量、类方法、类箭头字段、对象方法/箭头属性。
- * 全程按「函数值」过滤（与 no-internal-on-prefix 的顶层变量行为对齐），
- * 避免误伤名词属性（如 handleId：句柄/账号 handle 之意，并非事件处理器）。
+ * 覆盖顶层函数声明与函数型变量、类方法、类箭头字段、对象方法 / 箭头属性。
+ * 全程按「函数值」过滤（与 no-internal-on-prefix 对齐），避免误伤名词属性（如 handleId 指句柄/账号，并非事件处理器）。
  */
 export default {
   meta: {

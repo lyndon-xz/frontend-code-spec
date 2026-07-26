@@ -1,7 +1,4 @@
-/*
- * 禁止函数参数使用泛化命名（data/params/callback/options），强制具体领域词汇。
- * 覆盖普通参数、默认值参数、rest 参数三种形态。
- */
+// 覆盖普通参数、默认值参数、rest 参数三种形态
 const GENERIC_NAME = /^(data|params|callback|options)$/;
 
 export default {

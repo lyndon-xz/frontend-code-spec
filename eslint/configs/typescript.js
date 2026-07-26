@@ -1,8 +1,7 @@
 /** TypeScript 类型系统约束 */
 export default [
   {
-    // 全部 TS/TSX 同一 scope，统一放在一个 config 对象内（与其它领域「一个 scope 一个对象」的约定一致）；
-    // 其中类型感知的正确性规则依赖 parserOptions.project，自研规则按约定排在末尾。
+    // 全部 TS/TSX 规则同处一个 scope；类型感知规则依赖 parserOptions.project，自研规则排在末尾。
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       // 关闭原生规则，避免与 TS 规则冲突
@@ -40,8 +39,8 @@ export default [
         },
       ],
 
-      // —— 类型感知的正确性规则（依赖 parserOptions.project）：把原本只能靠人审的 业务正确性/副作用/类型收窄维度，尽可能前移为可 CI 拦截的强 lint，从源头挡住运行时错误。——
-      // —— 异步正确性 —— Promise 必须被 await / catch / void，杜绝「忘了 await」导致的丢错误、竞态、未处理拒绝
+      // 以下为类型感知规则（依赖 parserOptions.project），把业务正确性、副作用、类型收窄前移为 CI 可拦截的 lint。
+      // Promise 必须被 await / catch / void，杜绝「忘了 await」导致的丢错误、竞态、未处理拒绝
       '@typescript-eslint/no-floating-promises': 'error',
       // 禁止把返回 Promise 的函数误用在期望 void 的位置（如 onClick、条件判断），async 逻辑静默失效的高发点
       '@typescript-eslint/no-misused-promises': 'error',
@@ -53,7 +52,7 @@ export default [
       '@typescript-eslint/return-await': ['error', 'in-try-catch'],
       // switch 覆盖联合/枚举的所有分支，漏分支即报错
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
-      // —— 字符串化陷阱（避免 `${obj}` 得到 [object Object] 一类的展示 bug）——
+      // 字符串化陷阱：避免 `${obj}` 得到 [object Object] 一类的展示 bug
       '@typescript-eslint/no-base-to-string': 'error',
       '@typescript-eslint/restrict-template-expressions': [
         'error',

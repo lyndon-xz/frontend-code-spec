@@ -1,7 +1,4 @@
-/**
- * useRef 变量必须以 Ref 结尾。
- * 兼容 useRef(...) 与 xxx.useRef(...) 两种调用形态，覆盖变量声明与类字段。
- */
+/** 兼容 useRef(...) 与 xxx.useRef(...) 两种调用形态，覆盖变量声明与类字段。 */
 export default {
   meta: {
     type: 'suggestion',

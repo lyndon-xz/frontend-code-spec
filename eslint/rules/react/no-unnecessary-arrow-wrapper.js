@@ -1,10 +1,9 @@
 /**
- * 禁止不必要的箭头函数包裹（onClick={() => fn()} 应改为 onClick={fn}）。
- * 为防误修：
+ * 为防误修的分档策略：
  * - callee 为 MemberExpression（obj.fn）有 this 绑定丢失风险，直接跳过；
- * - async 箭头改写后会丢失 async 包裹语义，直接跳过；
+ * - async 箭头改写后会丢失 async 语义，直接跳过；
  * - 无参包裹 () => fn() 有 event 隐式透传风险，只告警不自动 fix；
- * - 仅「参数逐一透传」形态 (e) => fn(e) 提供 fix。
+ * - 仅「参数逐一透传」(e) => fn(e) 提供 fix。
  */
 export default {
   meta: {

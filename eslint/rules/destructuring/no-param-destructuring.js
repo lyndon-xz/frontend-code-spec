@@ -1,6 +1,3 @@
-/**
- * 禁止在函数签名中解构，统一在函数体首部解构。
- */
 export default {
   meta: {
     type: 'problem',

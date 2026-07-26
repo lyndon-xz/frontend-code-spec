@@ -38,11 +38,9 @@ declare module 'axios' {
     __requestStartTime?: number;
     // 剩余可重试次数：供拦截器判断是否抑制错误提示
     __retriesLeft?: number;
-    // 业务码错误提示策略
     businessError?: BusinessErrorOptions;
-    // 网络错误提示策略
     networkError?: NetworkErrorOptions;
-    // 自动重试策略，不设置则不重试
+    // 不设置则不重试
     retry?: RetryOptions;
     /*
      * 是否对相同请求去重：开启后，同一请求（method + url + 参数）再次发起时，

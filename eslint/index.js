@@ -5,38 +5,25 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
-// comments（注释）
 import commentStyle from './rules/comments/comment-style.js';
-
-// control-flow（控制流/异步）
 import noPromiseChain from './rules/control-flow/no-promise-chain.js';
-
-// destructuring（解构写法）
 import noParamDestructuring from './rules/destructuring/no-param-destructuring.js';
 import preferObjectDestructuring from './rules/destructuring/prefer-object-destructuring.js';
-
-// typescript（类型系统）
-import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
-
-// naming（命名）
 import noGenericParamName from './rules/naming/no-generic-param-name.js';
 import noHandlePrefix from './rules/naming/no-handle-prefix.js';
 import noImplementationSuffixFilename from './rules/naming/no-implementation-suffix-filename.js';
 import noInternalOnPrefix from './rules/naming/no-internal-on-prefix.js';
 import refSuffixNaming from './rules/naming/ref-suffix-naming.js';
 import statusFieldNaming from './rules/naming/status-field-naming.js';
-
-// react（React 组件约定）
 import noUnnecessaryArrowWrapper from './rules/react/no-unnecessary-arrow-wrapper.js';
 import propsInterfaceNaming from './rules/react/props-interface-naming.js';
-
-// structure（模块/文件/导出组织）
 import fileElementOrder from './rules/structure/file-element-order.js';
 import importPathBoundary from './rules/structure/import-path-boundary.js';
 import noBarrel from './rules/structure/no-barrel.js';
 import noComponentSidecarFiles from './rules/structure/no-component-sidecar-files.js';
 import noTsDefaultExport from './rules/structure/no-ts-default-export.js';
 import requireTsxDefaultExport from './rules/structure/require-tsx-default-export.js';
+import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
 
 import commentsConfig from './configs/comments.js';
 import controlFlowConfig from './configs/control-flow.js';
@@ -46,29 +33,21 @@ import reactConfig from './configs/react.js';
 import structureConfig from './configs/structure.js';
 import typescriptConfig from './configs/typescript.js';
 
-// 全部自研规则，按领域聚类于 rules/<domain>/，统一注册在 custom 命名空间下。
-// 规则 id 保持扁平（custom/<rule-name>），领域仅体现在源码目录，不进 id。
+// 规则 id 保持扁平（custom/<rule-name>），领域只体现在源码目录，不进 id。
 const customRules = {
-  // comments
   'comment-style': commentStyle,
-  // control-flow
   'no-promise-chain': noPromiseChain,
-  // destructuring
   'no-param-destructuring': noParamDestructuring,
   'prefer-object-destructuring': preferObjectDestructuring,
-  // typescript
   'require-enum-initializer': requireEnumInitializer,
-  // naming
   'no-handle-prefix': noHandlePrefix,
   'no-generic-param-name': noGenericParamName,
   'ref-suffix-naming': refSuffixNaming,
   'no-internal-on-prefix': noInternalOnPrefix,
   'no-implementation-suffix-filename': noImplementationSuffixFilename,
   'status-field-naming': statusFieldNaming,
-  // react
   'no-unnecessary-arrow-wrapper': noUnnecessaryArrowWrapper,
   'props-interface-naming': propsInterfaceNaming,
-  // structure
   'import-path-boundary': importPathBoundary,
   'no-barrel': noBarrel,
   'no-component-sidecar-files': noComponentSidecarFiles,
@@ -77,9 +56,7 @@ const customRules = {
   'no-ts-default-export': noTsDefaultExport,
 };
 
-/** 总入口 — 注册插件 + 全局语言配置 + 组装领域配置 */
 export default [
-  // 插件注册
   {
     plugins: {
       custom: { rules: customRules },

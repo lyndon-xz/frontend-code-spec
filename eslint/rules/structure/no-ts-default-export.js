@@ -1,9 +1,6 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
 
-/**
- * TS 文件（非 TSX）禁止使用 export default，强制具名导出。
- * .d.ts / .config.ts / 测试 / mock 文件豁免。
- */
+/** .d.ts / .config.ts / 测试 / mock 文件豁免。 */
 export default {
   meta: {
     type: 'problem',
