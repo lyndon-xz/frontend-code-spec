@@ -1,5 +1,5 @@
 import rule from '../../../rules/typescript/require-enum-initializer.js';
-import { createRuleTester } from '../../_support/rule-tester.js';
+import { createRuleTester } from '../../support/rule-tester.js';
 
 const ruleTester = createRuleTester();
 

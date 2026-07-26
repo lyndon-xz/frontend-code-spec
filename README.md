@@ -1,6 +1,6 @@
 # @lyndon/frontend-code-spec
 
-> 前端 **code-spec** 仓库：一套自研 **ESLint 规则防线** + 一套生产可用的 **请求层基础设施范式**。把团队的编码约定固化成可执行的 lint 规则，把 axios 封装沉淀成可复制的工程范式。
+> 前端 **code-spec** 仓库：一套自研 **ESLint 规则防线** + 一套生产可用的**请求层基础设施范式**。把团队的编码约定固化成可执行的 lint 规则，把 axios 封装沉淀成可复制的工程范式。
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/) [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/) [![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/) [![pnpm](https://img.shields.io/badge/pnpm-10.12-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/) [![Node](https://img.shields.io/badge/node-%5E20.19%20%7C%7C%20%3E%3D22.12-339933?logo=node.js&logoColor=white)](https://nodejs.org/) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
@@ -9,11 +9,11 @@
 本仓库交付两类相互印证的产物：
 
 - **ESLint 规则防线** — 位于 `eslint/`，一套按领域聚类的自研规则集，把命名、结构、注释、控制流、解构、React、TypeScript 等约定固化为可执行的 lint 规则。
-- **请求层基础设施范式** — 位于 `src/apis/`，一套基于 axios 的请求封装范式（实例复用、拦截器链、错误归一、自动重试、请求去重、埋点）。它既是可复制的工程范式，本身也被上面这套完整规则集校验，做到「规则集 dogfood 自己」。
+- **请求层基础设施范式** — 位于 `src/apis/`，一套基于 axios 的请求封装范式 (实例复用、拦截器链、错误归一、自动重试、请求去重、埋点)。它既是可复制的工程范式，本身也被上面这套完整规则集校验，做到 “规则集 dogfood 自己”。
 
 ## ✨ 特性
 
-- **规则按领域聚类**：`eslint/rules/<domain>/` 与 `eslint/configs/<domain>` 一一对应，规则 id 扁平（`custom/<rule-name>`），领域只体现在目录，不进 id。
+- **规则按领域聚类**：`eslint/rules/<domain>/` 与 `eslint/configs/<domain>` 一一对应，规则 id 扁平 (`custom/<rule-name>`)，领域只体现在目录，不进 id。
 - **规则可测**：每条规则在 `eslint/__tests__/` 下有独立用例，基于 ESLint `RuleTester`。
 - **请求实例单例化**：同一 `serviceCode` 运行期只创建一个 axios 实例，开发环境对配置漂移告警。
 - **拦截器链清晰**：请求阶段 analytics → auth；响应阶段 network → sso → business → analytics，按 FIFO 注册顺序执行。
@@ -24,9 +24,9 @@
 
 ## 🧱 技术栈
 
-- **语言 / 运行时**：TypeScript 5.9、Node（`^20.19.0 || >=22.12.0`）、pnpm 10.12
-- **规则引擎**：ESLint 9（flat config）、`@typescript-eslint`、`eslint-plugin-import` / `react` / `react-hooks`
-- **请求层**：axios、antd（UI 侧配套）、React 19
+- **语言 / 运行时**：TypeScript 5.9、Node (`^20.19.0 || >=22.12.0`)、pnpm 10.12
+- **规则引擎**：ESLint 9 (flat config)、`@typescript-eslint`、`eslint-plugin-import` / `react` / `react-hooks`
+- **请求层**：axios、antd (UI 侧配套)、React 19
 - **测试**：Vitest 4 + `@vitest/coverage-v8` + jsdom
 - **工程化**：Prettier、Stylelint、`@ls-lint/ls-lint`、zhlint、husky + lint-staged、commitlint
 
@@ -69,7 +69,7 @@
 pnpm install
 ```
 
-要求 Node `^20.19.0 || >=22.12.0`、pnpm `>=10.12.4`（见 `package.json` 的 `engines`）。
+要求 Node `^20.19.0 || >=22.12.0`、pnpm `>=10.12.4` (见 `package.json` 的 `engines`)。
 
 ## 🛠️ 使用
 
@@ -134,7 +134,7 @@ export const bookFlight = (payload: BookFlightPayload) =>
 
 ## 🧪 测试
 
-基于 Vitest（jsdom 环境）。规则用例在 `eslint/__tests__/`，请求层用例在 `src/apis/__tests__/`。
+基于 Vitest (jsdom 环境)。规则用例在 `eslint/__tests__/`，请求层用例在 `src/apis/__tests__/`。
 
 ```bash
 pnpm test        # 交互 / watch

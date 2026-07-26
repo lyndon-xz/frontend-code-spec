@@ -1,5 +1,5 @@
 import rule from '../../../rules/react/props-interface-naming.js';
-import { createRuleTester } from '../../_support/rule-tester.js';
+import { createRuleTester } from '../../support/rule-tester.js';
 
 const ruleTester = createRuleTester();
 

@@ -1,5 +1,5 @@
 import rule from '../../../rules/control-flow/no-promise-chain.js';
-import { createRuleTester } from '../../_support/rule-tester.js';
+import { createRuleTester } from '../../support/rule-tester.js';
 
 const ruleTester = createRuleTester();
 
