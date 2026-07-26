@@ -5,61 +5,54 @@ import { isExemptFile } from '../../utils/is-exempt-file.js';
 describe('isExemptFile', () => {
   it('空文件名返回 false', () => {
     expect(isExemptFile('')).toBe(false);
+    expect(isExemptFile(undefined)).toBe(false);
   });
 
-  it('undefined 返回 false', () => {
-    expect(isExemptFile(undefined)).toBe(false);
+  it('普通源码文件不豁免', () => {
+    expect(isExemptFile('src/apis/request.ts')).toBe(false);
   });
 
   describe('目录段豁免', () => {
     it('__tests__ 目录下的文件豁免', () => {
-      expect(isExemptFile('src/__tests__/a.ts')).toBe(true);
+      expect(isExemptFile('src/apis/__tests__/request.test.ts')).toBe(true);
     });
 
     it('__mocks__ 目录下的文件豁免', () => {
-      expect(isExemptFile('src/__mocks__/a.ts')).toBe(true);
+      expect(isExemptFile('src/__mocks__/axios.ts')).toBe(true);
     });
 
     it('mocks 目录下的文件豁免', () => {
-      expect(isExemptFile('src/mocks/a.ts')).toBe(true);
+      expect(isExemptFile('test/mocks/server.ts')).toBe(true);
     });
 
-    it('Windows 反斜杠路径同样按目录段豁免', () => {
+    it('仅目录名含 mocks 子串不算豁免目录段', () => {
+      expect(isExemptFile('my-mocks-project/index.ts')).toBe(false);
+    });
+
+    it('反斜杠路径归一后仍能命中豁免目录段', () => {
       expect(isExemptFile('src\\__tests__\\a.ts')).toBe(true);
-    });
-
-    it('目录名为豁免段子串时不豁免', () => {
-      expect(isExemptFile('src/my-mocks-project/a.ts')).toBe(false);
-    });
-
-    it('豁免目录段出现在文件名位置（无父路径命中）不因目录规则豁免', () => {
-      expect(isExemptFile('__tests__')).toBe(false);
     });
   });
 
   describe('文件名后缀豁免', () => {
     it('.test.ts 文件豁免', () => {
-      expect(isExemptFile('src/a.test.ts')).toBe(true);
+      expect(isExemptFile('foo.test.ts')).toBe(true);
     });
 
     it('.test.tsx 文件豁免', () => {
-      expect(isExemptFile('src/a.test.tsx')).toBe(true);
+      expect(isExemptFile('foo.test.tsx')).toBe(true);
     });
 
     it('.d.ts 声明文件豁免', () => {
-      expect(isExemptFile('src/types.d.ts')).toBe(true);
+      expect(isExemptFile('types/global.d.ts')).toBe(true);
     });
 
-    it('.config.ts 配置文件豁免', () => {
-      expect(isExemptFile('vite.config.ts')).toBe(true);
+    it('.d.tsx 不属于声明文件后缀，不豁免', () => {
+      expect(isExemptFile('foo.d.tsx')).toBe(false);
     });
 
-    it('.d.tsx 不算声明文件，不豁免', () => {
-      expect(isExemptFile('src/types.d.tsx')).toBe(false);
-    });
-
-    it('普通源文件不豁免', () => {
-      expect(isExemptFile('src/a.ts')).toBe(false);
+    it('.config.js 配置文件豁免', () => {
+      expect(isExemptFile('vitest.config.js')).toBe(true);
     });
   });
 });

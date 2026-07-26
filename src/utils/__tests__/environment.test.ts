@@ -5,35 +5,43 @@ import { getEnvironment } from '@/utils/environment';
 
 const originalLocation = window.location;
 
-const setHostname = (hostname: string) => {
+// getEnvironment 依赖 window.location.hostname，用可配置属性替换以模拟不同域名
+const stubHostname = (hostname: string) => {
   Object.defineProperty(window, 'location', {
-    value: { hostname },
-    writable: true,
     configurable: true,
+    value: { hostname },
   });
 };
 
 describe('getEnvironment', () => {
   afterEach(() => {
     Object.defineProperty(window, 'location', {
-      value: originalLocation,
-      writable: true,
       configurable: true,
+      value: originalLocation,
     });
   });
 
-  it('returns Development when hostname is localhost', () => {
-    setHostname('localhost');
+  it('localhost 判定为开发环境', () => {
+    stubHostname('localhost');
+
     expect(getEnvironment()).toBe(Environment.Development);
   });
 
-  it('returns Development when hostname is 127.0.0.1', () => {
-    setHostname('127.0.0.1');
+  it('127.0.0.1 判定为开发环境', () => {
+    stubHostname('127.0.0.1');
+
     expect(getEnvironment()).toBe(Environment.Development);
   });
 
-  it('returns Production for a non-local hostname', () => {
-    setHostname('api.example.com');
+  it('非本地域名判定为生产环境', () => {
+    stubHostname('api.example.com');
+
+    expect(getEnvironment()).toBe(Environment.Production);
+  });
+
+  it('空 hostname 判定为生产环境', () => {
+    stubHostname('');
+
     expect(getEnvironment()).toBe(Environment.Production);
   });
 });

@@ -1,41 +1,6 @@
 /**
- * commitlint 配置文件
- * 用于检查 git 提交信息是否符合 Angular 提交规范
- *
- * 提交信息格式：
- * <type>(<scope>): <subject>
- *
- * <body>
- *
- * <footer>
- *
- * 示例：
- * feat(user): 添加用户登录功能
- *
- * 实现了用户登录的核心逻辑
- *
- * Closes #123
- *
- * =================== 规则配置说明 ===================
- *
- * 规则格式：[错误级别, 条件, 规则值]
- *
- * 【错误级别】：
- * - 0: 禁用 (Disabled) - 不检查此规则
- * - 1: 警告 (Warning) - 显示警告但允许提交
- * - 2: 错误 (Error) - 显示错误并阻止提交
- *
- * 【条件参数】：
- * - 'always': 总是应用规则 / 必须满足条件
- * - 'never': 永远不应用规则 / 不允许满足条件
- *
- * 【规则值】：
- * - 字符串: 'lower-case', 'upper-case', 'camel-case' 等
- * - 数字: 最大长度、最小长度等
- * - 数组: 允许的枚举值
- * - 布尔值: true/false
- *
- * ====================================================
+ * commitlint 配置：基于 Angular 提交规范校验 git 提交信息。
+ * 格式为 `<type>(<scope>): <subject>`，如 `feat(user): 添加用户登录功能`。
  */
 export default {
   extends: ['@commitlint/config-conventional'],

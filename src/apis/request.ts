@@ -1,24 +1,29 @@
-import type { AxiosInstance } from 'axios';
+import type { AxiosInstance, Method } from 'axios';
 import axios from 'axios';
 
+import { Environment } from '@/constants/environment';
+import { getEnvironment } from '@/utils/environment';
+
+import { analyticsReqInterceptor, analyticsResInterceptor } from './interceptors/analytics';
+import { authReqInterceptor } from './interceptors/auth';
+import { businessErrorInterceptor } from './interceptors/error/business';
+import { networkErrorInterceptor } from './interceptors/error/network';
+import { ssoInterceptor } from './interceptors/sso';
 import type { EnhancedRequestConfig, InstanceConfig } from './types/config';
 import { generateBaseUrl } from './utils/base-url';
-import { analyticsReqInterceptor, analyticsResInterceptor } from './utils/interceptors/analytics';
-import { businessErrorInterceptor } from './utils/interceptors/error/business';
-import { networkErrorInterceptor } from './utils/interceptors/error/network';
-import { ssoInterceptor } from './utils/interceptors/sso';
-import { wrapperInterceptor } from './utils/interceptors/wrapper';
-
-const DEFAULT_TIMEOUT_MS = 3000;
+import { registerDedupe, releaseDedupe } from './utils/dedupe';
+import { isRetryableError } from './utils/error';
+import { delay, getRetryDelay } from './utils/retry';
 
 class RequestInstance {
   private static instances = new Map<string, AxiosInstance>();
+  private static signatures = new Map<string, string>();
 
   public static getInstance(config: InstanceConfig): AxiosInstance {
     const {
       serviceCode,
+      timeout = 3000,
       withCredentials = true,
-      timeout = DEFAULT_TIMEOUT_MS,
       headers = {
         'Content-Type': 'application/json',
       },
@@ -27,62 +32,122 @@ class RequestInstance {
       ...restConfig
     } = config;
 
-    // 同一 serviceCode 在运行期只创建一个实例，首次传入的配置即为该服务的固定配置。
-    if (!this.instances.has(serviceCode)) {
-      const instance = axios.create({
-        ...restConfig,
-        headers,
-        timeout,
-        // 跨域请求时需要设置凭证（默认 true）
-        withCredentials,
-        baseURL: generateBaseUrl(serviceCode),
-      });
+    const signature = JSON.stringify({ timeout, withCredentials, restConfig });
 
-      reqInterceptors.forEach((interceptor) => {
-        instance.interceptors.request.use(interceptor.onFulfilled, interceptor.onRejected);
-      });
-
-      resInterceptors.forEach((interceptor) => {
-        instance.interceptors.response.use(interceptor.onFulfilled, interceptor.onRejected);
-      });
-
-      this.instances.set(serviceCode, instance);
+    // 同一 serviceCode 在运行期只创建一个实例，首次传入的配置即为该服务的固定配置
+    if (this.instances.has(serviceCode)) {
+      this.warnOnConfigDrift(serviceCode, signature);
+      return this.instances.get(serviceCode)!;
     }
 
-    return this.instances.get(serviceCode)!;
+    const instance = axios.create({
+      ...restConfig,
+      headers,
+      timeout,
+      // 跨域请求时需要设置凭证（默认 true）
+      withCredentials,
+      baseURL: generateBaseUrl(serviceCode),
+    });
+
+    reqInterceptors.forEach((interceptor) => {
+      instance.interceptors.request.use(interceptor.onFulfilled, interceptor.onRejected);
+    });
+
+    resInterceptors.forEach((interceptor) => {
+      instance.interceptors.response.use(interceptor.onFulfilled, interceptor.onRejected);
+    });
+
+    this.instances.set(serviceCode, instance);
+    this.signatures.set(serviceCode, signature);
+    return instance;
+  }
+
+  // 开发环境下，同一 serviceCode 用不同实例级配置再次创建时告警：后续配置会被静默忽略
+  private static warnOnConfigDrift(serviceCode: string, signature: string) {
+    if (getEnvironment() !== Environment.Development) return;
+    if (this.signatures.get(serviceCode) === signature) return;
+
+    console.warn(
+      `[request] serviceCode "${serviceCode}" 已用首次配置创建实例，本次不同的实例级配置将被忽略`,
+    );
   }
 }
 
+interface RetryContext {
+  instance: AxiosInstance;
+  config: EnhancedRequestConfig;
+  method: Method;
+  signal?: EnhancedRequestConfig['signal'];
+  maxRetries: number;
+}
+
+/*
+ * 拦截器执行顺序：
+ * - 请求阶段：analytics（记录开始时间、requestId）、auth（注入 token）
+ * - 响应阶段按注册顺序 FIFO 执行：network（网络/HTTP 异常归一）→ sso（登录态）→ business（业务码、拆包）→ analytics（埋点上报）
+ * 异常兜底（转 null / 重试）在下方 createRequest 中统一处理，不再作为拦截器。
+ */
+const buildInstance = (serviceCode: string): AxiosInstance =>
+  RequestInstance.getInstance({
+    serviceCode,
+    reqInterceptors: [analyticsReqInterceptor, authReqInterceptor],
+    resInterceptors: [
+      networkErrorInterceptor,
+      ssoInterceptor,
+      businessErrorInterceptor,
+      analyticsResInterceptor,
+    ],
+  });
+
+// 执行请求并按可重试错误自动重试，返回拆包后的数据；最终失败时抛出 RequestError
+const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
+  const { instance, config, method, signal, maxRetries } = context;
+
+  for (let attempt = 0; ; attempt += 1) {
+    const requestConfig = { ...config, method, signal, __retriesLeft: maxRetries - attempt };
+
+    try {
+      const response = await instance.request<T>(requestConfig);
+      return response.data;
+    } catch (error) {
+      if (attempt >= maxRetries || !isRetryableError(error)) throw error;
+      if (config.retry) await delay(getRetryDelay(config.retry, attempt + 1));
+    }
+  }
+};
+
 /**
- * 创建 POST 请求函数（推荐使用）
+ * 创建指定 HTTP 方法的请求函数。
  *
  * 功能特性：
- * - 🎯 无异常处理：成功返回数据，失败返回 null
- * - 📊 自动埋点：记录请求时间、参数、响应等信息
- * - 🔧 错误处理：自动显示错误提示，支持静默配置
- * - 🔐 认证检查：自动处理 SSO 登录跳转
- * - ⚙️ 可配置：支持传统异常模式切换
+ * - 无异常处理：默认成功返回数据、失败返回 null（可通过 isErrorSwallowed:false 改为抛出 RequestError）
+ * - 响应拆包：自动剥离业务信封，只返回 data
+ * - 自动埋点、错误提示（支持静默 / 自定义文案）、SSO 登录跳转
+ * - 可选自动重试（retry）与请求去重（isDeduped），并支持传入 AbortSignal 主动取消
  */
-export const createPostRequest = (serviceCode: string) => {
+export const createRequest = (serviceCode: string, method: Method) => {
+  const instance = buildInstance(serviceCode);
+
   return async <T = unknown>(config: EnhancedRequestConfig): Promise<T | null> => {
-    const { url, params, ...restConfig } = config;
-    // 拦截器执行顺序：请求阶段 analytics（记录开始时间）→ 发送请求 → 服务端响应 → 响应阶段（按注册顺序执行）：network（网络异常）→ sso（登录态）→ business（业务码）→ analytics（埋点上报）→ wrapper（异常兜底）
-    const instance = RequestInstance.getInstance({
-      serviceCode,
-      reqInterceptors: [analyticsReqInterceptor],
-      // axios 响应拦截器按注册顺序 FIFO 执行，故此处按预期执行顺序正序注册：
-      // network（网络异常）→ sso（登录态）→ business（业务码）→ analytics（埋点上报）→ wrapper（异常兜底，最外层转 null）
-      resInterceptors: [
-        networkErrorInterceptor,
-        ssoInterceptor,
-        businessErrorInterceptor,
-        analyticsResInterceptor,
-        wrapperInterceptor,
-      ],
-    });
+    const { retry, isDeduped, signal: userSignal, isErrorSwallowed } = config;
+    const maxRetries = retry?.count ?? 0;
+    // 仅在开启去重且调用方未自带 signal 时接管取消控制，避免覆盖调用方的 signal
+    const controller =
+      isDeduped && userSignal == null ? registerDedupe({ ...config, method }) : undefined;
+    const signal = userSignal ?? controller?.signal;
 
-    const response = await instance.post<T>(url, params, restConfig);
-
-    return response.data;
+    try {
+      return await sendWithRetry<T>({ instance, config, method, signal, maxRetries });
+    } catch (error) {
+      if (isErrorSwallowed !== false) return null;
+      throw error;
+    } finally {
+      if (controller) releaseDedupe({ ...config, method }, controller);
+    }
   };
 };
+
+export const createGetRequest = (serviceCode: string) => createRequest(serviceCode, 'GET');
+export const createPostRequest = (serviceCode: string) => createRequest(serviceCode, 'POST');
+export const createPutRequest = (serviceCode: string) => createRequest(serviceCode, 'PUT');
+export const createDeleteRequest = (serviceCode: string) => createRequest(serviceCode, 'DELETE');

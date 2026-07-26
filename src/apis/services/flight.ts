@@ -1,4 +1,4 @@
-import { createPostRequest } from '../request';
+import { createGetRequest, createPostRequest } from '../request';
 
 /** 航班排序方式 */
 export type FlightSortBy = 'price-asc' | 'price-desc' | 'departure-time' | 'duration';
@@ -104,20 +104,26 @@ export interface BookFlightResult {
 
 const FLIGHT_SERVICE_CODE = '33251';
 
-// 机票统一请求实例：搜索、详情、预订共用一个 serviceCode
-const request = createPostRequest(FLIGHT_SERVICE_CODE);
+// 查询用 GET（params 走 query）、变更用 POST（data 走 body），共用一个 serviceCode
+const get = createGetRequest(FLIGHT_SERVICE_CODE);
+const post = createPostRequest(FLIGHT_SERVICE_CODE);
 
-/** 查询航班列表 */
+/** 查询航班列表：开启去重（快速改筛选条件时取消上一次请求）并对瞬时故障重试 */
 export const fetchFlights = (query: FlightListParams) =>
-  request<FlightListResult>({ url: '/api/flight/list', params: query });
+  get<FlightListResult>({
+    url: '/api/flight/list',
+    params: query,
+    isDeduped: true,
+    retry: { count: 2 },
+  });
 
 /** 查询航班详情 */
 export const fetchFlightDetail = (flightNo: string) =>
-  request<FlightDetail>({ url: '/api/flight/detail', params: { flightNo } });
+  get<FlightDetail>({ url: '/api/flight/detail', params: { flightNo } });
 
 /** 静默查询航班详情（不显示错误提示） */
 export const fetchFlightDetailSilent = (flightNo: string) =>
-  request<FlightDetail>({
+  get<FlightDetail>({
     url: '/api/flight/detail',
     params: { flightNo },
     businessError: { isSilent: true },
@@ -126,12 +132,33 @@ export const fetchFlightDetailSilent = (flightNo: string) =>
 
 /** 查询航班详情（自定义错误提示） */
 export const fetchFlightDetailWithCustomError = (flightNo: string) =>
-  request<FlightDetail>({
+  get<FlightDetail>({
     url: '/api/flight/detail',
     params: { flightNo },
     businessError: { customMessage: '获取航班信息失败，请稍后重试' },
   });
 
-/** 预订机票 */
+/** 预订机票：变更类请求不重试、不去重，避免重复下单 */
 export const bookFlight = (payload: BookFlightPayload) =>
-  request<BookFlightResult>({ url: '/api/flight/book', params: payload });
+  post<BookFlightResult>({ url: '/api/flight/book', data: payload });
+
+/**
+ * 预订机票（业务自行处理错误的示例）。
+ * 关掉默认提示并抛出 RequestError，调用方按错误类型 / 业务码自定义处理（如余票不足、重复下单）：
+ *
+ *   try {
+ *     const result = await bookFlightOrThrow(payload);
+ *   } catch (error) {
+ *     if (error instanceof RequestError && error.type === RequestErrorType.Business) {
+ *       // 按 error.code 分别处理
+ *     }
+ *   }
+ */
+export const bookFlightOrThrow = (payload: BookFlightPayload) =>
+  post<BookFlightResult>({
+    url: '/api/flight/book',
+    data: payload,
+    isErrorSwallowed: false,
+    businessError: { isSilent: true },
+    networkError: { isSilent: true },
+  });

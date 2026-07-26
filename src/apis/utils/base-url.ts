@@ -1,13 +1,9 @@
 import { Environment } from '@/constants/environment';
 import { getEnvironment } from '@/utils/environment';
 
-export const generateBaseUrl = (serviceCode: string) => {
-  const environment = getEnvironment();
+import { SERVICE_HOST } from '../constants/host';
 
-  const servicePrefix = {
-    [Environment.Development]: `http://localhost:3000/api/${serviceCode}`,
-    [Environment.Production]: `https://api.example.com/api/${serviceCode}`,
-  };
-
-  return servicePrefix[environment] ?? servicePrefix[Environment.Production];
+export const generateBaseUrl = (serviceCode: string): string => {
+  const host = SERVICE_HOST[getEnvironment()] ?? SERVICE_HOST[Environment.Production];
+  return `${host}/api/${serviceCode}`;
 };

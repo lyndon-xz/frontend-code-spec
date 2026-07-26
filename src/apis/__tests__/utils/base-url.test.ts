@@ -15,18 +15,21 @@ describe('generateBaseUrl', () => {
     vi.clearAllMocks();
   });
 
-  it('builds a localhost URL in development', () => {
+  it('开发环境拼接本地 host 与 serviceCode', () => {
     mockGetEnvironment.mockReturnValue(Environment.Development);
-    expect(generateBaseUrl('33238')).toBe('http://localhost:3000/api/33238');
+
+    expect(generateBaseUrl('33251')).toBe('http://localhost:3000/api/33251');
   });
 
-  it('builds the production URL in production', () => {
+  it('生产环境拼接线上 host 与 serviceCode', () => {
     mockGetEnvironment.mockReturnValue(Environment.Production);
-    expect(generateBaseUrl('33238')).toBe('https://api.example.com/api/33238');
+
+    expect(generateBaseUrl('33251')).toBe('https://api.example.com/api/33251');
   });
 
-  it('falls back to the production URL for an unknown environment', () => {
+  it('环境无对应 host 时回退到生产 host', () => {
     mockGetEnvironment.mockReturnValue('staging' as Environment);
-    expect(generateBaseUrl('33238')).toBe('https://api.example.com/api/33238');
+
+    expect(generateBaseUrl('abc')).toBe('https://api.example.com/api/abc');
   });
 });

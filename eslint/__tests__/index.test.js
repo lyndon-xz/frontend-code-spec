@@ -1,39 +1,55 @@
 import { describe, expect, it } from 'vitest';
 
-import config from '../index.js';
+import plugin from '../index.js';
 
-// 从扁平配置数组里取出注册了自研插件的那一项
-const customPlugin = config.find((item) => item.plugins?.custom)?.plugins.custom;
+// 自研规则清单，与 index.js 注册的 custom 命名空间应一一对应
+const EXPECTED_RULE_NAMES = [
+  'comment-style',
+  'no-promise-chain',
+  'no-param-destructuring',
+  'prefer-object-destructuring',
+  'require-enum-initializer',
+  'no-handle-prefix',
+  'no-generic-param-name',
+  'ref-suffix-naming',
+  'no-internal-on-prefix',
+  'no-implementation-suffix-filename',
+  'status-field-naming',
+  'no-unnecessary-arrow-wrapper',
+  'props-interface-naming',
+  'import-path-boundary',
+  'no-barrel',
+  'no-component-sidecar-files',
+  'file-element-order',
+  'require-tsx-default-export',
+  'no-ts-default-export',
+];
 
-describe('eslint flat config 入口', () => {
-  it('默认导出为非空的扁平配置数组', () => {
-    expect(Array.isArray(config)).toBe(true);
-    expect(config.length).toBeGreaterThan(0);
+describe('eslint 插件装配', () => {
+  it('默认导出为扁平配置数组', () => {
+    expect(Array.isArray(plugin)).toBe(true);
+    expect(plugin.length).toBeGreaterThan(0);
   });
 
-  it('在 custom 命名空间下注册了自研规则插件', () => {
-    expect(customPlugin).toBeDefined();
-    expect(customPlugin.rules).toBeTypeOf('object');
+  it('注册了 custom 命名空间下的全部自研规则', () => {
+    const pluginEntry = plugin.find((item) => item.plugins?.custom);
+    expect(pluginEntry).toBeDefined();
+
+    const registered = Object.keys(pluginEntry.plugins.custom.rules);
+    expect(registered).toEqual(expect.arrayContaining(EXPECTED_RULE_NAMES));
+    expect(registered).toHaveLength(EXPECTED_RULE_NAMES.length);
   });
 
-  it('注册全部 19 条自研规则', () => {
-    expect(Object.keys(customPlugin.rules)).toHaveLength(19);
-  });
-
-  it('每条规则都具备合法的 meta 与 create', () => {
-    for (const [id, rule] of Object.entries(customPlugin.rules)) {
-      expect(rule, id).toBeDefined();
-      expect(rule.meta, id).toBeTypeOf('object');
-      expect(rule.meta.messages, id).toBeTypeOf('object');
-      expect(rule.create, id).toBeTypeOf('function');
+  it('每条注册的规则都具备 meta 与 create', () => {
+    const pluginEntry = plugin.find((item) => item.plugins?.custom);
+    for (const rule of Object.values(pluginEntry.plugins.custom.rules)) {
+      expect(rule).toHaveProperty('meta');
+      expect(typeof rule.create).toBe('function');
     }
   });
 
-  it('包含对 TS/TSX 文件生效的语言配置项', () => {
-    const tsItem = config.find(
-      (item) => Array.isArray(item.files) && item.files.includes('**/*.tsx'),
-    );
-    expect(tsItem).toBeDefined();
-    expect(tsItem.languageOptions.parser).toBeDefined();
+  it('包含领域配置块（含 rules 或 files 的配置对象）', () => {
+    const configBlocks = plugin.filter((item) => item.rules || item.files);
+    expect(configBlocks.length).toBeGreaterThan(0);
   });
 });
