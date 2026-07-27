@@ -80,6 +80,23 @@ interface RetryContext {
   maxRetries: number;
 }
 
+// 执行请求并按可重试错误自动重试，返回拆包后的数据；最终失败时抛出 RequestError
+const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
+  const { instance, config, method, signal, maxRetries } = context;
+
+  for (let attempt = 0; ; attempt += 1) {
+    const requestConfig = { ...config, method, signal, __retriesLeft: maxRetries - attempt };
+
+    try {
+      const response = await instance.request<T>(requestConfig);
+      return response.data;
+    } catch (error) {
+      if (attempt >= maxRetries || !isRetryableError(error)) throw error;
+      if (config.retry) await delay(getRetryDelay(config.retry, attempt + 1));
+    }
+  }
+};
+
 /*
  * 拦截器执行顺序：
  * - 请求阶段：analytics（记录开始时间、requestId）、auth（注入 token）
@@ -97,23 +114,6 @@ const buildInstance = (serviceCode: string): AxiosInstance =>
       analyticsResInterceptor,
     ],
   });
-
-// 执行请求并按可重试错误自动重试，返回拆包后的数据；最终失败时抛出 RequestError
-const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
-  const { instance, config, method, signal, maxRetries } = context;
-
-  for (let attempt = 0; ; attempt += 1) {
-    const requestConfig = { ...config, method, signal, __retriesLeft: maxRetries - attempt };
-
-    try {
-      const response = await instance.request<T>(requestConfig);
-      return response.data;
-    } catch (error) {
-      if (attempt >= maxRetries || !isRetryableError(error)) throw error;
-      if (config.retry) await delay(getRetryDelay(config.retry, attempt + 1));
-    }
-  }
-};
 
 /**
  * 创建指定 HTTP 方法的请求函数。

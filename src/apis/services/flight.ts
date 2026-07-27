@@ -3,8 +3,16 @@ import { createGetRequest, createPostRequest } from '../request';
 /** 航班排序方式 */
 export type FlightSortBy = 'price-asc' | 'price-desc' | 'departure-time' | 'duration';
 
-/** 舱位等级 */
-export type CabinClass = 'economy' | 'business' | 'first';
+/** 航班列表查询参数 */
+export interface FlightListParams {
+  /** 出发城市码 */
+  departureCity: string;
+  /** 到达城市码 */
+  arrivalCity: string;
+  /** 出发日期（YYYY-MM-DD） */
+  departureDate: string;
+  sortBy: FlightSortBy;
+}
 
 /** 航班列表项 */
 export interface Flight {
@@ -23,22 +31,14 @@ export interface Flight {
   price: number;
 }
 
-/** 航班列表查询参数 */
-export interface FlightListParams {
-  /** 出发城市码 */
-  departureCity: string;
-  /** 到达城市码 */
-  arrivalCity: string;
-  /** 出发日期（YYYY-MM-DD） */
-  departureDate: string;
-  sortBy: FlightSortBy;
-}
-
 /** 航班列表查询结果 */
 export interface FlightListResult {
   list: Flight[];
   total: number;
 }
+
+/** 舱位等级 */
+export type CabinClass = 'economy' | 'business' | 'first';
 
 /** 舱位报价 */
 export interface FareOption {
