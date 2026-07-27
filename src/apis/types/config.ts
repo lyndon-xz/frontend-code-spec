@@ -14,6 +14,8 @@ export interface BusinessErrorOptions {
 export interface NetworkErrorOptions {
   /** 静默处理，不弹出错误提示 */
   isSilent?: boolean;
+  /** 自定义错误提示，不设置则使用归一后的默认文案 */
+  customMessage?: string;
 }
 
 /** 自动重试策略，仅对网络错误、超时、5xx 等可恢复错误生效 */

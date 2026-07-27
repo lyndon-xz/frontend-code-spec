@@ -20,37 +20,33 @@
     "eslint",
     "eslint.config.js",
     "src",
-    "README.md",
     "LICENSE"
   ],
   "scripts": {
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --check \"**/*.{json,yml,yaml,md,scss,css,html}\" --ignore-unknown",
     "lint": "eslint .",
     "lint:filename": "ls-lint",
     "lint:fix": "eslint . --fix",
-    "lint:md": "zhlint \"*.md\" \"eslint/**/*.md\" \"src/**/*.md\"",
-    "lint:md:fix": "zhlint \"*.md\" \"eslint/**/*.md\" \"src/**/*.md\" --fix",
+    "lint:md": "zhlint \".gitlab/**/*.md\" \"eslint/**/*.md\" \"src/**/*.md\"",
+    "lint:md:fix": "zhlint \".gitlab/**/*.md\" \"eslint/**/*.md\" \"src/**/*.md\" --fix",
     "lint:style": "stylelint \"**/*.scss\" --allow-empty-input",
     "lint:style:fix": "stylelint \"**/*.scss\" --fix --allow-empty-input",
     "prepare": "husky",
     "test": "vitest",
     "test:cov": "vitest run --coverage",
     "type-check": "tsc --noEmit",
-    "verify": "pnpm run verify:ci",
-    "verify:ci": "pnpm run type-check && pnpm run lint && pnpm run format:check && pnpm run lint:style && pnpm run lint:filename && pnpm run lint:md && pnpm run test:cov",
-    "verify:local": "pnpm run verify"
+    "verify": "pnpm run type-check && pnpm run lint && pnpm run format:check && pnpm run lint:filename && pnpm run lint:md && pnpm run test:cov"
   },
   "lint-staged": {
-    "**/*": [
+    "{src,eslint}/**/*": [
       "ls-lint"
     ],
     "package.json": [
       "sort-package-json"
     ],
     "*.{ts,tsx,js,mjs}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint --fix"
     ],
     "*.scss": [
       "stylelint --fix",
@@ -65,7 +61,7 @@
     ]
   },
   "dependencies": {
-    "antd": "^6.1.0",
+    "antd": "^6.5.2",
     "axios": "^1.13.2"
   },
   "devDependencies": {
@@ -75,8 +71,9 @@
     "@ls-lint/ls-lint": "^2.3.1",
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
-    "@typescript-eslint/eslint-plugin": "^8.40.0",
-    "@typescript-eslint/parser": "^8.40.0",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
     "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^9.33.0",
     "eslint-import-resolver-typescript": "^4.4.5",
@@ -88,8 +85,9 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^16.1.5",
-    "prettier": "^3.6.2",
+    "prettier": "^3.9.6",
     "react": "^19.2.4",
+    "react-dom": "^19.2.8",
     "sort-package-json": "^3.6.1",
     "stylelint": "^17.4.0",
     "stylelint-config-css-modules": "^4.6.0",

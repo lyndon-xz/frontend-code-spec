@@ -17,7 +17,7 @@ echo " 🛡️ [PRE-PUSH SECURITY]: 运行本地完整质量防线"
 echo "=========================================================="
 
 echo "➡️ Running local verify pipeline..."
-pnpm run verify:local || {
+pnpm run verify || {
     echo "❌ [Quality Gate Error]: 本地质量校验未通过，禁止带病提交！"
     exit 1
 }

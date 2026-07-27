@@ -1,25 +1,38 @@
-import { message } from 'antd';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { networkErrorInterceptor } from '@/apis/interceptors/error/network';
 import { RequestError, RequestErrorType } from '@/apis/utils/error';
+import { resetErrorNotifier, setErrorNotifier } from '@/apis/utils/error-notifier';
 
-vi.mock('antd', () => ({
-  message: { error: vi.fn() },
-}));
-
-const mockMessageError = vi.mocked(message.error);
+const mockNotifyError = vi.fn();
 
 describe('networkErrorInterceptor.onRejected', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setErrorNotifier(mockNotifyError);
+  });
+
+  afterEach(() => {
+    resetErrorNotifier();
   });
 
   it('归一后的错误默认弹出提示并继续拒绝', async () => {
     const error = new RequestError(RequestErrorType.Network, '网络连接失败');
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
-    expect(mockMessageError).toHaveBeenCalledWith('网络连接失败');
+    expect(mockNotifyError).toHaveBeenCalledWith('网络连接失败');
+  });
+
+  it('配置 networkError.customMessage 时用自定义文案提示', async () => {
+    const error = new RequestError(RequestErrorType.Network, '网络连接失败', {
+      config: { networkError: { customMessage: '请检查网络后重试' } },
+    });
+
+    await expect(networkErrorInterceptor.onRejected!(error)).rejects.toMatchObject({
+      message: '请检查网络后重试',
+      type: RequestErrorType.Network,
+    });
+    expect(mockNotifyError).toHaveBeenCalledWith('请检查网络后重试');
   });
 
   it('配置 networkError.isSilent 时不弹出提示', async () => {
@@ -28,7 +41,7 @@ describe('networkErrorInterceptor.onRejected', () => {
     });
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
-    expect(mockMessageError).not.toHaveBeenCalled();
+    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
   it('仍有重试次数且错误可重试时不提示', async () => {
@@ -37,7 +50,7 @@ describe('networkErrorInterceptor.onRejected', () => {
     });
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
-    expect(mockMessageError).not.toHaveBeenCalled();
+    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
   it('有重试次数但错误不可重试时仍提示', async () => {
@@ -47,13 +60,13 @@ describe('networkErrorInterceptor.onRejected', () => {
     });
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
-    expect(mockMessageError).toHaveBeenCalledWith('请求参数有误');
+    expect(mockNotifyError).toHaveBeenCalledWith('请求参数有误');
   });
 
   it('取消类错误不提示', async () => {
     const error = new RequestError(RequestErrorType.Canceled, '请求已取消');
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
-    expect(mockMessageError).not.toHaveBeenCalled();
+    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 });

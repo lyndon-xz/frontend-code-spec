@@ -36,6 +36,16 @@ describe('registerDedupe', () => {
     expect(second.signal.aborted).toBe(false);
   });
 
+  it('参数为数组时参与去重', () => {
+    const config = buildConfig({ params: [1, 2] });
+
+    const first = registerDedupe(config);
+    const second = registerDedupe(config);
+
+    expect(first.signal.aborted).toBe(true);
+    expect(second.signal.aborted).toBe(false);
+  });
+
   it('参数为不可序列化的宿主对象时不参与去重', () => {
     const formData = new FormData();
     const config = buildConfig({ data: formData });

@@ -92,14 +92,6 @@ export default [
       'react-hooks': reactHooks,
     },
   },
-  {
-    files: ['scripts/**/*.mjs'],
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
-    },
-  },
 
   /** 领域配置（与 rules/<domain>/ 一一对应；正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线） */
   ...commentsConfig,

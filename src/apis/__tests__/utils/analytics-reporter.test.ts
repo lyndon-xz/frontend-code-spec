@@ -1,7 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AnalyticsData } from '@/apis/utils/analytics-reporter';
-import { reportAnalytics, RequestStatus } from '@/apis/utils/analytics-reporter';
+import {
+  reportAnalytics,
+  RequestStatus,
+  resetAnalyticsSender,
+  setAnalyticsSender,
+} from '@/apis/utils/analytics-reporter';
 import { Environment } from '@/constants/environment';
 import { getEnvironment } from '@/utils/environment';
 
@@ -26,9 +31,14 @@ const buildAnalyticsData = (overrides: Partial<AnalyticsData> = {}): AnalyticsDa
 describe('reportAnalytics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetAnalyticsSender();
     vi.spyOn(console, 'group').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    resetAnalyticsSender();
   });
 
   it('开发环境成功请求打印分组日志并输出返回数据', () => {
@@ -63,5 +73,17 @@ describe('reportAnalytics', () => {
 
     expect(console.group).not.toHaveBeenCalled();
     expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it('生产环境走可注入的上报实现', () => {
+    mockGetEnvironment.mockReturnValue(Environment.Production);
+    const sender = vi.fn();
+    setAnalyticsSender(sender);
+    const analyticsData = buildAnalyticsData();
+
+    reportAnalytics(analyticsData);
+
+    expect(sender).toHaveBeenCalledWith(analyticsData);
+    expect(console.group).not.toHaveBeenCalled();
   });
 });

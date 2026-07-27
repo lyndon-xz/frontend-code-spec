@@ -9,13 +9,14 @@ import type { ResInterceptor } from '@/apis/types/interceptor';
  * RequestError 也一并动态导入，确保与 sso 内抛出的实例来自同一模块图，instanceof 才成立
  */
 let ssoInterceptor: ResInterceptor;
+let resetSsoRedirectState: typeof import('@/apis/interceptors/sso').resetSsoRedirectState;
 let RequestError: typeof import('@/apis/utils/error').RequestError;
 let RequestErrorType: typeof import('@/apis/utils/error').RequestErrorType;
 
 beforeEach(async () => {
   vi.resetModules();
   vi.restoreAllMocks();
-  ({ ssoInterceptor } = await import('@/apis/interceptors/sso'));
+  ({ ssoInterceptor, resetSsoRedirectState } = await import('@/apis/interceptors/sso'));
   ({ RequestError, RequestErrorType } = await import('@/apis/utils/error'));
 });
 
@@ -44,6 +45,15 @@ describe('ssoInterceptor.onFulfilled', () => {
     const response = buildResponse({
       returncode: UNAUTHORIZED_CODE,
       redirectUrl: 'javascript:alert(1)',
+    });
+
+    expect(() => ssoInterceptor.onFulfilled!(response)).toThrow('SSO 重定向地址非法');
+  });
+
+  it('跳转地址无法解析时抛出地址非法错误', () => {
+    const response = buildResponse({
+      returncode: UNAUTHORIZED_CODE,
+      redirectUrl: 'http://[',
     });
 
     expect(() => ssoInterceptor.onFulfilled!(response)).toThrow('SSO 重定向地址非法');
@@ -80,5 +90,19 @@ describe('ssoInterceptor.onFulfilled', () => {
     expect(() => ssoInterceptor.onFulfilled!(response)).toThrow(RequestError);
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('复位跳转状态后可再次触发跳转', () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const response = buildResponse({
+      returncode: UNAUTHORIZED_CODE,
+      redirectUrl: 'https://sso.example.com/login',
+    });
+
+    expect(() => ssoInterceptor.onFulfilled!(response)).toThrow(RequestError);
+    resetSsoRedirectState();
+    expect(() => ssoInterceptor.onFulfilled!(response)).toThrow(RequestError);
+
+    expect(clickSpy).toHaveBeenCalledTimes(2);
   });
 });

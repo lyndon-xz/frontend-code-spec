@@ -29,8 +29,8 @@ export default [
   },
 
   /*
-   * Prettier 格式化基线 — 与 code-spec 领域正交，不进领域规则集（eslint/configs 与 rules/
-   * 一一对应）， 统一在仓库顶层对全部源码（JS 规则源码 + src 的 TS/TSX）配线。
+   * Prettier 格式化基线 — JS/TS/TSX 由 eslint-plugin-prettier 在 lint 中校验；
+   * json/yml/md 等其它文本由 `pnpm format:check` 覆盖，避免与 ESLint 重复扫同一批文件。
    */
   {
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],

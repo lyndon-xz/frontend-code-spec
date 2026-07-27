@@ -9,9 +9,8 @@
     "module": "ESNext",
     "rootDir": "./",
     "moduleResolution": "bundler" /* 模块解析规则，适用现代打包工具。支持无扩展名导入 | 支持多种解析路径（路径映射、绝对路径、静态资源） */,
-    "baseUrl": "./" /* 非相对路径 -> 导入模块的查找起始位置 */,
     "paths": {
-      "@/*": ["src/*"],
+      "@/*": ["./src/*"],
       "~/*": ["./"] /* 项目根目录别名 */
     },
     "resolveJsonModule": true,

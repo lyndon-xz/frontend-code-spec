@@ -14,10 +14,19 @@ export interface AnalyticsData {
   endTime: number;
 }
 
+/** 生产环境埋点上报实现；默认空实现，业务侧通过 setAnalyticsSender 接入 */
+export type AnalyticsSender = (analyticsData: AnalyticsData) => void;
+
 export enum RequestStatus {
   Success = 'success',
   Error = 'error',
 }
+
+const noopSender: AnalyticsSender = (analyticsData) => {
+  void analyticsData;
+};
+
+let analyticsSender: AnalyticsSender = noopSender;
 
 // 开发环境用分组日志便于调试
 const logToConsole = (analyticsData: AnalyticsData) => {
@@ -50,14 +59,19 @@ const logToConsole = (analyticsData: AnalyticsData) => {
   console.groupEnd();
 };
 
-// 生产环境上报出口占位：接入真实埋点 SDK（如 sendBeacon / 上报接口）时替换此处
-const sendToServer = (analyticsData: AnalyticsData) => {
-  void analyticsData;
+/** 替换生产环境埋点上报实现 */
+export const setAnalyticsSender = (sender: AnalyticsSender) => {
+  analyticsSender = sender;
+};
+
+/** 恢复为默认空实现 */
+export const resetAnalyticsSender = () => {
+  analyticsSender = noopSender;
 };
 
 /**
- * 埋点上报出口。开发环境打印分组日志便于调试，生产环境走真实上报，
- * 避免生产控制台刷屏与请求数据泄漏。接入真实 SDK 时只需改 sendToServer，拦截器无需改动。
+ * 埋点上报出口。开发环境打印分组日志便于调试，生产环境走可注入的上报实现，
+ * 避免生产控制台刷屏与请求数据泄漏。
  */
 export const reportAnalytics = (analyticsData: AnalyticsData) => {
   if (getEnvironment() === Environment.Development) {
@@ -65,5 +79,5 @@ export const reportAnalytics = (analyticsData: AnalyticsData) => {
     return;
   }
 
-  sendToServer(analyticsData);
+  analyticsSender(analyticsData);
 };

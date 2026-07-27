@@ -1,4 +1,4 @@
-import type { AxiosInstance, Method } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, Method } from 'axios';
 import axios from 'axios';
 
 import { Environment } from '@/constants/environment';
@@ -14,6 +14,12 @@ import { generateBaseUrl } from './utils/base-url';
 import { registerDedupe, releaseDedupe } from './utils/dedupe';
 import { isRetryableError } from './utils/error';
 import { delay, getRetryDelay } from './utils/retry';
+
+/** 实例级可覆盖配置（同一 serviceCode 首次创建生效，后续差异会在开发环境告警） */
+export type RequestInstanceOptions = Pick<
+  AxiosRequestConfig,
+  'timeout' | 'withCredentials' | 'headers'
+>;
 
 class RequestInstance {
   private static instances = new Map<string, AxiosInstance>();
@@ -32,7 +38,8 @@ class RequestInstance {
       ...restConfig
     } = config;
 
-    const signature = JSON.stringify({ timeout, withCredentials, restConfig });
+    // headers 参与签名：同 serviceCode 下 Content-Type 等差异也应触发漂移告警
+    const signature = JSON.stringify({ timeout, withCredentials, headers, restConfig });
 
     // 同一 serviceCode 在运行期只创建一个实例，首次传入的配置即为该服务的固定配置
     if (this.instances.has(serviceCode)) {
@@ -103,9 +110,10 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
  * - 响应阶段按注册顺序 FIFO 执行：network（网络/HTTP 异常归一）→ sso（登录态）→ business（业务码、拆包）→ analytics（埋点上报）
  * 异常兜底（转 null / 重试）在下方 createRequest 中统一处理，不再作为拦截器。
  */
-const buildInstance = (serviceCode: string): AxiosInstance =>
+const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}): AxiosInstance =>
   RequestInstance.getInstance({
     serviceCode,
+    ...options,
     reqInterceptors: [analyticsReqInterceptor, authReqInterceptor],
     resInterceptors: [
       networkErrorInterceptor,
@@ -124,8 +132,12 @@ const buildInstance = (serviceCode: string): AxiosInstance =>
  * - 自动埋点、错误提示（支持静默 / 自定义文案）、SSO 登录跳转
  * - 可选自动重试（retry）与请求去重（isDeduped），并支持传入 AbortSignal 主动取消
  */
-export const createRequest = (serviceCode: string, method: Method) => {
-  const instance = buildInstance(serviceCode);
+export const createRequest = (
+  serviceCode: string,
+  method: Method,
+  options?: RequestInstanceOptions,
+) => {
+  const instance = buildInstance(serviceCode, options);
 
   return async <T = unknown>(config: EnhancedRequestConfig): Promise<T | null> => {
     const { retry, isDeduped, signal: userSignal, isErrorSwallowed } = config;
@@ -146,7 +158,11 @@ export const createRequest = (serviceCode: string, method: Method) => {
   };
 };
 
-export const createGetRequest = (serviceCode: string) => createRequest(serviceCode, 'GET');
-export const createPostRequest = (serviceCode: string) => createRequest(serviceCode, 'POST');
-export const createPutRequest = (serviceCode: string) => createRequest(serviceCode, 'PUT');
-export const createDeleteRequest = (serviceCode: string) => createRequest(serviceCode, 'DELETE');
+export const createGetRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+  createRequest(serviceCode, 'GET', options);
+export const createPostRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+  createRequest(serviceCode, 'POST', options);
+export const createPutRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+  createRequest(serviceCode, 'PUT', options);
+export const createDeleteRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+  createRequest(serviceCode, 'DELETE', options);

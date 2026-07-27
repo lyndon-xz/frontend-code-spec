@@ -1,32 +1,63 @@
-// 覆盖普通参数、默认值参数、rest 参数三种形态
-const GENERIC_NAME = /^(data|params|callback|options)$/;
+/*
+ * 覆盖普通参数、默认值参数、rest 参数三种形态。
+ * 默认黑名单为 data/callback；params/options 在请求与配置场景常见，不纳入默认集。
+ * 可通过 options.bannedNames 扩展或收窄。
+ */
+const DEFAULT_BANNED_NAMES = ['data', 'callback'];
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildNamePattern = (bannedNames) =>
+  new RegExp(`^(${bannedNames.map(escapeRegExp).join('|')})$`);
 
 export default {
   meta: {
     type: 'suggestion',
     docs: {
-      description:
-        '禁止函数参数使用泛化命名（data、params、callback、options），请使用具体的领域词汇',
+      description: '禁止函数参数使用泛化命名，请使用具体的领域词汇',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          bannedNames: {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+            uniqueItems: true,
+            minItems: 1,
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
-      noGenericParam: '参数禁止泛化命名（data、params、callback、options），请使用具体的领域词汇',
+      noGenericParam: '参数禁止泛化命名（{{names}}），请使用具体的领域词汇',
     },
   },
+
   create(context) {
+    const bannedNames = context.options[0]?.bannedNames ?? DEFAULT_BANNED_NAMES;
+    const namePattern = buildNamePattern(bannedNames);
+    const namesText = bannedNames.join('、');
     const FN = ':matches(FunctionDeclaration, ArrowFunctionExpression, FunctionExpression)';
+
+    const reportIfBanned = (node) => {
+      if (!namePattern.test(node.name)) return;
+      context.report({ node, messageId: 'noGenericParam', data: { names: namesText } });
+    };
+
     return {
       // 普通参数：fn(data)
-      [`${FN} > Identifier.params[name=${GENERIC_NAME}]`](node) {
-        context.report({ node, messageId: 'noGenericParam' });
+      [`${FN} > Identifier.params`](node) {
+        reportIfBanned(node);
       },
       // 默认值参数：fn(data = {})
-      [`${FN} > AssignmentPattern.params > Identifier.left[name=${GENERIC_NAME}]`](node) {
-        context.report({ node, messageId: 'noGenericParam' });
+      [`${FN} > AssignmentPattern.params > Identifier.left`](node) {
+        reportIfBanned(node);
       },
       // rest 参数：fn(...data)
-      [`${FN} > RestElement.params > Identifier.argument[name=${GENERIC_NAME}]`](node) {
-        context.report({ node, messageId: 'noGenericParam' });
+      [`${FN} > RestElement.params > Identifier.argument`](node) {
+        reportIfBanned(node);
       },
     };
   },

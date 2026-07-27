@@ -216,6 +216,44 @@ describe('createRequest', () => {
       createPostRequest(serviceCode);
 
       expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('开发环境再次创建且实例配置不同时告警', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const serviceCode = nextServiceCode();
+      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
+
+      createGetRequest(serviceCode, { timeout: 3000 });
+      createPostRequest(serviceCode, { timeout: 8000 });
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(`serviceCode "${serviceCode}"`));
+      expect(mockCreate).toHaveBeenCalledTimes(1);
+      warnSpy.mockRestore();
+    });
+
+    it('开发环境 headers 不同时同样触发漂移告警', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const serviceCode = nextServiceCode();
+      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
+
+      createGetRequest(serviceCode, { headers: { 'Content-Type': 'application/json' } });
+      createPostRequest(serviceCode, { headers: { 'Content-Type': 'text/plain' } });
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      warnSpy.mockRestore();
+    });
+
+    it('开发环境实例配置相同时不告警', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const serviceCode = nextServiceCode();
+      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
+
+      createGetRequest(serviceCode, { timeout: 5000 });
+      createPostRequest(serviceCode, { timeout: 5000 });
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 });

@@ -93,7 +93,7 @@ export default [
     rules: {
       // 函数/变量禁 handle 前缀
       'custom/no-handle-prefix': 'error',
-      // 参数禁泛化命名（data/params/callback/options）
+      // 参数禁泛化命名（默认 data/callback；可通过 bannedNames 扩展）
       'custom/no-generic-param-name': 'error',
       // useRef 变量必须以 Ref 结尾
       'custom/ref-suffix-naming': 'error',

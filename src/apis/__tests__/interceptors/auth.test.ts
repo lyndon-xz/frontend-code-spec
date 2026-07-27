@@ -1,7 +1,11 @@
 import type { InternalAxiosRequestConfig } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { authReqInterceptor } from '@/apis/interceptors/auth';
+import {
+  authReqInterceptor,
+  resetAuthTokenProvider,
+  setAuthTokenProvider,
+} from '@/apis/interceptors/auth';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -16,11 +20,13 @@ describe('authReqInterceptor.onFulfilled', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    resetAuthTokenProvider();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     window.localStorage.clear();
+    resetAuthTokenProvider();
   });
 
   it('存在 token 时注入 Authorization 头', () => {
@@ -59,5 +65,14 @@ describe('authReqInterceptor.onFulfilled', () => {
     authReqInterceptor.onFulfilled!(config);
 
     expect(set).not.toHaveBeenCalled();
+  });
+
+  it('自定义 token provider 优先生效', () => {
+    setAuthTokenProvider(() => 'from-memory');
+    const { config, set } = buildConfig();
+
+    authReqInterceptor.onFulfilled!(config);
+
+    expect(set).toHaveBeenCalledWith('Authorization', 'Bearer from-memory');
   });
 });

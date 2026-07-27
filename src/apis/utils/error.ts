@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
-// RequestError 构造附带信息（避免使用 options 这类泛化命名）
+// RequestError 构造附带信息
 interface RequestErrorMeta {
   // HTTP 状态码（http / unauthorized 类错误）
   status?: number;

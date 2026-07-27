@@ -113,7 +113,7 @@ export default {
           })
           .filter((item) => item.category && item.category !== 'import');
 
-        // 找到第一个「比前一个元素优先级更靠前」的违规并报告
+        // 报告所有「比前一个元素优先级更靠前」的违规，避免反复 lint 才扫完
         for (let i = 1; i < meaningful.length; i++) {
           if (meaningful[i].order < meaningful[i - 1].order) {
             context.report({
@@ -121,7 +121,6 @@ export default {
               messageId: 'wrongOrder',
               data: { current: meaningful[i].category, prev: meaningful[i - 1].category },
             });
-            break;
           }
         }
       },

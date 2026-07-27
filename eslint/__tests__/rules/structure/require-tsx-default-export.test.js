@@ -7,6 +7,13 @@ ruleTester.run('require-tsx-default-export', rule, {
   valid: [
     // .tsx 含 default 导出
     { code: 'export default function C() { return null; }', filename: 'C.tsx' },
+    // default 类组件
+    { code: 'export default class C {}', filename: 'C.tsx' },
+    // 具名 + default 并存
+    {
+      code: 'export const a = 1;\nexport default function C() { return null; }',
+      filename: 'C.tsx',
+    },
     // .ts 文件不要求 default
     { code: 'export const a = 1;', filename: 'foo.ts' },
     // 豁免文件放行
@@ -16,6 +23,12 @@ ruleTester.run('require-tsx-default-export', rule, {
     {
       code: 'export const a = 1;',
       filename: 'C.tsx',
+      errors: [{ messageId: 'requireDefault' }],
+    },
+    {
+      // 仅有具名导出函数也不算 default
+      code: 'export function C() { return null; }',
+      filename: 'src/components/card.tsx',
       errors: [{ messageId: 'requireDefault' }],
     },
   ],

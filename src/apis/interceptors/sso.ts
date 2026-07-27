@@ -5,7 +5,7 @@ import type { ResInterceptor } from '../types/interceptor';
 import type { SsoResponse } from '../types/response';
 import { RequestError, RequestErrorType } from '../utils/error';
 
-// 多个请求同时未授权时，只触发一次跳转
+// 多个请求同时未授权时，只触发一次跳转；业务可在取消登录回流后调用 resetSsoRedirectState 复位
 let isRedirecting = false;
 
 const isSsoResponse = (body: unknown): body is SsoResponse => {
@@ -29,6 +29,11 @@ const redirectTo = (url: string) => {
   document.body.appendChild(redirectLink);
   redirectLink.click();
   redirectLink.remove();
+};
+
+/** 复位 SSO 跳转闩锁（SPA 回流 / 测试场景） */
+export const resetSsoRedirectState = () => {
+  isRedirecting = false;
 };
 
 export const ssoInterceptor: ResInterceptor = {

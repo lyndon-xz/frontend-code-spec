@@ -14,7 +14,7 @@ export default [
       // 函数参数最多 3 个，超过 3 个必须使用对象传参
       'max-params': ['error', 3],
 
-      // 禁 .then/.catch 链式调用，统一 async/await
+      // 禁 .then/.catch/.finally 链式调用，统一 async/await
       'custom/no-promise-chain': 'error',
     },
   },

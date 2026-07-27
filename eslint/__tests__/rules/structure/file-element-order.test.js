@@ -62,5 +62,16 @@ ruleTester.run('file-element-order', rule, {
       filename: 'src/apis/foo.ts',
       errors: [{ messageId: 'wrongOrder' }],
     },
+    {
+      // 多处顺序颠倒时一次报全，不在首个违规处中断
+      code: [
+        'const run = () => {};',
+        'const MAX = 1;',
+        'interface A { x: number }',
+        'export default run;',
+      ].join('\n'),
+      filename: 'src/apis/multi.ts',
+      errors: [{ messageId: 'wrongOrder' }, { messageId: 'wrongOrder' }],
+    },
   ],
 });

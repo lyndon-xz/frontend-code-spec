@@ -1,15 +1,11 @@
-import { message } from 'antd';
 import type { AxiosResponse } from 'axios';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { businessErrorInterceptor } from '@/apis/interceptors/error/business';
 import { RequestError, RequestErrorType } from '@/apis/utils/error';
+import { resetErrorNotifier, setErrorNotifier } from '@/apis/utils/error-notifier';
 
-vi.mock('antd', () => ({
-  message: { error: vi.fn() },
-}));
-
-const mockMessageError = vi.mocked(message.error);
+const mockNotifyError = vi.fn();
 
 const buildResponse = (
   data: unknown,
@@ -19,6 +15,11 @@ const buildResponse = (
 describe('businessErrorInterceptor.onFulfilled', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setErrorNotifier(mockNotifyError);
+  });
+
+  afterEach(() => {
+    resetErrorNotifier();
   });
 
   it('非业务信封响应原样放行', () => {
@@ -50,7 +51,7 @@ describe('businessErrorInterceptor.onFulfilled', () => {
     const response = buildResponse({ code: 500, message: '库存不足', timestamp: 1, data: null });
 
     expect(() => businessErrorInterceptor.onFulfilled!(response)).toThrow(RequestError);
-    expect(mockMessageError).toHaveBeenCalledWith('库存不足');
+    expect(mockNotifyError).toHaveBeenCalledWith('库存不足');
 
     try {
       businessErrorInterceptor.onFulfilled!(response);
@@ -67,7 +68,7 @@ describe('businessErrorInterceptor.onFulfilled', () => {
     } as AxiosResponse['config']);
 
     expect(() => businessErrorInterceptor.onFulfilled!(response)).toThrow('下单失败，请重试');
-    expect(mockMessageError).toHaveBeenCalledWith('下单失败，请重试');
+    expect(mockNotifyError).toHaveBeenCalledWith('下单失败，请重试');
   });
 
   it('配置 isSilent 时不弹出提示但仍抛错', () => {
@@ -76,6 +77,6 @@ describe('businessErrorInterceptor.onFulfilled', () => {
     } as AxiosResponse['config']);
 
     expect(() => businessErrorInterceptor.onFulfilled!(response)).toThrow(RequestError);
-    expect(mockMessageError).not.toHaveBeenCalled();
+    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 });
