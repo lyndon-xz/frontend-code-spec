@@ -35,8 +35,10 @@ export default {
     const options = context.options[0] || {};
     const srcDirName = options.srcDir ?? 'src';
 
-    // 归一为正斜杠后提取 src/ 之后的部分；后续所有路径运算都在「相对 src 的 posix 空间」里进行，
-    // 全是相对正斜杠字符串（无盘符、无 OS 分隔符、不依赖 cwd），从而跨平台稳定、修复输出恒为合法 import 路径。
+    /*
+     * 归一为正斜杠后提取 src/ 之后的部分；后续所有路径运算都在「相对 src 的 posix 空间」里进行，
+     * 全是相对正斜杠字符串（无盘符、无 OS 分隔符、不依赖 cwd），从而跨平台稳定、修复输出恒为合法 import 路径。
+     */
     const filename = normalizePath(context.filename);
     const srcIndex = filename.lastIndexOf(`/${srcDirName}/`);
     if (srcIndex === -1) {

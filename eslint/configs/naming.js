@@ -84,8 +84,10 @@ export default [
     },
   },
   {
-    // 自研命名规则：统一作用于 src 源码并豁免测试，与 isExemptFile 的约定一致，
-    // 避免对测试桩（mock 的 handleXxx、桩数据的 data 参数等）与仓库配置文件产生噪音。
+    /*
+     * 自研命名规则：统一作用于 src 源码并豁免测试，与 isExemptFile 的约定一致，
+     * 避免对测试桩（mock 的 handleXxx、桩数据的 data 参数等）与仓库配置文件产生噪音。
+     */
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {

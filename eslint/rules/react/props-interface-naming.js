@@ -125,8 +125,10 @@ export default {
           // 无法安全自动修复：多个组件共用同一 interface（期望名互相冲突），或目标名已被占用
           const isShared = (componentCountByProps.get(component.propsTypeName) || 0) > 1;
           const isNameTaken = existingNames.has(expectedPropsName);
-          // 组件名形如 IXxx（I 后紧跟大写）时，期望名会命中 @typescript-eslint/naming-convention
-          // 的 ^I[A-Z] 接口禁令，自动改名反而产出被另一条规则判非法的代码，故此情形只告警不 fix
+          /*
+           * 组件名形如 IXxx（I 后紧跟大写）时，期望名会命中 @typescript-eslint/naming-convention
+           * 的 ^I[A-Z] 接口禁令，自动改名反而产出被另一条规则判非法的代码，故此情形只告警不 fix
+           */
           const violatesInterfaceIPrefix = /^I[A-Z]/.test(expectedPropsName);
           const canFix = !isShared && !isNameTaken && !violatesInterfaceIPrefix;
 

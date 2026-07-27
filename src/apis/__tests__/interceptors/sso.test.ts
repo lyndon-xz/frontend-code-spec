@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNAUTHORIZED_CODE } from '@/apis/constants/code';
 import type { ResInterceptor } from '@/apis/types/interceptor';
 
-// isRedirecting 为模块级状态，用 resetModules + 动态导入让每个用例拿到全新副本；
-// RequestError 也一并动态导入，确保与 sso 内抛出的实例来自同一模块图，instanceof 才成立
+/*
+ * isRedirecting 为模块级状态，用 resetModules + 动态导入让每个用例拿到全新副本；
+ * RequestError 也一并动态导入，确保与 sso 内抛出的实例来自同一模块图，instanceof 才成立
+ */
 let ssoInterceptor: ResInterceptor;
 let RequestError: typeof import('@/apis/utils/error').RequestError;
 let RequestErrorType: typeof import('@/apis/utils/error').RequestErrorType;

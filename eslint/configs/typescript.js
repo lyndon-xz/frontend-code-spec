@@ -39,8 +39,10 @@ export default [
         },
       ],
 
-      // 以下为类型感知规则（依赖 parserOptions.project），把业务正确性、副作用、类型收窄前移为 CI 可拦截的 lint。
-      // Promise 必须被 await / catch / void，杜绝「忘了 await」导致的丢错误、竞态、未处理拒绝
+      /*
+       * 以下为类型感知规则（依赖 parserOptions.project），把业务正确性、副作用、类型收窄前移为 CI 可拦截的 lint。
+       * Promise 必须被 await / catch / void，杜绝「忘了 await」导致的丢错误、竞态、未处理拒绝
+       */
       '@typescript-eslint/no-floating-promises': 'error',
       // 禁止把返回 Promise 的函数误用在期望 void 的位置（如 onClick、条件判断），async 逻辑静默失效的高发点
       '@typescript-eslint/no-misused-promises': 'error',
@@ -68,8 +70,10 @@ export default [
     files: ['**/*.ts', '**/*.tsx'],
     ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
-      // 禁止用 as / <T> 断言替代类型收窄（assertionStyle: never 始终放行 as const）；请用 typeof / in / 可辨识联合等收窄。
-      // 已整体禁止 as（冗余断言场景亦在其中），故不再叠加 @typescript-eslint/no-unnecessary-type-assertion，避免对同一处双重报错。
+      /*
+       * 禁止用 as / <T> 断言替代类型收窄（assertionStyle: never 始终放行 as const）；请用 typeof / in / 可辨识联合等收窄。
+       * 已整体禁止 as（冗余断言场景亦在其中），故不再叠加 @typescript-eslint/no-unnecessary-type-assertion，避免对同一处双重报错。
+       */
       '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
     },
   },

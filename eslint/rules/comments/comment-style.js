@@ -109,10 +109,10 @@ function buildMoveAboveFix(sourceCode, comment, tokenBefore) {
 }
 
 /*
- * 收集导出上方「连续堆叠、且同处一个导出上方」的注释组：
+ * 收集「连续堆叠、且同处一段代码上方」的注释组（导出与非导出通用）：
  * 从 startIdx 起，要求逐条行相邻、非可跳过、且共享同一后继代码 token。
  */
-function collectExportStack(sourceCode, comments, startIdx, tokenAfter) {
+function collectCommentStack(sourceCode, comments, startIdx, tokenAfter) {
   const stack = [comments[startIdx]];
   for (let j = startIdx + 1; j < comments.length; j++) {
     const next = comments[j];
@@ -125,20 +125,21 @@ function collectExportStack(sourceCode, comments, startIdx, tokenAfter) {
   return stack;
 }
 
-// 把一组注释合并为单个 /** */ 文档注释文本
-function buildMergedJsdoc(stack) {
+// 合并注释组为一个块注释：opener 决定是文档注释(/**)还是普通块(/*)
+function buildMergedComment(stack, opener) {
   const indent = ' '.repeat(stack[0].loc.start.column);
   const lines = stack.map((item) =>
     item.type === 'Block' ? stripBlock(item.value) : item.value.trim(),
   );
-  return `/**\n${lines.map((line) => `${indent} * ${line}`).join('\n')}\n${indent} */`;
+  return `${opener}\n${lines.map((line) => `${indent} * ${line}`).join('\n')}\n${indent} */`;
 }
 
 /**
  * 根据导出语义强制注释风格，以「注释正下方的代码是否为 export」为唯一分界：
  * - 所有注释必须写在目标代码上方独占一行（内联参数块注释除外）。
  * - export 声明上方 → `/** *\/` 文档注释；多段堆叠合并为一个。
- * - 其余位置（顶层非导出 / 函数体内部 / 文件尾部）：单行 → `//`；多行 → `/* *\/`（而非 JSDoc）。
+ * - 其余位置（顶层非导出 / 函数体内部 / 文件尾部）：单行 → `//`；多行 → `/* *\/`（而非 JSDoc）；
+ *   多段堆叠 → 合并为一个 `/* *\/` 块（与 export 上方合并为 `/** *\/` 对称）。
  *
  * 优先级：先放行指令 / 被注释掉的代码 / 内联参数注释，再判位置，最后判风格。
  */
@@ -147,7 +148,7 @@ export default {
     type: 'layout',
     docs: {
       description:
-        '根据导出语义强制注释风格：export 上方用 /** */，其余位置单行用 //、多行用 /* */；注释须在目标代码上方独占一行',
+        '根据导出语义强制注释风格：export 上方用 /** */，其余位置单行用 //、多行或多段堆叠用 /* */；注释须在目标代码上方独占一行',
     },
     fixable: 'code',
     schema: [],
@@ -157,29 +158,29 @@ export default {
       exportMergeJsdoc: '导出上方的多段注释应合并为一个 `/** */` 文档注释',
       internalSingleLine: '非导出代码的单行注释必须使用 `//` 行注释',
       internalMultiLine: '非导出代码的多行注释必须使用 `/* */` 块注释（而非 JSDoc `/** */`）',
+      internalMergeBlock: '非导出位置的多段注释应合并为一个 `/* */` 块注释',
     },
   },
   create(context) {
     const sourceCode = context.sourceCode ?? context.getSourceCode();
 
-    // 导出上方：单条转 /** */，多段合并为一个
-    function checkExportComment(comments, comment, idx, tokenAfter, visited) {
-      const stack = collectExportStack(sourceCode, comments, idx, tokenAfter);
-      stack.forEach((item) => visited.add(item));
+    // 多段堆叠合并为一个块注释：导出上方用 /** */，其余位置用 /* */
+    function reportMerge(stack, isExport) {
+      const first = stack[0];
+      const last = stack[stack.length - 1];
+      context.report({
+        loc: { start: first.loc.start, end: last.loc.end },
+        messageId: isExport ? 'exportMergeJsdoc' : 'internalMergeBlock',
+        fix: (fixer) =>
+          fixer.replaceTextRange(
+            [first.range[0], last.range[1]],
+            buildMergedComment(stack, isExport ? '/**' : '/*'),
+          ),
+      });
+    }
 
-      if (stack.length > 1) {
-        const first = stack[0];
-        const last = stack[stack.length - 1];
-        context.report({
-          loc: { start: first.loc.start, end: last.loc.end },
-          messageId: 'exportMergeJsdoc',
-          fix: (fixer) =>
-            fixer.replaceTextRange([first.range[0], last.range[1]], buildMergedJsdoc(stack)),
-        });
-        return;
-      }
-
-      // 单条：已是 /** */ 则合规，否则（// 或普通 /* */）转成 /** */
+    // 导出上方单条：已是 /** */ 则合规，否则（// 或普通 /* */）转成 /** */
+    function checkExportSingle(comment) {
       if (isJsdocBlock(comment)) return;
       const content = comment.type === 'Block' ? stripBlock(comment.value) : comment.value.trim();
       context.report({
@@ -189,8 +190,8 @@ export default {
       });
     }
 
-    // 非导出：行注释天然合规；单行块 → //；多行 JSDoc → 普通 /* */
-    function checkInternalComment(comment) {
+    // 非导出单条：行注释天然合规；单行块 → //；多行 JSDoc → 普通 /* */
+    function checkInternalSingle(comment) {
       if (comment.type !== 'Block') return;
 
       const isMultiLine = comment.loc.start.line !== comment.loc.end.line;
@@ -241,15 +242,23 @@ export default {
             return;
           }
 
-          // 2) 语义：根据下方代码是否为 export 分流
+          // 2) 语义：按下方代码是否为 export 分流。先收堆叠、多段合并，否则按位置处理单条
           const nodeAfter = sourceCode.getNodeByRangeIndex(
             tokenAfter ? tokenAfter.range[0] : comment.range[1],
           );
-          if (isExportNode(nodeAfter)) {
-            checkExportComment(comments, comment, idx, tokenAfter, visited);
+          const isExport = isExportNode(nodeAfter);
+          const stack = collectCommentStack(sourceCode, comments, idx, tokenAfter);
+          stack.forEach((item) => visited.add(item));
+
+          if (stack.length > 1) {
+            reportMerge(stack, isExport);
             return;
           }
-          checkInternalComment(comment);
+          if (isExport) {
+            checkExportSingle(comment);
+          } else {
+            checkInternalSingle(comment);
+          }
         });
       },
     };

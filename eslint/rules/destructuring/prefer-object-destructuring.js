@@ -92,8 +92,10 @@ export default {
             return;
           }
 
-          // 按最近的函数/模块作用域聚合，而非块级作用域：
-          // 散落在同一函数内不同 if/for 块里的属性访问应合并统计，才与「在函数顶部解构」的建议一致。
+          /*
+           * 按最近的函数/模块作用域聚合，而非块级作用域：
+           * 散落在同一函数内不同 if/for 块里的属性访问应合并统计，才与「在函数顶部解构」的建议一致。
+           */
           const scope = context.sourceCode.getScope(node);
           const scopeNode = scope.variableScope.block;
 

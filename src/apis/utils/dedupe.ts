@@ -3,8 +3,10 @@ import type { AxiosRequestConfig } from 'axios';
 // 记录在飞行中的请求，key 为请求签名，value 为其 AbortController
 const pendingRequests = new Map<string, AbortController>();
 
-// 仅可稳定 JSON 序列化的值参与去重；FormData/Blob/File/URLSearchParams 等宿主对象不参与，
-// 否则它们会被序列化成相同字符串（如 FormData → "{}"）导致不同请求被误判为同一签名
+/*
+ * 仅可稳定 JSON 序列化的值参与去重；FormData/Blob/File/URLSearchParams 等宿主对象不参与，
+ * 否则它们会被序列化成相同字符串（如 FormData → "{}"）导致不同请求被误判为同一签名
+ */
 const isSerializable = (value: unknown): boolean => {
   if (value === null || typeof value !== 'object') return true;
   if (Array.isArray(value)) return true;

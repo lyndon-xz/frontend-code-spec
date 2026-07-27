@@ -9,6 +9,8 @@ ruleTester.run('comment-style', rule, {
     '/** 创建用户 */\nexport const x = 1;',
     // 非导出单行 // 注释
     '// 普通说明\nconst a = 1;',
+    // 空行隔断的两段单行 // 不视为堆叠，各自合规
+    '// 第一段\n\n// 第二段\nconst a = 1;',
     // 非导出多行普通块注释（非 JSDoc）
     '/*\n * 多行说明\n * 第二行\n */\nconst a = 1;',
     // 内联参数块注释放行
@@ -66,6 +68,18 @@ ruleTester.run('comment-style', rule, {
       code: '/**\n * 说明\n */\nconst a = 1;',
       output: '/*\n * 说明\n */\nconst a = 1;',
       errors: [{ messageId: 'internalMultiLine' }],
+    },
+    {
+      // 非导出上方多段 // 注释合并为一个 /* */ 块
+      code: '// 第一行\n// 第二行\nconst a = 1;',
+      output: '/*\n * 第一行\n * 第二行\n */\nconst a = 1;',
+      errors: [{ messageId: 'internalMergeBlock' }],
+    },
+    {
+      // 非导出上方多段「块注释」合并（覆盖 stripBlock 分支）
+      code: '/* 甲 */\n/* 乙 */\nconst a = 1;',
+      output: '/*\n * 甲\n * 乙\n */\nconst a = 1;',
+      errors: [{ messageId: 'internalMergeBlock' }],
     },
     {
       // 行尾注释必须移到上方独占一行（可自动修复）
