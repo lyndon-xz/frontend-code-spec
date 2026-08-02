@@ -1,22 +1,5 @@
-import { IMPORT_ORDER_RULE } from './shared-rules.js';
-
 /** 结构与组织 — 导入路径、文件内排列、barrel、导出规范 */
 export default [
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    settings: {
-      'import/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-          project: './tsconfig.json',
-        },
-        node: true,
-      },
-    },
-    rules: {
-      ...IMPORT_ORDER_RULE,
-    },
-  },
   {
     // 测试 / mock 等豁免统一由规则内部的 isExemptFile 判定，配置层不声明 ignores
     files: ['src/**/*.ts', 'src/**/*.tsx'],

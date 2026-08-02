@@ -8,6 +8,8 @@ import globals from 'globals';
 import commentsConfig from './configs/comments.js';
 import controlFlowConfig from './configs/control-flow.js';
 import destructuringConfig from './configs/destructuring.js';
+import hygieneConfig from './configs/hygiene.js';
+import importsConfig from './configs/imports.js';
 import namingConfig from './configs/naming.js';
 import reactConfig from './configs/react.js';
 import structureConfig from './configs/structure.js';
@@ -93,6 +95,13 @@ export default [
       'react-hooks': reactHooks,
     },
   },
+
+  /**
+   * 通用基线：只用第三方规则，故在 rules/ 下没有对应的领域目录。
+   * 两者都自行声明 files，把 TS 源码与规则源码一并覆盖。
+   */
+  ...hygieneConfig,
+  ...importsConfig,
 
   /** 领域配置（与 rules/<domain>/ 一一对应；正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线） */
   ...commentsConfig,

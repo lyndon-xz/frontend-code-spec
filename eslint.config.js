@@ -1,9 +1,7 @@
 import js from '@eslint/js';
-import importPlugin from 'eslint-plugin-import';
 import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
 
-import { HYGIENE_RULES, IMPORT_ORDER_RULE } from './eslint/configs/shared-rules.js';
 import customConfigs from './eslint/index.js';
 
 /**
@@ -37,13 +35,7 @@ export default [
    */
   {
     files: ['eslint/**/*.js'],
-    plugins: {
-      import: importPlugin,
-    },
     rules: {
-      ...HYGIENE_RULES,
-      ...IMPORT_ORDER_RULE,
-
       // 规则源码同样禁 Promise 链，统一 async/await
       'custom/no-promise-chain': 'error',
       // 签名不解构，统一在函数体首部解构
