@@ -26,23 +26,29 @@ describe('delay', () => {
 
 describe('getRetryDelay', () => {
   it('默认指数退避：第一次重试使用基础间隔', () => {
-    expect(getRetryDelay({ count: 3 }, 1)).toBe(300);
+    expect(getRetryDelay(1, { count: 3 })).toBe(300);
   });
 
   it('默认指数退避：第 n 次为 base * 2^(n-1)', () => {
-    expect(getRetryDelay({ count: 3 }, 2)).toBe(600);
-    expect(getRetryDelay({ count: 3 }, 3)).toBe(1200);
+    expect(getRetryDelay(2, { count: 3 })).toBe(600);
+    expect(getRetryDelay(3, { count: 3 })).toBe(1200);
   });
 
   it('自定义基础间隔参与指数退避计算', () => {
-    expect(getRetryDelay({ count: 3, delayMs: 100 }, 3)).toBe(400);
+    expect(getRetryDelay(3, { count: 3, delayMs: 100 })).toBe(400);
   });
 
   it('关闭退避时恒为基础间隔', () => {
-    expect(getRetryDelay({ count: 3, delayMs: 200, isBackoff: false }, 5)).toBe(200);
+    expect(getRetryDelay(5, { count: 3, delayMs: 200, isBackoff: false })).toBe(200);
   });
 
   it('关闭退避且未指定间隔时使用默认间隔', () => {
-    expect(getRetryDelay({ count: 3, isBackoff: false }, 4)).toBe(300);
+    expect(getRetryDelay(4, { count: 3, isBackoff: false })).toBe(300);
+  });
+
+  // retry 缺省时全部走默认值，调用方因此不需要先判空
+  it('未传 retry 时使用默认间隔与默认退避', () => {
+    expect(getRetryDelay(1)).toBe(300);
+    expect(getRetryDelay(3)).toBe(1200);
   });
 });

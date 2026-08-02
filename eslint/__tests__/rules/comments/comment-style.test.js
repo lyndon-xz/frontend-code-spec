@@ -11,6 +11,13 @@ ruleTester.run('comment-style', rule, {
     '// 普通说明\nconst a = 1;',
     // 空行隔断的两段单行 // 不视为堆叠，各自合规
     '// 第一段\n\n// 第二段\nconst a = 1;',
+    /*
+     * 堆叠中夹工具指令时停止合并：指令注释不参与风格校验，
+     * 把它并进块注释会连带改变它对 ESLint 的语义。
+     */
+    '// 第一段\n// eslint-disable-next-line no-console\nconsole.log(1);',
+    // 文件末尾的注释后面没有代码，按非导出位置的单行注释处理
+    'const a = 1;\n// 收尾说明\n',
     // 非导出多行普通块注释（非 JSDoc）
     '/*\n * 多行说明\n * 第二行\n */\nconst a = 1;',
     // 内联参数块注释放行
@@ -102,6 +109,12 @@ ruleTester.run('comment-style', rule, {
     {
       // 行尾注释必须移到上方独占一行（可自动修复）
       code: 'const a = 1; // 说明',
+      output: '// 说明\nconst a = 1;',
+      errors: [{ messageId: 'notAbove' }],
+    },
+    {
+      // 紧贴代码、中间没有空格的行尾注释，移动时无空格可清理
+      code: 'const a = 1;// 说明',
       output: '// 说明\nconst a = 1;',
       errors: [{ messageId: 'notAbove' }],
     },

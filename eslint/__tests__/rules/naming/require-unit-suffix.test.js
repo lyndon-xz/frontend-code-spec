@@ -24,8 +24,12 @@ ruleTester.run('require-unit-suffix', rule, {
     'interface Flight { flightNo: string; seatsLeft: number; total: number; }',
     // 函数类型成员即使名字命中词根也不是数值量纲
     'interface Calc { price: () => number; }',
-    // 计算属性名无法静态判定，不做猜测
+    // 索引签名没有具体字段名可判
     'interface Dict { [key: string]: number; }',
+    // 计算键取自变量，静态期拿不到真实字段名，不做猜测
+    'const KEY = "price"; interface Dict { [KEY]: number }',
+    // 没写类型注解的成员（隐式 any）不视为数值量纲
+    'interface Loose { price }',
     // 局部变量与参数不校验：生命周期短、上下文就在眼前
     'const price = 100;',
     'function pay(price: number) { return price; }',

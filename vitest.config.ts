@@ -18,7 +18,7 @@ export default defineConfig({
   test: {
     coverage: {
       include: ['eslint/**/*.js', 'src/**/*.ts'],
-      exclude: ['eslint/__tests__/**', 'src/**/__tests__/**', '**/*.scss'],
+      exclude: ['eslint/__tests__/**', 'src/**/__tests__/**'],
       thresholds: {
         statements: 95,
         lines: 95,

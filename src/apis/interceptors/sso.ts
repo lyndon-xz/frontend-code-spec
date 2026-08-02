@@ -44,7 +44,7 @@ export const resetSsoRedirectState = () => {
 
 export const ssoInterceptor: ResInterceptor = {
   onFulfilled: (response: AxiosResponse) => {
-    const { data, config } = response ?? {};
+    const { data, config } = response;
     if (!isSsoResponse(data)) return response;
 
     const { returncode, redirectUrl } = data;

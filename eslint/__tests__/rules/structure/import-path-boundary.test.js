@@ -38,6 +38,13 @@ ruleTester.run('import-path-boundary', rule, {
       errors: [{ messageId: 'useRelative' }],
     },
     {
+      // 同模块内指向上层目录时修成 '../request'，不额外拼 './' 前缀
+      code: "import x from '@/apis/request';",
+      filename: '/proj/src/apis/services/flight.ts',
+      output: "import x from '../request';",
+      errors: [{ messageId: 'useRelative' }],
+    },
+    {
       // 跨模块却用相对路径 → 应改别名
       code: "import x from '../../utils/x';",
       filename: '/proj/src/apis/sub/foo.ts',

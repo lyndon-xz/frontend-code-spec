@@ -117,7 +117,7 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
       return response.data;
     } catch (error) {
       if (attempt >= maxRetries || !isRetryableError(error)) throw error;
-      if (config.retry) await delay(getRetryDelay(config.retry, attempt + 1));
+      await delay(getRetryDelay(attempt + 1, config.retry));
     }
   }
 };

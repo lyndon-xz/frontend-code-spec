@@ -87,10 +87,9 @@ function isSkippableComment(comment) {
   return false;
 }
 
-// 生成「把注释移到目标代码上方独占一行」的 fixer；无前驱 token 时返回 null 表示不自动修复
+// 生成「把注释移到目标代码上方独占一行」的 fixer。仅用于注释与前驱 token 同行的情形，故 tokenBefore 必然存在
 function buildMoveAboveFix(sourceCode, comment, tokenBefore) {
   return (fixer) => {
-    if (!tokenBefore) return null;
     const { text } = sourceCode;
     const commentText = text.slice(comment.range[0], comment.range[1]);
     const lineStart = sourceCode.getIndexFromLoc({ line: comment.loc.start.line, column: 0 });

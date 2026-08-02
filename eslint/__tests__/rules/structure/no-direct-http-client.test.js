@@ -22,9 +22,14 @@ ruleTester.run('no-direct-http-client', rule, {
     { code: 'repository.fetch(id);', filename: 'src/pages/flight/index.tsx' },
     // 计算成员访问不做猜测，避免误报
     { code: 'api["fetch"]();', filename: 'src/pages/flight/index.tsx' },
-    // 其它构造调用与成员访问不受影响
+    // 其它构造调用、裸函数调用与成员访问不受影响
     { code: 'const now = new Date();', filename: 'src/pages/flight/index.tsx' },
     { code: 'const value = store.state;', filename: 'src/pages/flight/index.tsx' },
+    { code: 'loadFlights();', filename: 'src/pages/flight/index.tsx' },
+    // 宿主对象上的非客户端属性照常放行
+    { code: 'const url = window.location.href;', filename: 'src/pages/flight/index.tsx' },
+    // 计算成员的键是变量引用而非属性名，跳过
+    { code: 'const value = api[fetch];', filename: 'src/pages/flight/index.tsx' },
     // allowedPaths 可配：把 services 也纳入放行范围
     {
       code: 'import axios from "axios";',
