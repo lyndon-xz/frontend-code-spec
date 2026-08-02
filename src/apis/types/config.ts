@@ -22,9 +22,9 @@ export interface NetworkErrorOptions {
 export interface RetryOptions {
   /** 最大重试次数（不含首次请求） */
   count: number;
-  /** 重试基础间隔（毫秒），默认 300 */
-  delay?: number;
-  /** 是否指数退避（第 n 次重试等待 delay * 2^(n-1)），默认 true */
+  /** 重试基础间隔，默认 300 */
+  delayMs?: number;
+  /** 是否指数退避（第 n 次重试等待 delayMs * 2^(n-1)），默认 true */
   isBackoff?: boolean;
 }
 

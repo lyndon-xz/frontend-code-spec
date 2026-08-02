@@ -15,12 +15,12 @@ import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
 import noPromiseChain from './rules/control-flow/no-promise-chain.js';
 import noParamDestructuring from './rules/destructuring/no-param-destructuring.js';
-import preferObjectDestructuring from './rules/destructuring/prefer-object-destructuring.js';
 import noGenericParamName from './rules/naming/no-generic-param-name.js';
 import noHandlePrefix from './rules/naming/no-handle-prefix.js';
 import noImplementationSuffixFilename from './rules/naming/no-implementation-suffix-filename.js';
 import noInternalOnPrefix from './rules/naming/no-internal-on-prefix.js';
 import refSuffixNaming from './rules/naming/ref-suffix-naming.js';
+import requireUnitSuffix from './rules/naming/require-unit-suffix.js';
 import statusFieldNaming from './rules/naming/status-field-naming.js';
 import noUnnecessaryArrowWrapper from './rules/react/no-unnecessary-arrow-wrapper.js';
 import propsInterfaceNaming from './rules/react/props-interface-naming.js';
@@ -28,6 +28,7 @@ import fileElementOrder from './rules/structure/file-element-order.js';
 import importPathBoundary from './rules/structure/import-path-boundary.js';
 import noBarrel from './rules/structure/no-barrel.js';
 import noComponentSidecarFiles from './rules/structure/no-component-sidecar-files.js';
+import noDirectHttpClient from './rules/structure/no-direct-http-client.js';
 import noTsDefaultExport from './rules/structure/no-ts-default-export.js';
 import requireTsxDefaultExport from './rules/structure/require-tsx-default-export.js';
 import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
@@ -37,7 +38,8 @@ const customRules = {
   'comment-style': commentStyle,
   'no-promise-chain': noPromiseChain,
   'no-param-destructuring': noParamDestructuring,
-  'prefer-object-destructuring': preferObjectDestructuring,
+  'require-unit-suffix': requireUnitSuffix,
+  'no-direct-http-client': noDirectHttpClient,
   'require-enum-initializer': requireEnumInitializer,
   'no-handle-prefix': noHandlePrefix,
   'no-generic-param-name': noGenericParamName,

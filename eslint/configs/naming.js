@@ -103,6 +103,11 @@ export default [
       'custom/no-implementation-suffix-filename': 'error',
       // 数据/异步状态字段强制后缀式命名（isLoadingXxx / xxxError）
       'custom/status-field-naming': 'error',
+      /*
+       * 类型成员中的数值量纲字段必须带单位后缀（priceCents / timeoutMs）。
+       * 不豁免测试：桩数据里的字段同样来自契约，单位写错的桩会把错误的预期固化下来。
+       */
+      'custom/require-unit-suffix': 'error',
     },
   },
 ];

@@ -3,13 +3,13 @@
 > 一个面向前端工程的 **code-spec 仓库**：一半是 **ESLint 自定义规则防线**，一半是 **axios 请求层范式样板**。
 > 仓库既给出 “该怎么约束代码”，也给出 “基础设施该怎么落地”。
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?logo=typescript&logoColor=white) ![ESLint](https://img.shields.io/badge/ESLint-9.33.0-4B32C3?logo=eslint&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-4.1.2-6E9F18?logo=vitest&logoColor=white) ![Node](https://img.shields.io/badge/Node-%3E%3D22.12.0-339933?logo=node.js&logoColor=white) ![pnpm](https://img.shields.io/badge/pnpm-10.12.4-F69220?logo=pnpm&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white) ![ESLint](https://img.shields.io/badge/ESLint-9.39-4B32C3?logo=eslint&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-4.1-6E9F18?logo=vitest&logoColor=white) ![Node](https://img.shields.io/badge/Node-%3E%3D22.12.0-339933?logo=node.js&logoColor=white) ![pnpm](https://img.shields.io/badge/pnpm-10.12.4-F69220?logo=pnpm&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-black)
 
 ## 📖 简介
 
 这个仓库聚焦两件事：
 
-- `eslint/` 提供 19 条按领域拆分的自定义规则，以及配套的 flat config
+- `eslint/` 提供 20 条按领域拆分的自定义规则，以及配套的 flat config
 - `src/apis/` 提供一套请求层封装范式，覆盖鉴权、SSO、业务码、错误提示、重试、去重、埋点
 
 它更像一个 “可执行规范仓”，而不是单纯的工具箱。规则、示例代码、测试和 CI 是绑在一起演进的：规则约束的写法，仓库自己的源码就是它的第一批被检查对象。
@@ -22,7 +22,7 @@
 - **可注入扩展点**：错误提示、埋点上报、token 读取都能替换为业务实现
 - **质量门禁完整**：type-check、ESLint、Prettier、文件名、Markdown、SCSS、package.json 排序、覆盖率逐项独立成关
 - **规则集自校验**：规则源码自身也受那批与技术栈无关的自研规则约束，交付的约定先在自己身上成立
-- **规则自带 RuleTester 用例**：19 条规则在实现、注册、配置、测试四处一一对应
+- **规则自带 RuleTester 用例**：20 条规则在实现、注册、配置、测试四处一一对应
 
 ## 🧱 技术栈
 
@@ -38,7 +38,7 @@
 ```text
 .
 ├── eslint/
-│   ├── rules/            # 19 条自定义规则实现，按领域分目录
+│   ├── rules/            # 20 条自定义规则实现，按领域分目录
 │   ├── configs/          # 领域配置 + 跨领域共享的基础规则片段
 │   ├── utils/            # 规则公共工具: 路径归一、豁免判定、函数节点判定、前缀规则工厂
 │   ├── __tests__/        # RuleTester 用例，与 rules 一一对应
@@ -120,7 +120,6 @@ pnpm run lint:fix
 **destructuring**
 
 - `custom/no-param-destructuring` — 禁止在函数签名中解构，改在函数体内解构
-- `custom/prefer-object-destructuring` — 同一对象在同一函数作用域内被访问的不同属性数超过阈值 (`maxAccessCount`，默认 2) 时强制改用解构
 
 **naming**
 
@@ -130,6 +129,7 @@ pnpm run lint:fix
 - `custom/no-implementation-suffix-filename` — 文件名禁用实现类后缀 (`-modal` / `-type` / `-config` / `-util(s)` 等) 与纯实现整名，强制业务名词主导
 - `custom/ref-suffix-naming` — `useRef` 声明的变量必须以 `Ref` 结尾
 - `custom/status-field-naming` — 状态上下文 (`useState` / `State` 类型 / 状态对象) 里的状态字段强制后缀式命名 (`isLoadingXxx` / `xxxError`)，禁止前缀式
+- `custom/require-unit-suffix` — 类型成员里的数值量纲字段 (金额 / 时长 / 尺寸) 必须带单位后缀，如 `priceCents`、`timeoutMs`
 
 **react**
 
@@ -142,6 +142,7 @@ pnpm run lint:fix
 - `custom/import-path-boundary` — 模块内部走相对路径，跨模块走 `@/` 别名
 - `custom/no-barrel` — 禁止 barrel 入口：公共库 index (含 `apis/utils` 这类深层公共库) 禁文件存在，其余 index 禁 `export *` 与跨模块重导出
 - `custom/no-component-sidecar-files` — 禁止 `components/<name>/` 下出现 `constants.ts` / `utils.ts` / `types.ts`，旁路文件应内联或上提模块级
+- `custom/no-direct-http-client` — 请求层之外禁止直连 HTTP 客户端 (`import axios`、`fetch`、`new XMLHttpRequest`)，必须走 apis 层统一出口
 - `custom/no-ts-default-export` — `.ts` 文件不允许 `export default`
 - `custom/require-tsx-default-export` — `.tsx` 文件必须有 `export default`
 
@@ -177,7 +178,7 @@ export const fetchFlights = (query: FlightListParams) =>
     url: '/flight/list',
     params: query,
     isDeduped: true,
-    retry: { count: 2 },
+    retry: { count: 2, delayMs: 300 },
   });
 
 export const bookFlight = (payload: BookFlightPayload) =>
@@ -200,12 +201,13 @@ export const bookFlight = (payload: BookFlightPayload) =>
 
 请求层的外部依赖都做成了可替换实现：
 
-| 扩展点                                                | 作用                       |
-| ----------------------------------------------------- | -------------------------- |
-| `setErrorNotifier()` / `resetErrorNotifier()`         | 替换默认错误提示实现       |
-| `setAnalyticsSender()` / `resetAnalyticsSender()`     | 替换生产环境埋点上报实现   |
-| `setAuthTokenProvider()` / `resetAuthTokenProvider()` | 替换默认 token 读取实现    |
-| `resetSsoRedirectState()`                             | 取消登录回流后复位跳转状态 |
+| 扩展点                                                    | 作用                       |
+| --------------------------------------------------------- | -------------------------- |
+| `setErrorNotifier()` / `resetErrorNotifier()`             | 替换默认错误提示实现       |
+| `setAnalyticsSender()` / `resetAnalyticsSender()`         | 替换生产环境埋点上报实现   |
+| `setAuthTokenProvider()` / `resetAuthTokenProvider()`     | 替换默认 token 读取实现    |
+| `resetSsoRedirectState()`                                 | 取消登录回流后复位跳转状态 |
+| `setEnvironmentProvider()` / `resetEnvironmentProvider()` | 替换环境判定实现           |
 
 ### 实例级配置
 
@@ -220,6 +222,18 @@ const get = createGetRequest('33251', {
 ```
 
 同一 `serviceCode` 在运行期只创建一个 axios 实例；若后续再用不同实例级配置创建，开发环境会给出配置漂移告警。
+
+### 环境判定
+
+默认按 “构建期注入的 `APP_ENV` → 浏览器域名兜底 → 取不到 `window` 时按生产” 三级判定，因此 SSR 与 Node 脚本下不会抛错，本地回环网段、`0.0.0.0`、`::1` 与 `.local` 自签域名都算开发环境。
+
+构建期变量的读法随框架而异 (`import.meta.env` / `process.env` / 全局常量)，请求层不绑定具体构建工具，需要精确控制时用 `setEnvironmentProvider()` 注入：
+
+```ts
+setEnvironmentProvider(() =>
+  import.meta.env.PROD ? Environment.Production : Environment.Development,
+);
+```
 
 ## 💡 示例
 

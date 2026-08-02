@@ -8,6 +8,12 @@ export default [
     rules: {
       // 关闭原生规则，避免与 TS 规则冲突
       'no-unused-vars': 'off',
+      'no-shadow': 'off',
+      /*
+       * 内层同名变量遮蔽外层：读代码时无法判断当前引用的是哪一个，改动时极易改错作用域。
+       * 用 TS 版而非原生版，避免把枚举成员、类型参数误报成遮蔽。
+       */
+      '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         // 允许 _开头的未使用参数

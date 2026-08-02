@@ -27,8 +27,8 @@ export interface Flight {
   departureTime: number;
   /** 到达时间戳（毫秒） */
   arrivalTime: number;
-  /** 起售价（单位：分） */
-  price: number;
+  /** 起售价 */
+  priceCents: number;
 }
 
 /** 航班列表查询结果 */
@@ -44,8 +44,8 @@ export type CabinClass = 'economy' | 'business' | 'first';
 export interface FareOption {
   fareId: string;
   cabinClass: CabinClass;
-  /** 该舱位售价（单位：分） */
-  price: number;
+  /** 该舱位售价 */
+  priceCents: number;
   seatsLeft: number;
   refundPolicy: string;
 }

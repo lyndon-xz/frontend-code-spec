@@ -11,7 +11,7 @@ describe('FlightCard', () => {
         airline: '国航',
         flightNo: 'CA1234',
         // 128050 分 = 1280.50 元
-        price: 128050,
+        priceCents: 128050,
         isRecommended: true,
         onSelect: vi.fn(),
       }),
@@ -28,7 +28,7 @@ describe('FlightCard', () => {
       createElement(FlightCard, {
         airline: '南航',
         flightNo: 'CZ3000',
-        price: 90000,
+        priceCents: 90000,
         isRecommended: false,
         onSelect: vi.fn(),
       }),
@@ -43,7 +43,7 @@ describe('FlightCard', () => {
       createElement(FlightCard, {
         airline: '东航',
         flightNo: 'MU5678',
-        price: 90000,
+        priceCents: 90000,
         isRecommended: false,
         onSelect: vi.fn(),
       }),

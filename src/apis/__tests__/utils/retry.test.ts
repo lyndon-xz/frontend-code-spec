@@ -35,11 +35,11 @@ describe('getRetryDelay', () => {
   });
 
   it('自定义基础间隔参与指数退避计算', () => {
-    expect(getRetryDelay({ count: 3, delay: 100 }, 3)).toBe(400);
+    expect(getRetryDelay({ count: 3, delayMs: 100 }, 3)).toBe(400);
   });
 
   it('关闭退避时恒为基础间隔', () => {
-    expect(getRetryDelay({ count: 3, delay: 200, isBackoff: false }, 5)).toBe(200);
+    expect(getRetryDelay({ count: 3, delayMs: 200, isBackoff: false }, 5)).toBe(200);
   });
 
   it('关闭退避且未指定间隔时使用默认间隔', () => {

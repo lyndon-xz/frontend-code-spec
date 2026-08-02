@@ -28,6 +28,8 @@ export default [
       'custom/file-element-order': 'error',
       // 叶子组件目录禁止 constants/utils/types 旁路文件
       'custom/no-component-sidecar-files': 'error',
+      // 请求层之外禁止直连 axios / fetch，统一走 apis 层出口（allowedPaths 默认放行 src/apis）
+      'custom/no-direct-http-client': 'error',
       /*
        * 禁 barrel：公共库 index（src/{constants,utils,types,hooks}）禁文件存在，
        * 其余 index.ts(x) 禁桶导出与跨模块重导出（export * / export { x } from）

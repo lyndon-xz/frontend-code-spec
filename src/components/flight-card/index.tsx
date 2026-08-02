@@ -4,8 +4,8 @@ import type { MouseEventHandler } from 'react';
 export interface FlightCardProps {
   airline: string;
   flightNo: string;
-  /** 售价，单位与接口一致为「分」，展示时换算成元 */
-  price: number;
+  /** 售价，与接口口径一致，展示时换算成元 */
+  priceCents: number;
   isRecommended: boolean;
   onSelect: MouseEventHandler<HTMLButtonElement>;
 }
@@ -18,13 +18,13 @@ const PRICE_FRACTION_DIGITS = 2;
  * 演示 props 接口命名（FlightCardProps）与 JSX 事件直传（无冗余箭头包裹）。
  */
 export default function FlightCard(props: FlightCardProps) {
-  const { airline, flightNo, price, isRecommended, onSelect } = props;
+  const { airline, flightNo, priceCents, isRecommended, onSelect } = props;
 
   return (
     <button type="button" onClick={onSelect}>
       <span>{airline}</span>
       <span>{flightNo}</span>
-      <span>{(price / CENTS_PER_YUAN).toFixed(PRICE_FRACTION_DIGITS)}</span>
+      <span>{(priceCents / CENTS_PER_YUAN).toFixed(PRICE_FRACTION_DIGITS)}</span>
       {isRecommended ? <span>推荐</span> : null}
     </button>
   );
