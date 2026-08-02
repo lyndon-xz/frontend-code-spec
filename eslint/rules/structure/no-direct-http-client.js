@@ -13,6 +13,9 @@ const DEFAULT_OPTIONS = {
   allowedPaths: ['src/apis'],
 };
 
+// 承载 fetch / XMLHttpRequest 的宿主对象，用于识别 window.fetch 这类挂全局的写法
+const GLOBAL_OBJECTS = new Set(['window', 'globalThis', 'self']);
+
 export default {
   meta: {
     type: 'problem',
@@ -87,9 +90,16 @@ export default {
           reportGlobalClient(node, node.name);
         }
       },
-      // window.fetch('/api/x')：绕过裸标识符检查的写法
+      /*
+       * 挂在全局对象上的写法：window.fetch / globalThis.fetch / self.fetch。
+       * 只认这三个宿主对象，不拦任意 obj.fetch —— 自研封装的方法名也可能叫 fetch，
+       * 那属于本仓库无从判断的领域命名，误报的代价高于漏报。
+       */
       'MemberExpression > Identifier.property'(node) {
-        if (node.parent.computed) return;
+        const { parent } = node;
+        if (parent.computed) return;
+        if (parent.object.type !== 'Identifier') return;
+        if (!GLOBAL_OBJECTS.has(parent.object.name)) return;
         if (clients.has(node.name)) {
           reportGlobalClient(node, node.name);
         }

@@ -17,6 +17,9 @@ ruleTester.run('no-direct-http-client', rule, {
     { code: 'import dayjs from "dayjs";', filename: 'src/pages/flight/index.tsx' },
     // 同名但语义无关的成员：fetchList 不是 HTTP 客户端
     { code: 'store.fetchList();', filename: 'src/pages/flight/index.tsx' },
+    // 自研封装的方法也可能叫 fetch，只有挂在宿主对象上的才判定为直连
+    { code: 'this.client.fetch("/x");', filename: 'src/pages/flight/index.tsx' },
+    { code: 'repository.fetch(id);', filename: 'src/pages/flight/index.tsx' },
     // 计算成员访问不做猜测，避免误报
     { code: 'api["fetch"]();', filename: 'src/pages/flight/index.tsx' },
     // 其它构造调用与成员访问不受影响
@@ -37,6 +40,7 @@ ruleTester.run('no-direct-http-client', rule, {
       errors: [{ messageId: 'noClientImport', data: { module: 'axios' } }],
     },
     {
+      // 默认禁令不止 axios：got / node-fetch / superagent / ky 一并在列
       code: 'import got from "got";',
       filename: 'src/pages/flight/index.tsx',
       errors: [{ messageId: 'noClientImport' }],
@@ -47,8 +51,13 @@ ruleTester.run('no-direct-http-client', rule, {
       errors: [{ messageId: 'noGlobalClient', data: { client: 'fetch' } }],
     },
     {
-      // window.fetch 是绕过裸标识符检查的常见写法
+      // 挂在宿主对象上是绕过裸标识符检查的常见写法
       code: 'window.fetch("/api/x");',
+      filename: 'src/pages/flight/index.tsx',
+      errors: [{ messageId: 'noGlobalClient' }],
+    },
+    {
+      code: 'globalThis.fetch("/api/x");',
       filename: 'src/pages/flight/index.tsx',
       errors: [{ messageId: 'noGlobalClient' }],
     },
