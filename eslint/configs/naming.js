@@ -29,6 +29,16 @@ export default [
           prefix: ['is', 'should', 'has', 'can', 'did', 'will'],
         },
         {
+          /*
+           * 类型成员的布尔字段同样要读作判断短语。上面的 variable 选择器只覆盖变量，
+           * 接口与类型别名的字段不在其列，而它们才是跨模块传递的契约。
+           */
+          selector: 'typeProperty',
+          types: ['boolean'],
+          format: ['PascalCase'],
+          prefix: ['is', 'should', 'has', 'can', 'did', 'will'],
+        },
+        {
           // Enum 命名强制 PascalCase
           selector: 'enum',
           format: ['PascalCase'],

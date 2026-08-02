@@ -67,8 +67,8 @@ export default [
        * - import-path-boundary / no-component-sidecar-files：依赖 src 分层与 @/ 别名约定，规则源码不在 src 下。
        * - no-barrel：eslint/index.js 的职责就是聚合导出全部规则，barrel 禁令与插件入口的定位冲突。
        * - no-implementation-suffix-filename：规则文件名必须与规则 id 一一对应，命名权归 id 契约，不受业务名词约束。
-       * - prefer-object-destructuring：规则源码是 AST 访问器，node/context 的字段按分支条件逐个读取，
-       *   顶部统一解构会在字段不存在的分支上求值、也读不出更清晰的语义，属规则前提不成立的场景。
+       * - require-unit-suffix：只校验 TS 类型成员，JS 里没有类型声明可校验。
+       * - no-direct-http-client：约束 src 下的业务代码不得绕过请求层，规则源码既不在 src 下也不发请求。
        */
     },
   },

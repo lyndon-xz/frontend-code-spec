@@ -23,10 +23,10 @@ export interface Flight {
   departureAirport: string;
   /** 到达机场三字码，如 SHA */
   arrivalAirport: string;
-  /** 出发时间戳（毫秒） */
-  departureTime: number;
-  /** 到达时间戳（毫秒） */
-  arrivalTime: number;
+  /** 出发时间 */
+  departureTimeMs: number;
+  /** 到达时间 */
+  arrivalTimeMs: number;
   /** 起售价 */
   priceCents: number;
 }
@@ -58,10 +58,10 @@ export interface FlightDetail {
   departureAirport: string;
   /** 到达机场三字码 */
   arrivalAirport: string;
-  /** 出发时间戳（毫秒） */
-  departureTime: number;
-  /** 到达时间戳（毫秒） */
-  arrivalTime: number;
+  /** 出发时间 */
+  departureTimeMs: number;
+  /** 到达时间 */
+  arrivalTimeMs: number;
   /** 机型，如 Boeing 737 */
   aircraftModel: string;
   fares: FareOption[];

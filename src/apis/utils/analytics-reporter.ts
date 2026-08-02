@@ -10,8 +10,8 @@ export interface AnalyticsData {
   status: RequestStatus;
   /** 错误信息，仅在失败时有值 */
   errorMessage?: string;
-  startTime: number;
-  endTime: number;
+  startTimeMs: number;
+  endTimeMs: number;
 }
 
 /** 生产环境埋点上报实现；默认空实现，业务侧通过 setAnalyticsSender 接入 */
@@ -34,18 +34,18 @@ const logToConsole = (analyticsData: AnalyticsData) => {
     method,
     url,
     requestId,
-    startTime,
-    endTime,
+    startTimeMs,
+    endTimeMs,
     status,
     requestParams,
     responseData,
     errorMessage,
   } = analyticsData;
-  const duration = endTime - startTime;
+  const duration = endTimeMs - startTimeMs;
 
   console.group(`[埋点上报] ${method} ${url}`);
   console.log('请求ID:', requestId);
-  console.log('请求时间:', new Date(startTime).toLocaleString());
+  console.log('请求时间:', new Date(startTimeMs).toLocaleString());
   console.log('请求耗时:', `${duration}ms`);
   console.log('请求状态:', status);
   console.log('请求参数:', requestParams);

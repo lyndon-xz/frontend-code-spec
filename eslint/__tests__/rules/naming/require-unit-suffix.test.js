@@ -9,6 +9,9 @@ ruleTester.run('require-unit-suffix', rule, {
     'interface Flight { priceCents: number; }',
     'interface Flight { priceYuan: number; }',
     'interface Config { timeoutMs: number; }',
+    'interface Flight { departureTimeMs: number; arrivalTimeIso: string; }',
+    // createdAt / updatedAt 是社区共识的时间戳命名，不在时间点量纲的词根里
+    'interface Record { createdAt: number; updatedAt: number; }',
     'interface Media { widthPx: number; }',
     'interface Upload { sizeBytes: number; }',
     // 词根出现在中间/开头，后缀齐全
@@ -64,6 +67,15 @@ ruleTester.run('require-unit-suffix', rule, {
       // 时长与尺寸两个量纲各报一次
       code: 'interface Anim { duration: number; height: number; }',
       errors: [{ messageId: 'missingUnit' }, { messageId: 'missingUnit' }],
+    },
+    {
+      // 时间点：秒级/毫秒级时间戳混用是接口联调的常客
+      code: 'interface Flight { departureTime: number; }',
+      errors: [{ messageId: 'missingUnit' }],
+    },
+    {
+      code: 'interface Envelope { timestamp: number; }',
+      errors: [{ messageId: 'missingUnit' }],
     },
     {
       // type 字面量的成员同样是类型成员

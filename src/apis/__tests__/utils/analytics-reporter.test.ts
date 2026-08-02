@@ -23,8 +23,8 @@ const buildAnalyticsData = (overrides: Partial<AnalyticsData> = {}): AnalyticsDa
   requestParams: { params: { a: 1 } },
   responseData: { ok: true },
   status: RequestStatus.Success,
-  startTime: 1000,
-  endTime: 1200,
+  startTimeMs: 1000,
+  endTimeMs: 1200,
   ...overrides,
 });
 

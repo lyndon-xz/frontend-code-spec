@@ -6,24 +6,24 @@ import { RequestError, RequestErrorType } from '../utils/error';
 import { generateRequestId } from '../utils/trace';
 
 /*
- * 从 config 提取埋点公共字段。若缺少 requestId/startTime（未经埋点请求拦截器的请求），
+ * 从 config 提取埋点公共字段。若缺少 requestId/startTimeMs（未经埋点请求拦截器的请求），
  * 返回 null，调用方据此跳过上报。
  */
 const extractTrace = (config?: AxiosRequestConfig) => {
   const {
     __requestId: requestId,
-    __requestStartTime: startTime,
+    __requestStartTimeMs: startTimeMs,
     url = '',
     method = '',
     params,
     data,
   } = config ?? {};
 
-  if (typeof requestId !== 'string' || startTime === undefined) return null;
+  if (typeof requestId !== 'string' || startTimeMs === undefined) return null;
 
   return {
     requestId,
-    startTime,
+    startTimeMs,
     url,
     method: method.toUpperCase(),
     requestParams: { params, data },
@@ -34,8 +34,8 @@ export const analyticsReqInterceptor: ReqInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
     // request 层已在重试循环外生成 id 的情况下沿用，重试才能与首次尝试串在同一条链路上
     config.__requestId ??= generateRequestId(config);
-    // startTime 每次尝试独立刷新，耗时统计的是单次尝试而非含重试的总时长
-    config.__requestStartTime = Date.now();
+    // startTimeMs 每次尝试独立刷新，耗时统计的是单次尝试而非含重试的总时长
+    config.__requestStartTimeMs = Date.now();
 
     return config;
   },
@@ -49,7 +49,7 @@ export const analyticsResInterceptor: ResInterceptor = {
         ...trace,
         status: RequestStatus.Success,
         responseData: response.data,
-        endTime: Date.now(),
+        endTimeMs: Date.now(),
       });
     }
 
@@ -71,7 +71,7 @@ export const analyticsResInterceptor: ResInterceptor = {
         status: RequestStatus.Error,
         responseData: null,
         errorMessage,
-        endTime: Date.now(),
+        endTimeMs: Date.now(),
       });
     }
 

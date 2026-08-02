@@ -37,7 +37,7 @@ declare module 'axios' {
   interface AxiosRequestConfig {
     // 请求唯一标识：埋点串联请求与响应
     __requestId?: string;
-    __requestStartTime?: number;
+    __requestStartTimeMs?: number;
     // 剩余可重试次数：供拦截器判断是否抑制错误提示
     __retriesLeft?: number;
     businessError?: BusinessErrorOptions;

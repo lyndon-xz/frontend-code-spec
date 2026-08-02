@@ -22,7 +22,7 @@ export const businessErrorInterceptor: ResInterceptor = {
 
     const { code, message: responseMessage, data } = body;
     if (code === SUCCESS_CODE) {
-      // 拆包：对外只暴露 data，隐藏 code/message/timestamp 信封；无 data 时归一为 null 以对齐 T | null 契约
+      // 拆包：对外只暴露 data，隐藏 code/message/timestampMs 信封；无 data 时归一为 null 以对齐 T | null 契约
       response.data = data ?? null;
       return response;
     }

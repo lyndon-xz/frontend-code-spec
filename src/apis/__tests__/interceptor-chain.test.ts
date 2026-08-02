@@ -85,7 +85,7 @@ describe('拦截器链端到端', () => {
   it('成功响应经业务拦截器拆包，并上报成功埋点', async () => {
     respond = (config) =>
       Promise.resolve(
-        buildResponse(config, { code: 0, message: 'ok', timestamp: 1, data: { id: 7 } }),
+        buildResponse(config, { code: 0, message: 'ok', timestampMs: 1, data: { id: 7 } }),
       );
 
     const run = createGetRequest(nextServiceCode());
@@ -115,7 +115,7 @@ describe('拦截器链端到端', () => {
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledWith('网络连接失败，请检查网络后重试');
 
-    // 埋点同样依赖 config（requestId / startTime 都挂在上面），丢了就是网络类错误零上报
+    // 埋点同样依赖 config（requestId / startTimeMs 都挂在上面），丢了就是网络类错误零上报
     expect(report).toHaveBeenCalledTimes(3);
     expect(report).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -132,7 +132,7 @@ describe('拦截器链端到端', () => {
   it('业务错误提示服务端文案、不重试，并抛出可分类的错误', async () => {
     respond = (config) =>
       Promise.resolve(
-        buildResponse(config, { code: 4001, message: '余票不足', timestamp: 1, data: null }),
+        buildResponse(config, { code: 4001, message: '余票不足', timestampMs: 1, data: null }),
       );
 
     const run = createGetRequest(nextServiceCode());

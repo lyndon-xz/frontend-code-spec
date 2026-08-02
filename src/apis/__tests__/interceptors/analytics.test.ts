@@ -12,11 +12,11 @@ vi.mock('@/apis/utils/analytics-reporter', async (importOriginal) => {
 
 const mockReportAnalytics = vi.mocked(reportAnalytics);
 
-// 构造一段已经过埋点请求拦截器的 config（含 __requestId / __requestStartTime）
+// 构造一段已经过埋点请求拦截器的 config（含 __requestId / __requestStartTimeMs）
 const buildTracedConfig = () =>
   ({
     __requestId: 'GET_/x_1',
-    __requestStartTime: 1000,
+    __requestStartTimeMs: 1000,
     url: '/x',
     method: 'get',
     params: { a: 1 },
@@ -27,7 +27,7 @@ describe('analyticsReqInterceptor.onFulfilled', () => {
     vi.clearAllMocks();
   });
 
-  it('写入 __requestId 与 __requestStartTime', () => {
+  it('写入 __requestId 与 __requestStartTimeMs', () => {
     vi.spyOn(Date, 'now').mockReturnValue(12345);
     const config = { url: '/x', method: 'get' } as InternalAxiosRequestConfig;
 
@@ -35,7 +35,7 @@ describe('analyticsReqInterceptor.onFulfilled', () => {
 
     expect(typeof result.__requestId).toBe('string');
     expect(result.__requestId).toContain('GET');
-    expect(result.__requestStartTime).toBe(12345);
+    expect(result.__requestStartTimeMs).toBe(12345);
   });
 });
 
@@ -60,7 +60,7 @@ describe('analyticsResInterceptor.onFulfilled', () => {
         requestId: 'GET_/x_1',
         status: RequestStatus.Success,
         responseData: { ok: true },
-        endTime: 2000,
+        endTimeMs: 2000,
       }),
     );
   });
@@ -99,7 +99,7 @@ describe('analyticsResInterceptor.onRejected', () => {
         status: RequestStatus.Error,
         responseData: null,
         errorMessage: '业务失败',
-        endTime: 3000,
+        endTimeMs: 3000,
       }),
     );
   });

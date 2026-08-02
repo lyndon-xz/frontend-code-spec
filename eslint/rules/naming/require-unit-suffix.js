@@ -15,8 +15,17 @@ const DEFAULT_DIMENSIONS = [
   },
   {
     name: '时长',
-    roots: ['duration', 'timeout', 'delay', 'interval', 'elapsed', 'expires'],
+    roots: ['duration', 'timeout', 'delay', 'interval', 'elapsed'],
     suffixes: ['Ms', 'Seconds', 'Minutes', 'Hours', 'Days'],
+  },
+  /*
+   * 时间点与时长同为数值时间，歧义却更常见：秒级时间戳、毫秒级时间戳、ISO 字符串三者混用是接口联调的常客。
+   * 不收 `at` 结尾（createdAt / updatedAt 已是社区共识的时间戳命名，强制 createdAtMs 属反惯例）。
+   */
+  {
+    name: '时间点',
+    roots: ['time', 'timestamp', 'deadline', 'expires'],
+    suffixes: ['Ms', 'Seconds', 'Iso', 'Utc'],
   },
   {
     name: '尺寸',

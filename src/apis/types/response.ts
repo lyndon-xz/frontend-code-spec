@@ -1,5 +1,5 @@
 /**
- * 业务响应信封，code、message、timestamp 必有，业务数据在 data 中。
+ * 业务响应信封，code、message、timestampMs 必有，业务数据在 data 中。
  *
  * 后端存在两种响应契约，字段名不同，分别由 business / sso 拦截器处理：
  * 1. 业务网关返回 BusinessResponse，用 code 标识业务状态（0 为成功），业务数据统一放在 data 字段；
@@ -9,8 +9,8 @@ export interface BusinessResponse<T = unknown> {
   /** 业务状态码，0 表示成功 */
   code: number;
   message: string;
-  /** 响应时间戳（毫秒） */
-  timestamp: number;
+  /** 响应时间戳 */
+  timestampMs: number;
   data: T;
 }
 
