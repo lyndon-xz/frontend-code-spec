@@ -80,10 +80,9 @@ export default {
     const layout = { ...DEFAULT_OPTIONS, ...context.options[0] };
     const { isIndex, isPublicLib, path } = analyzeIndexPath(context.filename, layout);
 
-    // 非 index 文件不受本规则约束
     if (!isIndex) return {};
 
-    // 公共库 index：禁文件存在，报在 Program 上（不再检查 re-export，天然无双报）
+    // 公共库 index：禁文件存在，报在 Program 上（不检查 re-export，天然无双报）
     if (isPublicLib) {
       return {
         Program(node) {

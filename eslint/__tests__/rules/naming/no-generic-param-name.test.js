@@ -42,7 +42,6 @@ ruleTester.run('no-generic-param-name', rule, {
       errors: [{ messageId: 'noGenericParam' }],
     },
     {
-      // rest 参数
       code: 'function f(...callback) { return callback; }',
       errors: [{ messageId: 'noGenericParam' }],
     },
@@ -53,22 +52,18 @@ ruleTester.run('no-generic-param-name', rule, {
       errors: [{ messageId: 'noGenericParam' }],
     },
     {
-      // 类方法参数
       code: 'class C { save(data) { return data; } }',
       errors: [{ messageId: 'noGenericParam' }],
     },
     {
-      // 对象方法参数
       code: 'const api = { save(data) { return data; } };',
       errors: [{ messageId: 'noGenericParam' }],
     },
     {
-      // 类的箭头字段参数
       code: 'class C { save = (data) => data; }',
       errors: [{ messageId: 'noGenericParam' }],
     },
     {
-      // 默认值参数
       code: 'function f(data = {}) { return data; }',
       errors: [{ messageId: 'noGenericParam' }],
     },

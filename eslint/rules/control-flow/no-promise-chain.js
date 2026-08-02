@@ -12,7 +12,6 @@ export default {
     },
   },
   create(context) {
-    // 被禁止的 Promise 链式方法名 -> 对应报错文案 id
     const chainMethodToMessageId = {
       then: 'noThenChain',
       catch: 'noCatchChain',

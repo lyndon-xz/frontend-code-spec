@@ -1,4 +1,3 @@
-// 判断节点是否为导出声明（在函数体/对象体/程序顶层边界处停止追溯）
 function isExportNode(node) {
   let current = node;
   while (current) {
@@ -42,7 +41,6 @@ function looksLikeCommentedCode(text) {
   if (/^[A-Za-z_$][\w$.]*\s*(\(|=[^=])/.test(text)) {
     return true;
   }
-  // 以 ; { } 结尾
   if (/[;{}]\s*$/.test(text)) {
     return true;
   }
@@ -72,7 +70,6 @@ function isJsdocBlock(comment) {
  */
 function isSkippableComment(comment) {
   const text = comment.value.trim();
-  // 工具指令注释：eslint- / prettier- / @ts-
   if (text.startsWith('eslint-') || text.startsWith('prettier-') || text.startsWith('@ts-')) {
     return true;
   }
@@ -84,7 +81,6 @@ function isSkippableComment(comment) {
   if (isJsdocBlock(comment) && text.includes('@')) {
     return true;
   }
-  // 被注释掉的代码
   if (comment.type === 'Line' && looksLikeCommentedCode(text)) {
     return true;
   }
@@ -127,7 +123,6 @@ function collectCommentStack(scanContext) {
   return stack;
 }
 
-// 把注释组抽成纯文本行：块注释去掉每行前导 *，行注释去掉两端空白
 function extractCommentLines(stack) {
   return stack.map((item) => (item.type === 'Block' ? stripBlock(item.value) : item.value.trim()));
 }

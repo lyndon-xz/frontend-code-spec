@@ -35,19 +35,14 @@ export default {
     },
   },
   create(context) {
-    /*
-     * ESLint 9 flat config 下 context.filename 恒为非空字符串（未提供文件名时为 `<input>`），
-     * 故全规则集统一不设空值守卫，也不再兜底旧版 getFilename()。
-     */
+    // context.filename 恒为非空字符串（未提供文件名时为 `<input>`），故全规则集统一不设空值守卫
     const { filename } = context;
 
     return {
       Program(node) {
         const basename = path.basename(filename);
-        // 去掉扩展名（.ts/.tsx/.d.ts）
         const nameWithoutExt = basename.replace(/\.(d\.ts|tsx?|jsx?)$/, '');
 
-        // 放行 index，以及测试 / 类型声明 / mock / 配置等豁免文件
         if (nameWithoutExt === 'index' || isExemptFile(filename)) {
           return;
         }

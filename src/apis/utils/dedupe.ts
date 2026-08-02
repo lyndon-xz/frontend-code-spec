@@ -21,7 +21,6 @@ export interface DedupeHandle {
   release: () => void;
 }
 
-// 记录在飞行中的请求，key 为请求签名，value 为其 AbortController
 const pendingRequests = new Map<string, AbortController>();
 
 /*

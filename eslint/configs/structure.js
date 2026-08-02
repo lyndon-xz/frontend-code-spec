@@ -14,12 +14,11 @@ export default [
       },
     },
     rules: {
-      // Import 排序
       ...IMPORT_ORDER_RULE,
     },
   },
   {
-    // 测试 / mock 等豁免由规则内的 isExemptFile 统一判定，配置里不再各写一份 ignores
+    // 测试 / mock 等豁免统一由规则内部的 isExemptFile 判定，配置层不声明 ignores
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     rules: {
       // 模块内部使用相对路径，跨模块引用使用 @/ 别名
@@ -31,7 +30,7 @@ export default [
       // 请求层之外禁止直连 axios / fetch，统一走 apis 层出口（allowedPaths 默认放行 src/apis）
       'custom/no-direct-http-client': 'error',
       /*
-       * 禁 barrel：公共库 index（src/{constants,utils,types,hooks}）禁文件存在，
+       * 禁 barrel：公共库 index（父目录为 constants/utils/types/hooks，含 apis/utils 这类深层）禁文件存在，
        * 其余 index.ts(x) 禁桶导出与跨模块重导出（export * / export { x } from）
        */
       'custom/no-barrel': 'error',

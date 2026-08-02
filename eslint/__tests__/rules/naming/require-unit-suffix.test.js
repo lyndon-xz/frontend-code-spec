@@ -74,6 +74,7 @@ ruleTester.run('require-unit-suffix', rule, {
       errors: [{ messageId: 'missingUnit' }],
     },
     {
+      // timestamp 自身就是词根，不必与 time 复合也要带单位
       code: 'interface Envelope { timestamp: number; }',
       errors: [{ messageId: 'missingUnit' }],
     },

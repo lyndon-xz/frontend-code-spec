@@ -42,7 +42,6 @@ declare module 'axios' {
     __retriesLeft?: number;
     businessError?: BusinessErrorOptions;
     networkError?: NetworkErrorOptions;
-    // 不设置则不重试
     retry?: RetryOptions;
     /*
      * 是否对相同请求去重：开启后，同一请求（method + url + 参数）再次发起时，

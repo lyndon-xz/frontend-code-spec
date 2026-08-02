@@ -34,6 +34,7 @@ ruleTester.run('no-handle-prefix', rule, {
       errors: [{ messageId: 'noHandleFn' }],
     },
     {
+      // 只有变量声明的函数值报 noHandleVar，类字段与对象属性即使是箭头函数也报 noHandleFn
       code: 'const handleSave = () => {};',
       errors: [{ messageId: 'noHandleVar' }],
     },

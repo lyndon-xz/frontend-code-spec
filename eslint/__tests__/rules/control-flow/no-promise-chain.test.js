@@ -30,7 +30,7 @@ ruleTester.run('no-promise-chain', rule, {
       errors: [{ messageId: 'noFinallyChain' }],
     },
     {
-      // 计算成员 obj['then']
+      // 计算成员写法同样命中：判定取的是键的字面量值，不是点号形态
       code: 'p["then"](fn);',
       errors: [{ messageId: 'noThenChain' }],
     },

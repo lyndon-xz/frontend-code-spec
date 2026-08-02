@@ -94,11 +94,8 @@ describe('DedupeHandle.release', () => {
     const request = buildRequest({ params: { q: 'b' } });
 
     const first = registerDedupe(request);
-    // 覆盖登记，map 中当前为 second
     const second = registerDedupe(request);
-    // first 非当前登记，release 不应删除 second
     first.release();
-    // 仍应取消 second
     const third = registerDedupe(request);
 
     expect(second.signal.aborted).toBe(true);

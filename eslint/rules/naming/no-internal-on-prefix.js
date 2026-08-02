@@ -6,7 +6,6 @@ import { createPrefixRule } from '../../utils/create-prefix-rule.js';
  */
 export default createPrefixRule({
   prefix: 'on',
-  // 对象属性里的 onXxx 多为 Props 回调的合法声明处，不校验
   checkObjectProperties: false,
   functionMessageId: 'noInternalOn',
   variableMessageId: 'noInternalOn',

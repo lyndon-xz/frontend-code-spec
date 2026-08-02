@@ -3,9 +3,8 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
-      // React 17+ 新 JSX 转换
+      // 走新 JSX 转换，React 无需在作用域中，两条为旧转换服务的规则一并关闭
       'react/jsx-uses-react': 'off',
-      // 不再需要 React 在作用域中
       'react/react-in-jsx-scope': 'off',
       // 确保 JSX 变量被正确识别
       'react/jsx-uses-vars': 'error',

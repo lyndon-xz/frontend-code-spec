@@ -1,15 +1,14 @@
 import type { AxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
-// RequestError 构造附带信息
 interface RequestErrorMeta {
-  // HTTP 状态码（http / unauthorized 类错误）
+  // 仅 http / unauthorized 类错误有值
   status?: number;
-  // 业务码（business 类错误）
+  // 仅 business 类错误有值
   code?: number;
-  // 触发错误的请求配置，供埋点与重试判断使用
+  // 下游靠它抑制重试期间的重复提示、串联埋点，各归一分支都应带上
   config?: AxiosRequestConfig;
-  // 原始错误（unknown 类错误），保留现场便于定位真正的异常来源
+  // 仅 unknown 类错误有值，保留现场便于定位真正的异常来源
   cause?: unknown;
 }
 
@@ -31,7 +30,6 @@ export enum RequestErrorType {
   Unknown = 'unknown',
 }
 
-// HTTP 状态码 → 用户提示文案
 const HTTP_STATUS_MESSAGE: Record<number, string> = {
   400: '请求参数有误',
   401: '登录已失效，请重新登录',

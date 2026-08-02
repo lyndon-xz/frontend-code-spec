@@ -9,9 +9,9 @@ ruleTester.run('no-barrel', rule, {
     { code: 'export * from "./x";', filename: 'src/apis/foo.ts' },
     // 普通 index 仅含自身声明，非桶
     { code: 'export const a = 1;', filename: 'src/apis/index.ts' },
-    // 深层 index 非公共库（层级不匹配），且无重导出
+    // 判据只看直接父目录：sub 不是公共库目录，因此 utils 在路径上层也不算公共库桶
     { code: 'export const a = 1;', filename: 'src/utils/sub/index.ts' },
-    // 可通过 options 收窄公共库目录，使 utils 不再视为公共桶
+    // publicLibDirs 可收窄公共库目录，只留 hooks 时 utils/index 不在其列
     {
       code: 'export const a = 1;',
       filename: 'src/utils/index.ts',
@@ -19,7 +19,7 @@ ruleTester.run('no-barrel', rule, {
     },
     // src 根下的 index 不是公共库桶
     { code: 'export const a = 1;', filename: 'src/index.ts' },
-    // 源码根目录名可配：srcDir 改成 app 后，src 下的 utils/index 不再按公共库判定
+    // 源码根目录名可配：srcDir 指向 app 时路径里找不到源码根，src/utils/index 不按公共库判定
     {
       code: 'export const a = 1;',
       filename: 'src/utils/index.ts',
@@ -28,7 +28,7 @@ ruleTester.run('no-barrel', rule, {
   ],
   invalid: [
     {
-      // 深层公共库 index 同样禁止存在（此前按层级数判定会漏检）
+      // 深层公共库 index 同样禁止存在：判据是直接父目录为公共库目录，与它离 src 多远无关
       code: 'export const a = 1;',
       filename: 'src/apis/utils/index.ts',
       errors: [{ messageId: 'noPublicBarrel' }],

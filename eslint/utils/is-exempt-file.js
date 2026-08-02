@@ -27,7 +27,7 @@ export const EXEMPT_GLOBS = [
 
 /**
  * 判断文件是否豁免自定义规则校验（测试 / mock / 类型声明 / 配置文件）。
- * 入参取自 context.filename：ESLint 9 flat config 下它恒为非空字符串（未提供文件名时为 `<input>`），故不设空值守卫。
+ * 入参取自 context.filename：它恒为非空字符串（未提供文件名时为 `<input>`），故不设空值守卫。
  * @param {string} filename
  * @returns {boolean}
  */

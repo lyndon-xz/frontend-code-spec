@@ -4,7 +4,7 @@ import { isFunctionNode } from './is-function-node.js';
 /**
  * 生成「禁止以某前缀命名函数」的规则。
  * handle / on 两条命名规则的判定逻辑完全一致，只差前缀、报错文案与是否覆盖对象字面量属性，
- * 故收敛为一个工厂；「值是否为函数」统一走 isFunctionNode，不再在选择器里用正则重写一遍。
+ * 故收敛为一个工厂；「值是否为函数」统一走 isFunctionNode。
  *
  * 覆盖形态：函数声明、函数型变量、类方法、类箭头字段，以及（可选）对象字面量的函数属性。
  * @param {object} spec
@@ -36,25 +36,22 @@ export function createPrefixRule(spec) {
       }
 
       const visitors = {
-        // 函数声明：function handleClick() {}
         FunctionDeclaration(node) {
           if (node.id !== null && isPrefixedIdentifier(node.id)) {
             report(node.id, functionMessageId);
           }
         },
-        // 函数型变量：const handleSave = () => {}（限定函数值，放行 handleId 等名词变量）
+        // 限定函数值，放行 handleId 这类名词变量
         VariableDeclarator(node) {
           if (isPrefixedIdentifier(node.id) && isFunctionNode(node.init)) {
             report(node.id, variableMessageId);
           }
         },
-        // 类方法：class C { handleClick() {} }
         MethodDefinition(node) {
           if (!node.computed && isPrefixedIdentifier(node.key)) {
             report(node.key, functionMessageId);
           }
         },
-        // 类箭头字段：handleClick = () => {}
         PropertyDefinition(node) {
           if (!node.computed && isPrefixedIdentifier(node.key) && isFunctionNode(node.value)) {
             report(node.key, functionMessageId);
@@ -68,7 +65,7 @@ export function createPrefixRule(spec) {
 
       return {
         ...visitors,
-        // 对象方法 / 箭头属性：{ handleClick() {} } / { handleClick: () => {} }。shorthand 已在变量声明处校验，跳过防重复
+        // shorthand 属性（{ handleClick }）已在其变量声明处校验，跳过防重复
         Property(node) {
           if (node.computed || node.shorthand) return;
           if (isPrefixedIdentifier(node.key) && isFunctionNode(node.value)) {

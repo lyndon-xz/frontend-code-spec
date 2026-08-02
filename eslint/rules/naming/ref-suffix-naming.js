@@ -25,6 +25,7 @@ export default {
       },
       // class C { input = useRef(null) }
       'PropertyDefinition[value.callee.name="useRef"] > Identifier.key[name!=/Ref$/]'(node) {
+        // 计算键（[key] = useRef()）没有可判定的静态名字，跳过
         if (!node.parent.computed) {
           context.report({ node, messageId: 'refSuffix' });
         }

@@ -25,19 +25,17 @@ export default {
       JSXAttribute(node) {
         const valueExpr = node.value;
 
-        // 只处理 JSX 属性中的表达式容器 (如 onClick={...})
         if (!valueExpr || valueExpr.type !== 'JSXExpressionContainer') {
           return;
         }
 
         const arrow = valueExpr.expression;
 
-        // 只处理箭头函数表达式；async 箭头改写后会丢失 async 语义，跳过
+        // async 箭头改写后会丢失 async 语义，跳过
         if (arrow.type !== 'ArrowFunctionExpression' || arrow.async) {
           return;
         }
 
-        // 获取箭头函数的 body (可能是表达式，或仅含单条语句的代码块)
         let callExpr;
         if (arrow.body.type === 'CallExpression') {
           // () => fn()
@@ -60,19 +58,19 @@ export default {
         const arrowParams = arrow.params;
         const callArgs = callExpr.arguments;
 
-        // callee 为 MemberExpression 时存在 this 绑定丢失风险（onClick={(e) => obj.fn(e)} → onClick={obj.fn}），直接跳过
+        // this 绑定丢失风险：onClick={(e) => obj.fn(e)} → onClick={obj.fn}
         if (callExpr.callee.type === 'MemberExpression') {
           return;
         }
 
-        // 情况 1: 无参数箭头函数调用无参数函数 — () => fn()。只告警不 fix，避免隐式 event 透传
+        // () => fn()：只告警不 fix，去掉包裹会把 event 隐式透传给 fn
         if (arrowParams.length === 0 && callArgs.length === 0) {
           const callee = sourceCode.getText(callExpr.callee);
           context.report({ node: arrow, messageId: 'unwrapNoArg', data: { callee } });
           return;
         }
 
-        // 情况 2: 参数逐一透传 — (e) => fn(e) 或 (a, b) => fn(a, b)
+        // 参数逐一透传：(e) => fn(e) 或 (a, b) => fn(a, b)
         if (
           arrowParams.length > 0 &&
           arrowParams.length === callArgs.length &&

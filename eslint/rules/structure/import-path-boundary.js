@@ -60,7 +60,7 @@ export default {
       return {};
     }
 
-    // 当前文件相对 src 的路径（如 'apis/foo.ts'）及其所属一级模块（如 'apis'）
+    // 当前文件相对 src 的路径（如 'apis/foo.ts'）及其所属一级模块（如 'apis'）；+2 跳过 srcDir 前后的两个斜杠
     const relativeToSrc = filename.substring(srcIndex + srcDir.length + 2);
     const currentModule = relativeToSrc.split('/')[0];
     // 当前文件所在目录（相对 src），顶层文件时为 '.'
@@ -70,7 +70,7 @@ export default {
       ImportDeclaration(node) {
         const source = node.source.value;
 
-        // 只处理 @/ 开头的别名导入和 ./ ../ 开头的相对导入
+        // 只管仓库内引用；裸包名（react、@scope/pkg）不在本规则约束范围
         if (!source.startsWith('@/') && !source.startsWith('../') && !source.startsWith('./')) {
           return;
         }
@@ -107,7 +107,6 @@ export default {
           return;
         }
 
-        // 在 src 相对空间解析目标路径
         const targetRelativeToSrc = path.posix.join(currentDir, source);
 
         // 逃出 src（.. 开头）→ 非 src 内引用，跳过

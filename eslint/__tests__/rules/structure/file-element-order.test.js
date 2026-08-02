@@ -16,7 +16,7 @@ ruleTester.run('file-element-order', rule, {
        * import（跳过）→ 各类 type（interface / type / 具名导出 interface）
        * → 各类 constant（全大写常量 / enum / 具名导出 enum / 具名导出常量 / const 对象）
        * → 表达式语句（无法归类，返回 null）
-       * → 各类 helper（const 箭头 / 函数声明 / let 声明）
+       * → 各类 helper（const 箭头 / 函数声明 / 类声明 / let 声明）
        * → 各类 export（具名导出无 declaration / 默认导出）
        */
       code: [

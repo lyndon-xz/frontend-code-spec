@@ -2,13 +2,13 @@ import { isExemptFile } from '../../utils/is-exempt-file.js';
 
 /*
  * 覆盖普通参数、默认值参数、rest 参数三种形态。
- * 默认黑名单为 data/callback；params/options 在请求与配置场景常见，不纳入默认集。
- * 可通过 options.bannedNames 扩展或收窄。
+ * params / options 在请求与配置场景常见，不纳入默认黑名单；可通过 options.bannedNames 扩展或收窄。
  */
 const DEFAULT_BANNED_NAMES = ['data', 'callback'];
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// 整名匹配（^...$）：只禁泛化整名，userData / dataSource 这类带领域词的复合名放行
 const buildNamePattern = (bannedNames) =>
   new RegExp(`^(${bannedNames.map(escapeRegExp).join('|')})$`);
 

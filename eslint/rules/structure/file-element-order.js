@@ -1,8 +1,8 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
 
+// 顶层语句太少时无所谓排序（如仅 import + 单个导出），跳过以免给这类文件添噪音
 const MIN_STATEMENTS_TO_CHECK = 3;
 
-// 分类优先级：import → type → constant → helper → export
 const CATEGORY_ORDER = {
   import: 0,
   type: 1,
@@ -11,14 +11,12 @@ const CATEGORY_ORDER = {
   export: 4,
 };
 
-// 判断一组声明是否全为 UPPER_CASE 常量标识符
 function isAllUpperConst(declarations) {
   return declarations.every(
     (d) => d.id.type === 'Identifier' && /^[A-Z_][A-Z0-9_]*$/.test(d.id.name),
   );
 }
 
-// 判断一组声明是否全为函数表达式/箭头函数
 function isAllFunction(declarations) {
   return declarations.every(
     (d) =>
@@ -26,14 +24,11 @@ function isAllFunction(declarations) {
   );
 }
 
-// 把顶层语句归类到 import / type / constant / helper / export，无法归类返回 null（保持原位）
 function categorize(node) {
   if (node.type === 'ImportDeclaration') return 'import';
 
-  // export default — 主导出
   if (node.type === 'ExportDefaultDeclaration') return 'export';
 
-  // export named
   if (node.type === 'ExportNamedDeclaration') {
     const decl = node.declaration;
     if (!decl) return 'export';
@@ -50,14 +45,11 @@ function categorize(node) {
     return 'export';
   }
 
-  // interface / type 声明
   if (node.type === 'TSInterfaceDeclaration' || node.type === 'TSTypeAliasDeclaration')
     return 'type';
 
-  // enum（非 export）
   if (node.type === 'TSEnumDeclaration') return 'constant';
 
-  // VariableDeclaration
   if (node.type === 'VariableDeclaration') {
     if (node.kind === 'const') {
       if (isAllUpperConst(node.declarations)) return 'constant';
@@ -109,7 +101,7 @@ export default {
         const { body } = programNode;
         if (body.length < MIN_STATEMENTS_TO_CHECK) return;
 
-        // 分类并过滤：跳过 import 与无法分类的节点
+        // 跳过 import 与无法归类的节点：import 之间的相对顺序交给 import/order 把关
         const meaningful = body
           .map((node) => {
             const category = categorize(node);

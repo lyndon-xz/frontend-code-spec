@@ -31,7 +31,6 @@ ruleTester.run('require-enum-initializer', rule, {
       errors: [{ messageId: 'requireInitializer' }, { messageId: 'requireInitializer' }],
     },
     {
-      // 命名空间内的 enum
       code: 'namespace N { export enum E { A } }',
       errors: [{ messageId: 'requireInitializer' }],
     },

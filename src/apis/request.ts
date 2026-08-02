@@ -126,7 +126,7 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
  * 拦截器执行顺序：
  * - 请求阶段：analytics（记录开始时间、requestId）、auth（注入 token）
  * - 响应阶段按注册顺序 FIFO 执行：network（网络/HTTP 异常归一）→ sso（登录态）→ business（业务码、拆包）→ analytics（埋点上报）
- * 异常兜底（转 null / 重试）在下方 createRequest 中统一处理，不再作为拦截器。
+ * 异常兜底（转 null / 重试）由下方 createRequest 统一处理，不放进拦截器链。
  */
 const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}): AxiosInstance =>
   RequestInstance.getInstance({

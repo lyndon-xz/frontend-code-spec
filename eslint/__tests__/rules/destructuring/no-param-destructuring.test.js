@@ -24,17 +24,16 @@ ruleTester.run('no-param-destructuring', rule, {
       errors: [{ messageId: 'noParamDestructure' }],
     },
     {
-      // 带默认值的对象解构：({ a } = {})
+      // 解构藏在默认值（AssignmentPattern）之下，只看形参顶层类型会漏
       code: 'const g = ({ a } = {}) => a;',
       errors: [{ messageId: 'noParamDestructure' }],
     },
     {
-      // 带默认值的数组解构：([a] = [])
       code: 'const g = ([a] = []) => a;',
       errors: [{ messageId: 'noParamDestructure' }],
     },
     {
-      // rest 中解构：...[a]
+      // 解构藏在 rest 参数（RestElement）之下，同样要向内穿透
       code: 'function f(...[a]) { return a; }',
       errors: [{ messageId: 'noParamDestructure' }],
     },

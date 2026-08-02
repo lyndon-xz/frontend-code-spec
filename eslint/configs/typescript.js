@@ -14,20 +14,15 @@ export default [
        * 用 TS 版而非原生版，避免把枚举成员、类型参数误报成遮蔽。
        */
       '@typescript-eslint/no-shadow': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        // 允许 _开头的未使用参数
-        { argsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 
-      // 类型定义一致性
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', disallowTypeAnnotations: false },
       ],
 
-      // 空值合并
+      // ?? 只在 null / undefined 时回落，|| 会把 0 与空串一并当作缺值
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
 
       // 业务代码禁止 any，强推 unknown + 类型收窄
@@ -83,7 +78,7 @@ export default [
     rules: {
       /*
        * 禁止用 as / <T> 断言替代类型收窄（assertionStyle: never 始终放行 as const）；请用 typeof / in / 可辨识联合等收窄。
-       * 已整体禁止 as（冗余断言场景亦在其中），故不再叠加 @typescript-eslint/no-unnecessary-type-assertion，避免对同一处双重报错。
+       * 已整体禁止 as（冗余断言场景亦在其中），故不叠加 @typescript-eslint/no-unnecessary-type-assertion，避免对同一处双重报错。
        */
       '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
     },

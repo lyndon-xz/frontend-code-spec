@@ -82,9 +82,7 @@ ruleTester.run('comment-style', rule, {
       errors: [{ messageId: 'internalMergeBlock' }],
     },
     {
-      /*
-       * 注释内容含块注释结束符：包进 /** *\/ 会提前闭合并产出语法错误，故只报错不 fix
-       */
+      // 内容含块注释结束符：包进 /** */ 会提前闭合并产出语法错误，故只报错不 fix
       code: '// 见 /* x */ 的说明\nexport const x = 1;',
       output: null,
       errors: [{ messageId: 'exportNeedsJsdoc' }],

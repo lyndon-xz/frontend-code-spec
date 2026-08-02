@@ -40,7 +40,7 @@ const GENERIC_ATTR = new Set([
 
 // loading 开头但不是 isLoading/shouldLoading 等布尔前缀形态
 const LOADING_PREFIX = /^loading[A-Z]/;
-// error 开头且后面直接跟名词（errorMessage 之外的 errorFlightList 等）
+// error 开头且紧跟大写字母；errorMessage 这类通用属性词随后由 GENERIC_ATTR 放行
 const ERROR_PREFIX = /^error[A-Z]/;
 
 // 状态类型 / 状态对象的命名约定：以 State 结尾（State、FlightState、initialState）

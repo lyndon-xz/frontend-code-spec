@@ -48,7 +48,6 @@ export default {
     // 收集函数组件，元素形态 { name, propsTypeName }
     const components = [];
 
-    // 从 TSTypeReference 取名字，仅当其以 Props 结尾时返回，否则返回 null
     function typeRefName(annotation) {
       if (annotation?.type !== 'TSTypeReference') return null;
       const typeName = annotation.typeName?.name;
@@ -65,13 +64,12 @@ export default {
     function propsNameFromFcAnnotation(idNode) {
       const annotation = idNode.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== 'TSTypeReference') return null;
-      // typescript-eslint v8 用 typeArguments，旧版用 typeParameters，两者都兜底
+      // 取泛型参数：typeArguments / typeParameters 两种字段名都要兜底
       const typeArgs = annotation.typeArguments ?? annotation.typeParameters;
       return typeRefName(typeArgs?.params?.[0]);
     }
 
     return {
-      // 收集 interface 声明
       TSInterfaceDeclaration(node) {
         if (node.id?.type === 'Identifier') {
           interfaces.push({ node, name: node.id.name });
@@ -105,21 +103,20 @@ export default {
       },
 
       'Program:exit'() {
-        // 统计每个 Props 类型被多少个组件引用，用于识别「共用同一 interface」的冲突
+        // 用于识别「多个组件共用同一 interface」的期望名冲突
         const componentCountByProps = new Map();
         for (const component of components) {
           const count = componentCountByProps.get(component.propsTypeName) ?? 0;
           componentCountByProps.set(component.propsTypeName, count + 1);
         }
 
-        // 已存在的 interface 名，用于避免重命名后与现有声明重名
+        // 用于避免重命名后与现有 interface 声明重名
         const existingNames = new Set(interfaces.map((item) => item.name));
 
         for (const component of components) {
           const expectedPropsName = `${component.name}Props`;
           if (component.propsTypeName === expectedPropsName) continue;
 
-          // 找到对应的 interface 声明
           const matchingInterface = interfaces.find(
             (item) => item.name === component.propsTypeName,
           );
@@ -141,7 +138,6 @@ export default {
             data: { expected: expectedPropsName, actual: component.propsTypeName },
             fix: canFix
               ? (fixer) => {
-                  // 基于作用域，重命名该 interface 在当前文件内的全部引用（声明 + 类型引用）
                   const variables = sourceCode.getDeclaredVariables(matchingInterface.node);
                   const idNodes = [];
                   for (const variable of variables) {
