@@ -12,6 +12,7 @@ import hygieneConfig from './configs/hygiene.js';
 import importsConfig from './configs/imports.js';
 import namingConfig from './configs/naming.js';
 import reactConfig from './configs/react.js';
+import selfCheckConfig from './configs/self-check.js';
 import structureConfig from './configs/structure.js';
 import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
@@ -96,6 +97,18 @@ export default [
     },
   },
 
+  // 规则源码与各类配置文件都是 Node 端 ESM
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      sourceType: 'module',
+      ecmaVersion: 'latest',
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+
   /**
    * 通用基线：只用第三方规则，故在 rules/ 下没有对应的领域目录。
    * 两者都自行声明 files，把 TS 源码与规则源码一并覆盖。
@@ -111,4 +124,7 @@ export default [
   ...namingConfig,
   ...reactConfig,
   ...structureConfig,
+
+  /** 收窄到规则源码自身：领域配置面向 TS/TSX，此处挑出与技术栈无关的那批用于自校验 */
+  ...selfCheckConfig,
 ];
