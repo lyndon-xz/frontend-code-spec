@@ -62,6 +62,19 @@ describe('businessErrorInterceptor.onFulfilled', () => {
     }
   });
 
+  it('服务端 message 为空时用兜底文案，不弹空提示', () => {
+    const response = buildResponse({ code: 500, message: '', timestamp: 1, data: null });
+
+    expect(() => businessErrorInterceptor.onFulfilled!(response)).toThrow('操作失败，请稍后重试');
+    expect(mockNotifyError).toHaveBeenCalledWith('操作失败，请稍后重试');
+  });
+
+  it('服务端未返回 message 字段时同样走兜底文案', () => {
+    const response = buildResponse({ code: 500, timestamp: 1, data: null });
+
+    expect(() => businessErrorInterceptor.onFulfilled!(response)).toThrow('操作失败，请稍后重试');
+  });
+
   it('配置 customMessage 时用自定义文案提示与报错', () => {
     const response = buildResponse({ code: 500, message: '库存不足', timestamp: 1, data: null }, {
       businessError: { customMessage: '下单失败，请重试' },

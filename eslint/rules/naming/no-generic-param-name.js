@@ -1,3 +1,5 @@
+import { isExemptFile } from '../../utils/is-exempt-file.js';
+
 /*
  * 覆盖普通参数、默认值参数、rest 参数三种形态。
  * 默认黑名单为 data/callback；params/options 在请求与配置场景常见，不纳入默认集。
@@ -36,6 +38,9 @@ export default {
   },
 
   create(context) {
+    // 测试 / mock 文件豁免：桩函数与 vi.mock 工厂里 (data) 这类泛化参数名是合理的，不该倒逼改桩
+    if (isExemptFile(context.filename)) return {};
+
     const bannedNames = context.options[0]?.bannedNames ?? DEFAULT_BANNED_NAMES;
     const namePattern = buildNamePattern(bannedNames);
     const namesText = bannedNames.join('、');

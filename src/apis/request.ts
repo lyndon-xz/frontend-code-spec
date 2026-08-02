@@ -11,15 +11,27 @@ import { networkErrorInterceptor } from './interceptors/error/network';
 import { ssoInterceptor } from './interceptors/sso';
 import type { EnhancedRequestConfig, InstanceConfig } from './types/config';
 import { generateBaseUrl } from './utils/base-url';
-import { registerDedupe, releaseDedupe } from './utils/dedupe';
+import { registerDedupe } from './utils/dedupe';
 import { isRetryableError } from './utils/error';
 import { delay, getRetryDelay } from './utils/retry';
+import { generateRequestId } from './utils/trace';
 
 /** 实例级可覆盖配置（同一 serviceCode 首次创建生效，后续差异会在开发环境告警） */
 export type RequestInstanceOptions = Pick<
   AxiosRequestConfig,
   'timeout' | 'withCredentials' | 'headers'
 >;
+
+interface RetryContext {
+  instance: AxiosInstance;
+  config: EnhancedRequestConfig;
+  method: Method;
+  signal?: EnhancedRequestConfig['signal'];
+  maxRetries: number;
+}
+
+const DEFAULT_TIMEOUT = 3000;
+const DEFAULT_HEADERS = { 'Content-Type': 'application/json' };
 
 class RequestInstance {
   private static instances = new Map<string, AxiosInstance>();
@@ -28,18 +40,24 @@ class RequestInstance {
   public static getInstance(config: InstanceConfig): AxiosInstance {
     const {
       serviceCode,
-      timeout = 3000,
+      timeout = DEFAULT_TIMEOUT,
       withCredentials = true,
-      headers = {
-        'Content-Type': 'application/json',
-      },
+      headers,
       reqInterceptors,
       resInterceptors,
       ...restConfig
     } = config;
 
+    // 浅合并而非整体替换：调用方只想加一个 header 时，不该连默认 Content-Type 一起丢掉
+    const mergedHeaders = { ...DEFAULT_HEADERS, ...headers };
+
     // headers 参与签名：同 serviceCode 下 Content-Type 等差异也应触发漂移告警
-    const signature = JSON.stringify({ timeout, withCredentials, headers, restConfig });
+    const signature = JSON.stringify({
+      timeout,
+      withCredentials,
+      headers: mergedHeaders,
+      restConfig,
+    });
 
     // 同一 serviceCode 在运行期只创建一个实例，首次传入的配置即为该服务的固定配置
     if (this.instances.has(serviceCode)) {
@@ -49,7 +67,7 @@ class RequestInstance {
 
     const instance = axios.create({
       ...restConfig,
-      headers,
+      headers: mergedHeaders,
       timeout,
       withCredentials,
       baseURL: generateBaseUrl(serviceCode),
@@ -79,20 +97,20 @@ class RequestInstance {
   }
 }
 
-interface RetryContext {
-  instance: AxiosInstance;
-  config: EnhancedRequestConfig;
-  method: Method;
-  signal?: EnhancedRequestConfig['signal'];
-  maxRetries: number;
-}
-
 // 执行请求并按可重试错误自动重试，返回拆包后的数据；最终失败时抛出 RequestError
 const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
   const { instance, config, method, signal, maxRetries } = context;
+  // 在循环外生成：每次尝试都是新的 config 对象，若交给拦截器生成会让同一请求的重试拿到互不关联的 id
+  const requestId = generateRequestId({ ...config, method });
 
   for (let attempt = 0; ; attempt += 1) {
-    const requestConfig = { ...config, method, signal, __retriesLeft: maxRetries - attempt };
+    const requestConfig = {
+      ...config,
+      method,
+      signal,
+      __requestId: requestId,
+      __retriesLeft: maxRetries - attempt,
+    };
 
     try {
       const response = await instance.request<T>(requestConfig);
@@ -140,12 +158,14 @@ export const createRequest = (
   const instance = buildInstance(serviceCode, options);
 
   return async <T = unknown>(config: EnhancedRequestConfig): Promise<T | null> => {
-    const { retry, isDeduped, signal: userSignal, isErrorSwallowed } = config;
+    const { url, params, data, retry, isDeduped, signal: userSignal, isErrorSwallowed } = config;
     const maxRetries = retry?.count ?? 0;
     // 仅在开启去重且调用方未自带 signal 时接管取消控制，避免覆盖调用方的 signal
-    const controller =
-      isDeduped && userSignal == null ? registerDedupe({ ...config, method }) : undefined;
-    const signal = userSignal ?? controller?.signal;
+    const dedupe =
+      isDeduped && userSignal == null
+        ? registerDedupe({ serviceCode, method, url, params, data })
+        : undefined;
+    const signal = userSignal ?? dedupe?.signal;
 
     try {
       return await sendWithRetry<T>({ instance, config, method, signal, maxRetries });
@@ -153,7 +173,7 @@ export const createRequest = (
       if (isErrorSwallowed !== false) return null;
       throw error;
     } finally {
-      if (controller) releaseDedupe({ ...config, method }, controller);
+      dedupe?.release();
     }
   };
 };

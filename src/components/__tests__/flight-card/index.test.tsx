@@ -10,7 +10,8 @@ describe('FlightCard', () => {
       createElement(FlightCard, {
         airline: '国航',
         flightNo: 'CA1234',
-        price: 1280.5,
+        // 128050 分 = 1280.50 元
+        price: 128050,
         isRecommended: true,
         onSelect: vi.fn(),
       }),
@@ -22,12 +23,27 @@ describe('FlightCard', () => {
     expect(html).toContain('推荐');
   });
 
+  it('价格按分转元展示，不直接输出接口原值', () => {
+    const html = renderToStaticMarkup(
+      createElement(FlightCard, {
+        airline: '南航',
+        flightNo: 'CZ3000',
+        price: 90000,
+        isRecommended: false,
+        onSelect: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain('900.00');
+    expect(html).not.toContain('90000');
+  });
+
   it('非推荐航班不展示推荐标记', () => {
     const html = renderToStaticMarkup(
       createElement(FlightCard, {
         airline: '东航',
         flightNo: 'MU5678',
-        price: 900,
+        price: 90000,
         isRecommended: false,
         onSelect: vi.fn(),
       }),

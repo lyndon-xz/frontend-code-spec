@@ -6,6 +6,8 @@ import type { BusinessResponse } from '../../types/response';
 import { RequestError, RequestErrorType } from '../../utils/error';
 import { notifyError } from '../../utils/error-notifier';
 
+const DEFAULT_BUSINESS_MESSAGE = '操作失败，请稍后重试';
+
 // 判定是否为业务信封（含数值 code）；非信封响应（如文件流、三方接口）直接放行
 const isBusinessResponse = (body: unknown): body is BusinessResponse => {
   return (
@@ -26,7 +28,12 @@ export const businessErrorInterceptor: ResInterceptor = {
     }
 
     const { isSilent = false, customMessage } = config?.businessError ?? {};
-    const errorMessage = customMessage ?? responseMessage;
+    // 服务端 message 缺失或为空时兜底，避免弹出空 toast（与埋点的「未知错误」兜底口径一致）
+    const serverMessage =
+      typeof responseMessage === 'string' && responseMessage.length > 0
+        ? responseMessage
+        : DEFAULT_BUSINESS_MESSAGE;
+    const errorMessage = customMessage ?? serverMessage;
     if (!isSilent) {
       notifyError(errorMessage);
     }

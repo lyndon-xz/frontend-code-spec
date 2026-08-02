@@ -51,8 +51,9 @@ declare module 'axios' {
     isDeduped?: boolean;
     /*
      * 是否启用异常兜底。
-     * true（默认）：任何错误都被吞掉，请求以 null 返回；
-     * false：错误以 RequestError 原样抛出，由调用方自行 try/catch 获取错误类型与信息。
+     * true（默认）：任何错误都被吞掉，请求以 null 返回。被去重取消的请求同样返回 null，
+     *   调用方无法区分「取消」与「失败」，若拿 null 去清空列表，旧请求的取消就会覆盖新请求的结果；
+     * false：错误以 RequestError 原样抛出，由调用方自行 try/catch，按 type === Canceled 区分取消。
      */
     isErrorSwallowed?: boolean;
   }

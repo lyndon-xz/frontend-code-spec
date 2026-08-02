@@ -1,26 +1,53 @@
-local_branch_name=$(git rev-parse --abbrev-ref HEAD)
+valid_branch_regex='^(feature|fix|hotfix|chore|refactor)/[a-z0-9._-]+$'
 
-valid_branch_regex="^(feature|fix|hotfix|chore|refactor)\/[a-z0-9._-]+$"
-
-if [ "$local_branch_name" != "main" ] && [ "$local_branch_name" != "master" ] && [ "$local_branch_name" != "develop" ] && [[ ! $local_branch_name =~ $valid_branch_regex ]]; then
+# husky 以 `sh -e` 执行本脚本，因此全文必须是 POSIX 语法（不可用 bash 的 [[ ]]）
+report_invalid_branch() {
     echo "=========================================================="
-    echo " 🚨 [GIT ERROR]: 你的本地分支名称校验失败！"
-    echo " 👉 当前分支: $local_branch_name"
+    echo " 🚨 [GIT ERROR]: 你的分支名称校验失败！"
+    echo " 👉 待推送分支: $1"
     echo " ✅ 正确格式: {行为类别}/{短描述} (例如 feature/payment-flow)"
     echo " 💡 可选类别: feature, fix, hotfix, chore, refactor"
     echo "=========================================================="
-    exit 1
-fi
+}
+
+# pre-push 的 stdin 逐行给出 `<local_ref> <local_sha> <remote_ref> <remote_sha>`。
+# 校验 remote_ref 而非当前 HEAD，否则 `git push origin HEAD:refs/heads/BadName` 可绕过。
+while read -r local_ref local_sha remote_ref remote_sha; do
+    # 删除远端分支时 local_sha 为全 0，此时没有待推送内容需要校验
+    case "$local_sha" in
+    *[!0]*) ;;
+    *) continue ;;
+    esac
+
+    # 命名约定只约束分支，tag 等其它 ref 放行
+    case "$remote_ref" in
+    refs/heads/*) branch_name=${remote_ref#refs/heads/} ;;
+    *) continue ;;
+    esac
+
+    case "$branch_name" in
+    main | master | develop) continue ;;
+    esac
+
+    if ! printf '%s\n' "$branch_name" | grep -Eq "$valid_branch_regex"; then
+        report_invalid_branch "$branch_name"
+        exit 1
+    fi
+done
 
 echo "=========================================================="
 echo " 🛡️ [PRE-PUSH SECURITY]: 运行本地完整质量防线"
 echo "=========================================================="
 
-echo "➡️ Running local verify pipeline..."
-pnpm run verify || {
-    echo "❌ [Quality Gate Error]: 本地质量校验未通过，禁止带病提交！"
-    exit 1
-}
+# 与 CI 的校验步骤保持一致，逐项执行以便失败时直接定位到具体环节。
+# stdin 已被上面的分支校验读到 EOF，这里显式接 /dev/null 避免子命令误读。
+for script in type-check lint format:check lint:filename lint:md lint:style lint:pkg test:cov; do
+    echo "➡️ Running $script..."
+    pnpm run "$script" </dev/null || {
+        echo "❌ [Quality Gate Error]: $script 未通过，禁止带病提交！"
+        exit 1
+    }
+done
 
 echo "✅ All defenses cleared! Enjoy your push!"
 exit 0

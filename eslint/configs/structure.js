@@ -1,3 +1,5 @@
+import { IMPORT_ORDER_RULE } from './shared-rules.js';
+
 /** 结构与组织 — 导入路径、文件内排列、barrel、导出规范 */
 export default [
   {
@@ -13,26 +15,12 @@ export default [
     },
     rules: {
       // Import 排序
-      'import/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          pathGroups: [
-            { pattern: '@/**', group: 'internal', position: 'before' },
-            { pattern: './**/*.module.scss', group: 'index', position: 'after' },
-          ],
-          pathGroupsExcludedImportTypes: ['builtin'],
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-          },
-        },
-      ],
+      ...IMPORT_ORDER_RULE,
     },
   },
   {
+    // 测试 / mock 等豁免由规则内的 isExemptFile 统一判定，配置里不再各写一份 ignores
     files: ['src/**/*.ts', 'src/**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       // 模块内部使用相对路径，跨模块引用使用 @/ 别名
       'custom/import-path-boundary': 'error',

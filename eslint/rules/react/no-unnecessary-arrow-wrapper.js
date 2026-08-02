@@ -47,11 +47,7 @@ export default {
           if (stmt.type === 'ExpressionStatement' && stmt.expression.type === 'CallExpression') {
             // () => { fn(); }
             callExpr = stmt.expression;
-          } else if (
-            stmt.type === 'ReturnStatement' &&
-            stmt.argument &&
-            stmt.argument.type === 'CallExpression'
-          ) {
+          } else if (stmt.type === 'ReturnStatement' && stmt.argument?.type === 'CallExpression') {
             // () => { return fn(); }
             callExpr = stmt.argument;
           } else {

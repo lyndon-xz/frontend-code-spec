@@ -85,11 +85,11 @@ export default [
   },
   {
     /*
-     * 自研命名规则：统一作用于 src 源码并豁免测试，与 isExemptFile 的约定一致，
-     * 避免对测试桩（mock 的 handleXxx、桩数据的 data 参数等）与仓库配置文件产生噪音。
+     * 自研命名规则统一作用于 src 源码。哪些文件豁免由规则内的 isExemptFile 判定（唯一来源）：
+     * 会被测试桩倒逼命名的规则（mock 的 handleXxx / onXxx、桩数据的 data 参数）自行豁免，
+     * 其余（如 ref 后缀、状态字段命名）在测试里同样成立，不豁免。
      */
     files: ['src/**/*.ts', 'src/**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       // 函数/变量禁 handle 前缀
       'custom/no-handle-prefix': 'error',

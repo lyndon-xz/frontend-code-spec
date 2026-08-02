@@ -8,8 +8,14 @@ import { RequestError, RequestErrorType } from '../utils/error';
 // 多个请求同时未授权时，只触发一次跳转；业务可在取消登录回流后调用 resetSsoRedirectState 复位
 let isRedirecting = false;
 
+// 判定是否为 SSO 信封；与 business 拦截器口径一致地校验类型，否则 returncode 为 "-100" 时未授权会被当成已登录放行
 const isSsoResponse = (body: unknown): body is SsoResponse => {
-  return typeof body === 'object' && body !== null && 'returncode' in body;
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'returncode' in body &&
+    typeof body.returncode === 'number'
+  );
 };
 
 // 仅允许跳转到 http/https 目标，拦截 javascript:/data: 等危险协议，避免开放重定向

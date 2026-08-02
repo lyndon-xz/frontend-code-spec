@@ -17,6 +17,16 @@ ruleTester.run('prefer-object-destructuring', rule, {
     'function f(u) { u.a = 1; u.b = 2; u.c = 3; }',
     // delete 操作不计入
     'function f(u) { delete u.a; delete u.b; delete u.c; }',
+    // 自增自减是写操作，不计入（解构后写的是局部变量，照建议改会改错代码）
+    'function f(u) { u.a++; u.b++; u.c++; }',
+    'function f(u) { --u.a; --u.b; --u.c; }',
+    // 复合赋值同属写操作
+    'function f(u) { u.a += 1; u.b += 1; u.c += 1; }',
+    // 测试文件豁免
+    {
+      code: 'function f(u) { return u.a + u.b + u.c; }',
+      filename: 'src/apis/__tests__/foo.test.ts',
+    },
     // 计算成员访问不计入
     'function f(u, k1, k2, k3) { return u[k1] + u[k2] + u[k3]; }',
     // 通过配置额外忽略领域对象

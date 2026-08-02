@@ -26,7 +26,7 @@ export default {
 
     return {
       Program(node) {
-        if (!filename || isExemptFile(filename)) return;
+        if (isExemptFile(filename)) return;
 
         // 匹配 .../components/<name>/<sidecar>.ts(x)
         const match = normalizePath(filename).match(/\/components\/[^/]+\/([^/]+)\.(tsx?|jsx?)$/);

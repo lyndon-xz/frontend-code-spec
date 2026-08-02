@@ -21,6 +21,19 @@ ruleTester.run('ref-suffix-naming', rule, {
       errors: [{ messageId: 'refSuffix' }],
     },
     {
+      /*
+       * 裸 `ref` 同样违规：它没有指向对象，与 no-generic-param-name 禁 `data` 同理属泛化命名，
+       * 要求写成 inputRef / containerRef 这类「指向 + Ref」形态。
+       */
+      code: 'const ref = useRef(null);',
+      errors: [{ messageId: 'refSuffix' }],
+    },
+    {
+      // 大小写敏感：refs 结尾不算 Ref 后缀
+      code: 'const inputRefs = useRef([]);',
+      errors: [{ messageId: 'refSuffix' }],
+    },
+    {
       code: 'const input = React.useRef(null);',
       errors: [{ messageId: 'refSuffix' }],
     },

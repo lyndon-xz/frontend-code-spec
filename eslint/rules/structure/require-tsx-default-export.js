@@ -17,7 +17,7 @@ export default {
 
     return {
       Program(node) {
-        if (!filename || !filename.endsWith('.tsx') || isExemptFile(filename)) {
+        if (!filename.endsWith('.tsx') || isExemptFile(filename)) {
           return;
         }
         const hasDefault = node.body.some((stmt) => stmt.type === 'ExportDefaultDeclaration');

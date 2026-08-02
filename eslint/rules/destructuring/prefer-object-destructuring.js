@@ -1,4 +1,12 @@
+import { isExemptFile } from '../../utils/is-exempt-file.js';
+
 const MAX_DISPLAY_PROPS = 3;
+
+// 选项默认值的唯一来源：schema 的 default 与 create 里的取值都引用此处
+const DEFAULT_OPTIONS = {
+  maxAccessCount: 2,
+  additionalIgnoredObjects: [],
+};
 
 /*
  * 默认忽略的全局/内建对象：对它们做多属性访问不应强制解构。
@@ -20,6 +28,18 @@ const DEFAULT_IGNORED_OBJECTS = [
   'Date',
 ];
 
+/*
+ * 该成员访问是否为写操作目标：赋值左侧（u.a = 1）、自增自减（u.a++）、delete（delete u.a）。
+ * 解构只能替代「读」，把写操作计入统计会给出改坏代码的建议——解构后写的是局部变量，原对象不再被修改。
+ */
+function isWriteTarget(node) {
+  const { parent } = node;
+  if (parent.type === 'AssignmentExpression') return parent.left === node;
+  if (parent.type === 'UpdateExpression') return parent.argument === node;
+  if (parent.type === 'UnaryExpression') return parent.operator === 'delete';
+  return false;
+}
+
 export default {
   meta: {
     type: 'suggestion',
@@ -34,12 +54,12 @@ export default {
         properties: {
           maxAccessCount: {
             type: 'number',
-            default: 2,
+            default: DEFAULT_OPTIONS.maxAccessCount,
           },
           additionalIgnoredObjects: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            default: DEFAULT_OPTIONS.additionalIgnoredObjects,
           },
         },
         additionalProperties: false,
@@ -51,12 +71,17 @@ export default {
     },
   },
   create(context) {
-    const options = context.options[0] || {};
-    const maxAccessCount = options.maxAccessCount ?? 2;
-    const ignoredObjects = new Set([
-      ...DEFAULT_IGNORED_OBJECTS,
-      ...(options.additionalIgnoredObjects ?? []),
-    ]);
+    /*
+     * 测试 / mock 文件豁免：桩对象与断言常密集读取同一对象的多个属性
+     * （如 mock.calls / mock.results），改成解构反而割裂断言语境。
+     */
+    if (isExemptFile(context.filename)) return {};
+
+    const { maxAccessCount, additionalIgnoredObjects } = {
+      ...DEFAULT_OPTIONS,
+      ...context.options[0],
+    };
+    const ignoredObjects = new Set([...DEFAULT_IGNORED_OBJECTS, ...additionalIgnoredObjects]);
 
     // 记录每个作用域下的对象访问情况
     const scopeTracker = new Map();
@@ -82,15 +107,8 @@ export default {
             return;
           }
 
-          // 如果是在赋值的左侧，不计算在内 (例如 user.name = 'xxx')
-          const { parent } = node;
-          if (parent.type === 'AssignmentExpression' && parent.left === node) {
-            return;
-          }
-          // 如果是在 delete 操作符中，不计算在内
-          if (parent.type === 'UnaryExpression' && parent.operator === 'delete') {
-            return;
-          }
+          // 写操作目标不计入统计
+          if (isWriteTarget(node)) return;
 
           /*
            * 按最近的函数/模块作用域聚合，而非块级作用域：

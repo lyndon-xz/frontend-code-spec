@@ -3,11 +3,7 @@ import type { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } fr
 import type { ReqInterceptor, ResInterceptor } from '../types/interceptor';
 import { RequestStatus, reportAnalytics } from '../utils/analytics-reporter';
 import { RequestError, RequestErrorType } from '../utils/error';
-
-const generateRequestId = (config: InternalAxiosRequestConfig): string => {
-  const uniqueId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}_${Math.random()}`;
-  return `${config.method?.toUpperCase()}_${config.url}_${uniqueId}`;
-};
+import { generateRequestId } from '../utils/trace';
 
 /*
  * 从 config 提取埋点公共字段。若缺少 requestId/startTime（未经埋点请求拦截器的请求），
@@ -36,7 +32,9 @@ const extractTrace = (config?: AxiosRequestConfig) => {
 
 export const analyticsReqInterceptor: ReqInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
-    config.__requestId = generateRequestId(config);
+    // request 层已在重试循环外生成 id 的情况下沿用，重试才能与首次尝试串在同一条链路上
+    config.__requestId ??= generateRequestId(config);
+    // startTime 每次尝试独立刷新，耗时统计的是单次尝试而非含重试的总时长
     config.__requestStartTime = Date.now();
 
     return config;

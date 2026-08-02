@@ -1,3 +1,6 @@
+import { isExemptFile } from '../../utils/is-exempt-file.js';
+import { isFunctionNode } from '../../utils/is-function-node.js';
+
 /**
  * Props 接口必须使用「组件名Props」命名格式。
  * 仅对 .tsx 生效；收集组件与其 Props 类型（首参标注或 React.FC 泛型参数），
@@ -32,8 +35,11 @@ export default {
   create(context) {
     const { filename, sourceCode } = context;
 
-    // 仅对 .tsx 文件生效
-    if (!filename || !filename.endsWith('.tsx')) {
+    /*
+     * 仅对 .tsx 生效；测试 / mock 里的包装组件常直接复用被测组件的 Props 类型
+     * （如 const Wrapper = (props: FlightCardProps) => ...），按组件名改名会改坏引用，故一并豁免。
+     */
+    if (!filename.endsWith('.tsx') || isExemptFile(filename)) {
       return {};
     }
 
@@ -44,34 +50,30 @@ export default {
 
     // 从 TSTypeReference 取名字，仅当其以 Props 结尾时返回，否则返回 null
     function typeRefName(annotation) {
-      if (annotation && annotation.type === 'TSTypeReference' && annotation.typeName) {
-        const typeName = annotation.typeName.name;
-        if (typeName && typeName.endsWith('Props')) return typeName;
-      }
-      return null;
+      if (annotation?.type !== 'TSTypeReference') return null;
+      const typeName = annotation.typeName?.name;
+      return typeName?.endsWith('Props') === true ? typeName : null;
     }
 
     // 首参类型标注：(props: XxxProps)
     function propsNameFromParam(fnNode) {
-      const params = fnNode.params;
-      if (params.length === 0 || !params[0].typeAnnotation) return null;
-      return typeRefName(params[0].typeAnnotation.typeAnnotation);
+      const firstParam = fnNode.params[0];
+      return typeRefName(firstParam?.typeAnnotation?.typeAnnotation);
     }
 
     // 变量类型标注的首个泛型参数：const C: React.FC<XxxProps> = ...
     function propsNameFromFcAnnotation(idNode) {
-      const annotation = idNode.typeAnnotation && idNode.typeAnnotation.typeAnnotation;
-      if (!annotation || annotation.type !== 'TSTypeReference') return null;
+      const annotation = idNode.typeAnnotation?.typeAnnotation;
+      if (annotation?.type !== 'TSTypeReference') return null;
       // typescript-eslint v8 用 typeArguments，旧版用 typeParameters，两者都兜底
-      const typeArgs = annotation.typeArguments || annotation.typeParameters;
-      if (!typeArgs || !typeArgs.params || typeArgs.params.length === 0) return null;
-      return typeRefName(typeArgs.params[0]);
+      const typeArgs = annotation.typeArguments ?? annotation.typeParameters;
+      return typeRefName(typeArgs?.params?.[0]);
     }
 
     return {
       // 收集 interface 声明
       TSInterfaceDeclaration(node) {
-        if (node.id && node.id.type === 'Identifier') {
+        if (node.id?.type === 'Identifier') {
           interfaces.push({ node, name: node.id.name });
         }
       },
@@ -81,10 +83,9 @@ export default {
         if (
           node.id.type === 'Identifier' &&
           /^[A-Z]/.test(node.id.name) &&
-          node.init &&
-          (node.init.type === 'ArrowFunctionExpression' || node.init.type === 'FunctionExpression')
+          isFunctionNode(node.init)
         ) {
-          const propsTypeName = propsNameFromParam(node.init) || propsNameFromFcAnnotation(node.id);
+          const propsTypeName = propsNameFromParam(node.init) ?? propsNameFromFcAnnotation(node.id);
           if (propsTypeName) {
             components.push({ name: node.id.name, propsTypeName });
           }
@@ -93,11 +94,13 @@ export default {
 
       // 收集 function Xxx(props: XxxProps) {}
       FunctionDeclaration(node) {
-        if (node.id && /^[A-Z]/.test(node.id.name)) {
-          const propsTypeName = propsNameFromParam(node);
-          if (propsTypeName) {
-            components.push({ name: node.id.name, propsTypeName });
-          }
+        // 匿名默认导出函数无 id，跳过
+        const componentName = node.id?.name;
+        if (componentName === undefined || !/^[A-Z]/.test(componentName)) return;
+
+        const propsTypeName = propsNameFromParam(node);
+        if (propsTypeName) {
+          components.push({ name: componentName, propsTypeName });
         }
       },
 
@@ -105,7 +108,7 @@ export default {
         // 统计每个 Props 类型被多少个组件引用，用于识别「共用同一 interface」的冲突
         const componentCountByProps = new Map();
         for (const component of components) {
-          const count = componentCountByProps.get(component.propsTypeName) || 0;
+          const count = componentCountByProps.get(component.propsTypeName) ?? 0;
           componentCountByProps.set(component.propsTypeName, count + 1);
         }
 
@@ -123,7 +126,7 @@ export default {
           if (!matchingInterface) continue;
 
           // 无法安全自动修复：多个组件共用同一 interface（期望名互相冲突），或目标名已被占用
-          const isShared = (componentCountByProps.get(component.propsTypeName) || 0) > 1;
+          const isShared = (componentCountByProps.get(component.propsTypeName) ?? 0) > 1;
           const isNameTaken = existingNames.has(expectedPropsName);
           /*
            * 组件名形如 IXxx（I 后紧跟大写）时，期望名会命中 @typescript-eslint/naming-convention

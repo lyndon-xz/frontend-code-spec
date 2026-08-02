@@ -111,8 +111,10 @@ function buildMoveAboveFix(sourceCode, comment, tokenBefore) {
 /*
  * 收集「连续堆叠、且同处一段代码上方」的注释组（导出与非导出通用）：
  * 从 startIdx 起，要求逐条行相邻、非可跳过、且共享同一后继代码 token。
+ * 判定需要 sourceCode / comments / startIdx / tokenAfter 四项，故聚成一个对象入参。
  */
-function collectCommentStack(sourceCode, comments, startIdx, tokenAfter) {
+function collectCommentStack(scanContext) {
+  const { sourceCode, comments, startIdx, tokenAfter } = scanContext;
   const stack = [comments[startIdx]];
   for (let j = startIdx + 1; j < comments.length; j++) {
     const next = comments[j];
@@ -125,12 +127,23 @@ function collectCommentStack(sourceCode, comments, startIdx, tokenAfter) {
   return stack;
 }
 
+// 把注释组抽成纯文本行：块注释去掉每行前导 *，行注释去掉两端空白
+function extractCommentLines(stack) {
+  return stack.map((item) => (item.type === 'Block' ? stripBlock(item.value) : item.value.trim()));
+}
+
+/*
+ * 内容含块注释结束符（星号加斜杠）时不能包进块注释：会把块注释提前闭合，残留的结束符是语法错误。
+ * 转义虽能编译，却改变了注释文字本身，同属改坏用户内容，故这类内容一律放弃自动修复、只报错。
+ */
+function canWrapInBlockComment(text) {
+  return !text.includes('*/');
+}
+
 // 合并注释组为一个块注释：opener 决定是文档注释(/**)还是普通块(/*)
 function buildMergedComment(stack, opener) {
   const indent = ' '.repeat(stack[0].loc.start.column);
-  const lines = stack.map((item) =>
-    item.type === 'Block' ? stripBlock(item.value) : item.value.trim(),
-  );
+  const lines = extractCommentLines(stack);
   return `${opener}\n${lines.map((line) => `${indent} * ${line}`).join('\n')}\n${indent} */`;
 }
 
@@ -162,20 +175,23 @@ export default {
     },
   },
   create(context) {
-    const sourceCode = context.sourceCode ?? context.getSourceCode();
+    const { sourceCode } = context;
 
     // 多段堆叠合并为一个块注释：导出上方用 /** */，其余位置用 /* */
     function reportMerge(stack, isExport) {
       const first = stack[0];
       const last = stack[stack.length - 1];
+      const canFix = extractCommentLines(stack).every(canWrapInBlockComment);
       context.report({
         loc: { start: first.loc.start, end: last.loc.end },
         messageId: isExport ? 'exportMergeJsdoc' : 'internalMergeBlock',
-        fix: (fixer) =>
-          fixer.replaceTextRange(
-            [first.range[0], last.range[1]],
-            buildMergedComment(stack, isExport ? '/**' : '/*'),
-          ),
+        fix: canFix
+          ? (fixer) =>
+              fixer.replaceTextRange(
+                [first.range[0], last.range[1]],
+                buildMergedComment(stack, isExport ? '/**' : '/*'),
+              )
+          : null,
       });
     }
 
@@ -186,7 +202,9 @@ export default {
       context.report({
         loc: comment.loc,
         messageId: 'exportNeedsJsdoc',
-        fix: (fixer) => fixer.replaceText(comment, `/** ${content} */`),
+        fix: canWrapInBlockComment(content)
+          ? (fixer) => fixer.replaceText(comment, `/** ${content} */`)
+          : null,
       });
     }
 
@@ -247,7 +265,7 @@ export default {
             tokenAfter ? tokenAfter.range[0] : comment.range[1],
           );
           const isExport = isExportNode(nodeAfter);
-          const stack = collectCommentStack(sourceCode, comments, idx, tokenAfter);
+          const stack = collectCommentStack({ sourceCode, comments, startIdx: idx, tokenAfter });
           stack.forEach((item) => visited.add(item));
 
           if (stack.length > 1) {

@@ -13,10 +13,21 @@ ruleTester.run('import-path-boundary', rule, {
     { code: "import axios from 'axios';", filename: '/proj/src/apis/foo.ts' },
     // 文件不在 src 下，规则不生效
     { code: "import x from '@/apis/bar';", filename: '/proj/lib/foo.ts' },
+    // 源码根目录名可配：srcDir 为 app 时，src 下的文件不受约束
+    {
+      code: "import x from '@/apis/bar';",
+      filename: '/proj/src/apis/foo.ts',
+      options: [{ srcDir: 'app' }],
+    },
     // 模块内部向上相对引用（仍在本模块内）
     { code: "import x from '../bar';", filename: '/proj/src/apis/sub/foo.ts' },
     // 相对路径逃出 src，跳过
     { code: "import x from '../../outside';", filename: '/proj/src/apis/foo.ts' },
+    // 测试文件豁免：__tests__ 里按别名引用被测模块是约定写法
+    {
+      code: "import x from '@/apis/bar';",
+      filename: '/proj/src/apis/__tests__/foo.test.ts',
+    },
   ],
   invalid: [
     {

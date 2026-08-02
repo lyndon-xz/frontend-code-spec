@@ -10,7 +10,7 @@ import {
   createRequest,
 } from '@/apis/request';
 import type { EnhancedRequestConfig } from '@/apis/types/config';
-import { registerDedupe, releaseDedupe } from '@/apis/utils/dedupe';
+import { registerDedupe } from '@/apis/utils/dedupe';
 import { RequestError, RequestErrorType } from '@/apis/utils/error';
 import { delay } from '@/apis/utils/retry';
 import { Environment } from '@/constants/environment';
@@ -28,7 +28,6 @@ vi.mock('@/apis/utils/base-url', () => ({
 
 vi.mock('@/apis/utils/dedupe', () => ({
   registerDedupe: vi.fn(),
-  releaseDedupe: vi.fn(),
 }));
 
 // delay 直接 resolve，避免真实定时器拖慢重试用例
@@ -43,7 +42,6 @@ vi.mock('@/utils/environment', () => ({
 
 const mockCreate = vi.mocked(axios.create);
 const mockRegisterDedupe = vi.mocked(registerDedupe);
-const mockReleaseDedupe = vi.mocked(releaseDedupe);
 const mockDelay = vi.mocked(delay);
 const mockGetEnvironment = vi.mocked(getEnvironment);
 
@@ -148,26 +146,59 @@ describe('createRequest', () => {
   });
 
   describe('去重', () => {
-    it('开启去重且未自带 signal 时登记控制器并透传其 signal', async () => {
-      const fakeSignal = { aborted: false } as AbortSignal;
-      const controller = { signal: fakeSignal } as AbortController;
-      mockRegisterDedupe.mockReturnValue(controller);
+    // 去重句柄替身：signal 供透传断言，release 供注销断言
+    const buildDedupeHandle = () => ({
+      signal: { aborted: false } as AbortSignal,
+      release: vi.fn(),
+    });
+
+    it('开启去重且未自带 signal 时按服务与请求特征登记，并透传其 signal', async () => {
+      const handle = buildDedupeHandle();
+      mockRegisterDedupe.mockReturnValue(handle);
+
+      const instance = buildFakeInstance();
+      mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
+      const serviceCode = nextServiceCode();
+      const run = createGetRequest(serviceCode);
+      instance.request.mockResolvedValue({ data: null });
+
+      await run({ url: '/x', isDeduped: true, params: { page: 1 } });
+
+      // serviceCode 必须并入签名，否则两个服务的同路径请求会互相取消
+      expect(mockRegisterDedupe).toHaveBeenCalledWith({
+        serviceCode,
+        method: 'GET',
+        url: '/x',
+        params: { page: 1 },
+        data: undefined,
+      });
+      expect(instance.request).toHaveBeenCalledWith(
+        expect.objectContaining({ signal: handle.signal }),
+      );
+    });
+
+    it('请求结束后注销去重登记', async () => {
+      const handle = buildDedupeHandle();
+      mockRegisterDedupe.mockReturnValue(handle);
 
       const { instance, run } = setupRequest();
       instance.request.mockResolvedValue({ data: null });
 
       await run({ url: '/x', isDeduped: true });
 
-      expect(mockRegisterDedupe).toHaveBeenCalledWith(
-        expect.objectContaining({ url: '/x', method: 'GET' }),
-      );
-      expect(instance.request).toHaveBeenCalledWith(
-        expect.objectContaining({ signal: fakeSignal }),
-      );
-      expect(mockReleaseDedupe).toHaveBeenCalledWith(
-        expect.objectContaining({ url: '/x', method: 'GET' }),
-        controller,
-      );
+      expect(handle.release).toHaveBeenCalledTimes(1);
+    });
+
+    it('请求失败时同样注销去重登记', async () => {
+      const handle = buildDedupeHandle();
+      mockRegisterDedupe.mockReturnValue(handle);
+
+      const { instance, run } = setupRequest();
+      instance.request.mockRejectedValue(new RequestError(RequestErrorType.Business, '业务失败'));
+
+      await run({ url: '/x', isDeduped: true });
+
+      expect(handle.release).toHaveBeenCalledTimes(1);
     });
 
     it('调用方自带 signal 时不接管去重', async () => {
@@ -181,7 +212,6 @@ describe('createRequest', () => {
       expect(instance.request).toHaveBeenCalledWith(
         expect.objectContaining({ signal: userSignal }),
       );
-      expect(mockReleaseDedupe).not.toHaveBeenCalled();
     });
 
     it('未开启去重时不登记控制器', async () => {
@@ -191,7 +221,6 @@ describe('createRequest', () => {
       await run({ url: '/x' });
 
       expect(mockRegisterDedupe).not.toHaveBeenCalled();
-      expect(mockReleaseDedupe).not.toHaveBeenCalled();
     });
   });
 

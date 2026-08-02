@@ -105,27 +105,35 @@ describe('classifyAxiosError', () => {
     expect(result.message).toBe('服务器开小差了，请稍后重试');
   });
 
-  it('未映射的 4xx 使用网络兜底文案', () => {
+  it('未映射的 4xx 使用中性文案，不归因到网络', () => {
     const error = buildAxiosError();
     error.response = { status: 418 } as AxiosError['response'];
 
     const result = classifyAxiosError(error);
 
     expect(result.type).toBe(RequestErrorType.Http);
-    expect(result.message).toBe('网络连接失败，请检查网络后重试');
+    expect(result.message).toBe('请求失败，请稍后重试');
   });
 
-  it('无 response 的 AxiosError 归一为 Network', () => {
-    const result = classifyAxiosError(buildAxiosError());
+  it('无 response 的 AxiosError 归一为 Network 并携带 config', () => {
+    const error = buildAxiosError();
+
+    const result = classifyAxiosError(error);
 
     expect(result.type).toBe(RequestErrorType.Network);
     expect(result.message).toBe('网络连接失败，请检查网络后重试');
+    // config 是下游抑制重试提示与串联埋点的唯一入口，网络错误分支同样必须带上
+    expect(result.config).toBe(error.config);
   });
 
-  it('非 axios 的未知错误归一为 Network', () => {
-    const result = classifyAxiosError(new Error('unknown'));
+  it('非 axios 的错误归一为 Unknown 并保留原始错误', () => {
+    const original = new Error('interceptor boom');
 
-    expect(result.type).toBe(RequestErrorType.Network);
+    const result = classifyAxiosError(original);
+
+    expect(result.type).toBe(RequestErrorType.Unknown);
+    expect(result.message).toBe('请求出现异常，请稍后重试');
+    expect(result.cause).toBe(original);
     expect(result.config).toBeUndefined();
   });
 });
@@ -161,5 +169,9 @@ describe('isRetryableError', () => {
     expect(isRetryableError(new RequestError(RequestErrorType.Business, '', { code: 1 }))).toBe(
       false,
     );
+  });
+
+  it('未知异常不可重试', () => {
+    expect(isRetryableError(new RequestError(RequestErrorType.Unknown, ''))).toBe(false);
   });
 });

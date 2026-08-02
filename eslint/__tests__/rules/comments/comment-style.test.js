@@ -82,6 +82,26 @@ ruleTester.run('comment-style', rule, {
       errors: [{ messageId: 'internalMergeBlock' }],
     },
     {
+      /*
+       * 注释内容含块注释结束符：包进 /** *\/ 会提前闭合并产出语法错误，故只报错不 fix
+       */
+      code: '// 见 /* x */ 的说明\nexport const x = 1;',
+      output: null,
+      errors: [{ messageId: 'exportNeedsJsdoc' }],
+    },
+    {
+      // 导出上方多段合并时，任一段含块注释结束符即放弃 fix
+      code: '// 第一行\n// 见 /* x */\nexport const x = 1;',
+      output: null,
+      errors: [{ messageId: 'exportMergeJsdoc' }],
+    },
+    {
+      // 非导出多段合并同样受保护
+      code: '// 第一行\n// 见 /* x */\nconst a = 1;',
+      output: null,
+      errors: [{ messageId: 'internalMergeBlock' }],
+    },
+    {
       // 行尾注释必须移到上方独占一行（可自动修复）
       code: 'const a = 1; // 说明',
       output: '// 说明\nconst a = 1;',

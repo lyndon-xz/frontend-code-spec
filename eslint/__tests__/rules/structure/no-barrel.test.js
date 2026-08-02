@@ -17,8 +17,29 @@ ruleTester.run('no-barrel', rule, {
       filename: 'src/utils/index.ts',
       options: [{ publicLibDirs: ['hooks'] }],
     },
+    // src 根下的 index 不是公共库桶
+    { code: 'export const a = 1;', filename: 'src/index.ts' },
+    // 源码根目录名可配：srcDir 改成 app 后，src 下的 utils/index 不再按公共库判定
+    {
+      code: 'export const a = 1;',
+      filename: 'src/utils/index.ts',
+      options: [{ srcDir: 'app' }],
+    },
   ],
   invalid: [
+    {
+      // 深层公共库 index 同样禁止存在（此前按层级数判定会漏检）
+      code: 'export const a = 1;',
+      filename: 'src/apis/utils/index.ts',
+      errors: [{ messageId: 'noPublicBarrel' }],
+    },
+    {
+      // srcDir 可配：app/constants/index.ts 同样按公共库判定
+      code: 'export const a = 1;',
+      filename: 'app/constants/index.ts',
+      options: [{ srcDir: 'app' }],
+      errors: [{ messageId: 'noPublicBarrel' }],
+    },
     {
       // 公共库 index 禁止存在
       code: 'export const a = 1;',

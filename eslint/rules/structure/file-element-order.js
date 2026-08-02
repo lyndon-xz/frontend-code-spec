@@ -67,7 +67,11 @@ function categorize(node) {
     return 'helper';
   }
 
-  if (node.type === 'FunctionDeclaration') return 'helper';
+  /*
+   * 函数声明与类声明同属实现单元：未导出即辅助实现（helper），
+   * 导出则在上面的 export 分支里归为主导出——加不加 export 得到的排序约束因此一致。
+   */
+  if (node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') return 'helper';
 
   // 其余（如 ExpressionStatement）保持原位
   return null;
@@ -95,8 +99,8 @@ export default {
   create(context) {
     const { filename } = context;
 
-    // 仅对 src 下的业务文件生效，排除测试 / mock / 类型声明 / 配置
-    if (!filename || isExemptFile(filename)) {
+    // 排除测试 / mock / 类型声明 / 配置：这类文件的顶层排列由其自身范式决定
+    if (isExemptFile(filename)) {
       return {};
     }
 

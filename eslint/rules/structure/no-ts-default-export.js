@@ -17,7 +17,7 @@ export default {
 
     return {
       ExportDefaultDeclaration(node) {
-        if (!filename || !filename.endsWith('.ts') || isExemptFile(filename)) {
+        if (!filename.endsWith('.ts') || isExemptFile(filename)) {
           return;
         }
         context.report({ node, messageId: 'noDefault' });

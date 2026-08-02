@@ -22,11 +22,13 @@ export default [
   },
   {
     files: ['**/*.tsx'],
-    ignores: ['**/*.test.tsx'],
     rules: {
-      // 禁止不必要的箭头函数包裹（如 onClick={() => fn()} 应改为 onClick={fn}）
+      /*
+       * 禁止不必要的箭头函数包裹（如 onClick={() => fn()} 应改为 onClick={fn}）。
+       * 不豁免测试：规则只报「纯透传」包裹，测试里同样应直接传函数。
+       */
       'custom/no-unnecessary-arrow-wrapper': 'error',
-      // Props 接口必须使用「组件名Props」命名格式
+      // Props 接口必须使用「组件名Props」命名格式（测试里的包装组件复用被测 Props 类型，由规则内 isExemptFile 豁免）
       'custom/props-interface-naming': 'error',
     },
   },

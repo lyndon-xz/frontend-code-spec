@@ -18,6 +18,8 @@ ruleTester.run('no-internal-on-prefix', rule, {
     'class C { [onTap] = () => {}; }',
     // on 前缀但值非函数的类字段不校验
     'class C { onData = 5; }',
+    // 测试文件豁免：const onClick = vi.fn() 是按 Props 回调原名声明的桩
+    { code: 'const onClick = () => {};', filename: 'src/components/foo.test.tsx' },
   ],
   invalid: [
     {

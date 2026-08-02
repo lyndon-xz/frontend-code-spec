@@ -35,7 +35,10 @@ export default {
     },
   },
   create(context) {
-    // ESLint 9 flat config 下 context.filename 恒有值，无需旧版 getFilename() 兜底与空值守卫
+    /*
+     * ESLint 9 flat config 下 context.filename 恒为非空字符串（未提供文件名时为 `<input>`），
+     * 故全规则集统一不设空值守卫，也不再兜底旧版 getFilename()。
+     */
     const { filename } = context;
 
     return {

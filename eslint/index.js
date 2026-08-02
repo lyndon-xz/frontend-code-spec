@@ -5,6 +5,13 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
+import commentsConfig from './configs/comments.js';
+import controlFlowConfig from './configs/control-flow.js';
+import destructuringConfig from './configs/destructuring.js';
+import namingConfig from './configs/naming.js';
+import reactConfig from './configs/react.js';
+import structureConfig from './configs/structure.js';
+import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
 import noPromiseChain from './rules/control-flow/no-promise-chain.js';
 import noParamDestructuring from './rules/destructuring/no-param-destructuring.js';
@@ -24,14 +31,6 @@ import noComponentSidecarFiles from './rules/structure/no-component-sidecar-file
 import noTsDefaultExport from './rules/structure/no-ts-default-export.js';
 import requireTsxDefaultExport from './rules/structure/require-tsx-default-export.js';
 import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
-
-import commentsConfig from './configs/comments.js';
-import controlFlowConfig from './configs/control-flow.js';
-import destructuringConfig from './configs/destructuring.js';
-import namingConfig from './configs/naming.js';
-import reactConfig from './configs/react.js';
-import structureConfig from './configs/structure.js';
-import typescriptConfig from './configs/typescript.js';
 
 // 规则 id 保持扁平（custom/<rule-name>），领域只体现在源码目录，不进 id。
 const customRules = {

@@ -45,6 +45,21 @@ ruleTester.run('props-interface-naming', rule, {
       code: 'const Bar: SomeType = () => null;',
       filename: 'Bar.tsx',
     },
+    // 非函数初值的大写变量不是组件
+    {
+      code: 'interface Props {}\nconst Config: Props = {};',
+      filename: 'Foo.tsx',
+    },
+    // 匿名默认导出函数无组件名可推导
+    {
+      code: 'interface Props {}\nexport default function (props: Props) { return null; }',
+      filename: 'Foo.tsx',
+    },
+    // 测试文件豁免：包装组件常直接复用被测组件的 Props 类型
+    {
+      code: 'interface FlightCardProps {}\nconst Wrapper = (props: FlightCardProps) => null;',
+      filename: 'src/components/__tests__/flight-card/index.test.tsx',
+    },
   ],
   invalid: [
     {

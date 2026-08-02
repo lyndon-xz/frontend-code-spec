@@ -36,7 +36,7 @@ describe('flight service', () => {
 
     await expect(fetchFlights(query)).resolves.toBe(result);
     expect(mockGet).toHaveBeenCalledWith({
-      url: '/api/flight/list',
+      url: '/flight/list',
       params: query,
       isDeduped: true,
       retry: { count: 2 },
@@ -47,7 +47,7 @@ describe('flight service', () => {
     await fetchFlightDetail('CA1234');
 
     expect(mockGet).toHaveBeenCalledWith({
-      url: '/api/flight/detail',
+      url: '/flight/detail',
       params: { flightNo: 'CA1234' },
     });
   });
@@ -56,7 +56,7 @@ describe('flight service', () => {
     await fetchFlightDetailSilent('CA1234');
 
     expect(mockGet).toHaveBeenCalledWith({
-      url: '/api/flight/detail',
+      url: '/flight/detail',
       params: { flightNo: 'CA1234' },
       businessError: { isSilent: true },
       networkError: { isSilent: true },
@@ -67,7 +67,7 @@ describe('flight service', () => {
     await fetchFlightDetailWithCustomError('CA1234');
 
     expect(mockGet).toHaveBeenCalledWith({
-      url: '/api/flight/detail',
+      url: '/flight/detail',
       params: { flightNo: 'CA1234' },
       businessError: { customMessage: '获取航班信息失败，请稍后重试' },
     });
@@ -82,7 +82,7 @@ describe('flight service', () => {
 
     await bookFlight(payload);
 
-    expect(mockPost).toHaveBeenCalledWith({ url: '/api/flight/book', data: payload });
+    expect(mockPost).toHaveBeenCalledWith({ url: '/flight/book', data: payload });
   });
 
   it('bookFlightOrThrow 关闭吞错并静默提示以便调用方自处理', async () => {
@@ -91,7 +91,7 @@ describe('flight service', () => {
     await bookFlightOrThrow(payload);
 
     expect(mockPost).toHaveBeenCalledWith({
-      url: '/api/flight/book',
+      url: '/flight/book',
       data: payload,
       isErrorSwallowed: false,
       businessError: { isSilent: true },

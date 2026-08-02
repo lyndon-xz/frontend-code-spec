@@ -9,6 +9,8 @@ interface RequestErrorMeta {
   code?: number;
   // 触发错误的请求配置，供埋点与重试判断使用
   config?: AxiosRequestConfig;
+  // 原始错误（unknown 类错误），保留现场便于定位真正的异常来源
+  cause?: unknown;
 }
 
 /** 请求错误类型，供调用方按类型区分处理 */
@@ -25,6 +27,8 @@ export enum RequestErrorType {
   Unauthorized = 'unauthorized',
   /** 请求被主动取消 */
   Canceled = 'canceled',
+  /** 非请求链路的未知异常（如拦截器内部报错），不代表网络或服务端故障 */
+  Unknown = 'unknown',
 }
 
 // HTTP 状态码 → 用户提示文案
@@ -42,6 +46,9 @@ const HTTP_STATUS_MESSAGE: Record<number, string> = {
 const DEFAULT_NETWORK_MESSAGE = '网络连接失败，请检查网络后重试';
 const DEFAULT_TIMEOUT_MESSAGE = '请求超时，请稍后重试';
 const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
+// 未映射的 4xx：请求已到达服务端，与网络无关，故用不归因的中性文案
+const DEFAULT_REQUEST_MESSAGE = '请求失败，请稍后重试';
+const DEFAULT_UNKNOWN_MESSAGE = '请求出现异常，请稍后重试';
 
 /**
  * 统一的请求错误。各拦截器主动抛错时都用它携带 config，
@@ -54,8 +61,8 @@ export class RequestError extends Error {
   public readonly config?: AxiosRequestConfig;
 
   constructor(type: RequestErrorType, message: string, meta: RequestErrorMeta = {}) {
-    super(message);
-    const { status, code, config } = meta;
+    const { status, code, config, cause } = meta;
+    super(message, { cause });
     this.name = 'RequestError';
     this.type = type;
     this.status = status;
@@ -64,7 +71,10 @@ export class RequestError extends Error {
   }
 }
 
-/** 把 axios / 取消 / 未知错误归一成带类型与提示文案的 RequestError */
+/**
+ * 把 axios / 取消 / 未知错误归一成带类型与提示文案的 RequestError。
+ * 所有 axios 错误分支都必须带上 config：下游靠它读取 __retriesLeft 抑制重试期间的重复提示、读取 __requestId 串联埋点。
+ */
 export const classifyAxiosError = (error: unknown): RequestError => {
   if (error instanceof RequestError) return error;
 
@@ -85,16 +95,20 @@ export const classifyAxiosError = (error: unknown): RequestError => {
       const isServerError = status >= 500;
       const message =
         HTTP_STATUS_MESSAGE[status] ??
-        (isServerError ? DEFAULT_SERVER_MESSAGE : DEFAULT_NETWORK_MESSAGE);
+        (isServerError ? DEFAULT_SERVER_MESSAGE : DEFAULT_REQUEST_MESSAGE);
       const type = status === 401 ? RequestErrorType.Unauthorized : RequestErrorType.Http;
       return new RequestError(type, message, { status, config });
     }
+
+    // 无 response：请求没能到达服务端，属网络不可达
+    return new RequestError(RequestErrorType.Network, DEFAULT_NETWORK_MESSAGE, { config });
   }
 
-  return new RequestError(RequestErrorType.Network, DEFAULT_NETWORK_MESSAGE);
+  // 非 axios 错误只可能来自链路内部（拦截器抛错等），归到 Network 会把代码 bug 伪装成网络问题
+  return new RequestError(RequestErrorType.Unknown, DEFAULT_UNKNOWN_MESSAGE, { cause: error });
 };
 
-/** 是否为可重试错误：网络不可达、超时、5xx 视为瞬时故障可重试；4xx 与业务错误不重试 */
+/** 是否为可重试错误：网络不可达、超时、5xx 视为瞬时故障可重试；4xx、业务错误与未知异常不重试 */
 export const isRetryableError = (error: unknown): boolean => {
   if (!(error instanceof RequestError)) return false;
 

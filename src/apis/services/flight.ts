@@ -92,10 +92,14 @@ const FLIGHT_SERVICE_CODE = '33251';
 const get = createGetRequest(FLIGHT_SERVICE_CODE);
 const post = createPostRequest(FLIGHT_SERVICE_CODE);
 
-/** 查询航班列表：开启去重（快速改筛选条件时取消上一次请求）并对瞬时故障重试 */
+/**
+ * 查询航班列表：开启去重并对瞬时故障重试。
+ * 去重签名含 params，因此只挡「同一筛选条件被连续触发」（连点、重复渲染），
+ * 改筛选条件属于不同请求，不会取消上一次。
+ */
 export const fetchFlights = (query: FlightListParams) =>
   get<FlightListResult>({
-    url: '/api/flight/list',
+    url: '/flight/list',
     params: query,
     isDeduped: true,
     retry: { count: 2 },
@@ -103,12 +107,12 @@ export const fetchFlights = (query: FlightListParams) =>
 
 /** 查询航班详情 */
 export const fetchFlightDetail = (flightNo: string) =>
-  get<FlightDetail>({ url: '/api/flight/detail', params: { flightNo } });
+  get<FlightDetail>({ url: '/flight/detail', params: { flightNo } });
 
 /** 静默查询航班详情（不显示错误提示） */
 export const fetchFlightDetailSilent = (flightNo: string) =>
   get<FlightDetail>({
-    url: '/api/flight/detail',
+    url: '/flight/detail',
     params: { flightNo },
     businessError: { isSilent: true },
     networkError: { isSilent: true },
@@ -117,14 +121,14 @@ export const fetchFlightDetailSilent = (flightNo: string) =>
 /** 查询航班详情（自定义错误提示） */
 export const fetchFlightDetailWithCustomError = (flightNo: string) =>
   get<FlightDetail>({
-    url: '/api/flight/detail',
+    url: '/flight/detail',
     params: { flightNo },
     businessError: { customMessage: '获取航班信息失败，请稍后重试' },
   });
 
 /** 预订机票：变更类请求不重试、不去重，避免重复下单 */
 export const bookFlight = (payload: BookFlightPayload) =>
-  post<BookFlightResult>({ url: '/api/flight/book', data: payload });
+  post<BookFlightResult>({ url: '/flight/book', data: payload });
 
 /**
  * 预订机票（业务自行处理错误的示例）。
@@ -140,7 +144,7 @@ export const bookFlight = (payload: BookFlightPayload) =>
  */
 export const bookFlightOrThrow = (payload: BookFlightPayload) =>
   post<BookFlightResult>({
-    url: '/api/flight/book',
+    url: '/flight/book',
     data: payload,
     isErrorSwallowed: false,
     businessError: { isSilent: true },

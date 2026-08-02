@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { isExemptFile } from '../../utils/is-exempt-file.js';
+import { EXEMPT_GLOBS, isExemptFile } from '../../utils/is-exempt-file.js';
 
 describe('isExemptFile', () => {
-  it('空文件名返回 false', () => {
-    expect(isExemptFile('')).toBe(false);
-    expect(isExemptFile(undefined)).toBe(false);
-  });
-
   it('普通源码文件不豁免', () => {
     expect(isExemptFile('src/apis/request.ts')).toBe(false);
+  });
+
+  it('未提供文件名时 ESLint 给出的 <input> 不豁免', () => {
+    expect(isExemptFile('<input>')).toBe(false);
   });
 
   describe('目录段豁免', () => {
@@ -53,6 +52,19 @@ describe('isExemptFile', () => {
 
     it('.config.js 配置文件豁免', () => {
       expect(isExemptFile('vitest.config.js')).toBe(true);
+    });
+  });
+
+  describe('EXEMPT_GLOBS 与 isExemptFile 同源', () => {
+    it('覆盖三类豁免目录段与三类豁免文件名', () => {
+      expect(EXEMPT_GLOBS).toEqual([
+        '**/__tests__/**',
+        '**/__mocks__/**',
+        '**/mocks/**',
+        '**/*.test.*',
+        '**/*.d.ts',
+        '**/*.config.*',
+      ]);
     });
   });
 });

@@ -1,3 +1,5 @@
+import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
+
 /** TypeScript 类型系统约束 */
 export default [
   {
@@ -66,9 +68,12 @@ export default [
     },
   },
   {
-    // 类型断言禁令单独一个 scope：测试文件豁免（测试常用 `as unknown as Mock` 造桩，全量禁断言会大量误报）。
+    /*
+     * 类型断言禁令单独一个 scope：测试等文件豁免（测试常用 `as unknown as Mock` 造桩，全量禁断言会大量误报）。
+     * 第三方规则无法像自研规则那样内部调用 isExemptFile，故从同一来源取 glob 形态，口径与 isExemptFile 一致。
+     */
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.test.tsx'],
+    ignores: EXEMPT_GLOBS,
     rules: {
       /*
        * 禁止用 as / <T> 断言替代类型收窄（assertionStyle: never 始终放行 as const）；请用 typeof / in / 可辨识联合等收窄。

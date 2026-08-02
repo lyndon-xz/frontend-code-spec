@@ -35,6 +35,16 @@ describe('ssoInterceptor.onFulfilled', () => {
     expect(ssoInterceptor.onFulfilled!(response)).toBe(response);
   });
 
+  /*
+   * returncode 为字符串时不认作 SSO 信封：谓词若只查字段存在性，
+   * "-100" !== -100 会让未授权响应被当成已登录放行，把登录态问题变成空数据渲染。
+   */
+  it('returncode 为字符串时不视为 SSO 响应', () => {
+    const response = buildResponse({ returncode: String(UNAUTHORIZED_CODE) });
+
+    expect(ssoInterceptor.onFulfilled!(response)).toBe(response);
+  });
+
   it('未授权但缺少跳转地址时抛出地址缺失错误', () => {
     const response = buildResponse({ returncode: UNAUTHORIZED_CODE });
 

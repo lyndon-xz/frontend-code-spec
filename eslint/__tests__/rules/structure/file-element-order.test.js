@@ -32,6 +32,7 @@ ruleTester.run('file-element-order', rule, {
         'doSideEffect();',
         'const run = () => {};',
         'function helper2() {}',
+        'class Helper3 {}',
         'let mutable = 1;',
         'export { MAX };',
         'export default run;',
@@ -50,6 +51,18 @@ ruleTester.run('file-element-order', rule, {
     },
   ],
   invalid: [
+    {
+      // 未导出的 class 与函数声明同为 helper：出现在 constant 之前即违规
+      code: 'class Service {}\nconst MAX = 1;\nexport default Service;',
+      filename: 'src/apis/foo.ts',
+      errors: [{ messageId: 'wrongOrder' }],
+    },
+    {
+      // 同一个 class 加上 export 后归为主导出，出现在 helper 之前同样违规——加不加 export 都受约束
+      code: 'export class Service {}\nconst run = () => {};\nconst MAX = 1;',
+      filename: 'src/apis/bar.ts',
+      errors: [{ messageId: 'wrongOrder' }, { messageId: 'wrongOrder' }],
+    },
     {
       // constant 出现在 type 之前
       code: 'const MAX = 1;\ninterface A { x: number }\nexport default MAX;',

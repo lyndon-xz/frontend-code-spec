@@ -1,6 +1,13 @@
 import path from 'path';
 
+import { isExemptFile } from '../../utils/is-exempt-file.js';
 import { normalizePath } from '../../utils/normalize-path.js';
+import { DEFAULT_SRC_DIR } from '../../utils/source-layout.js';
+
+// 选项默认值的唯一来源：schema 的 default 与 create 里的取值都引用此处
+const DEFAULT_OPTIONS = {
+  srcDir: DEFAULT_SRC_DIR,
+};
 
 /**
  * 与 import/order 的 fix 关系：本规则只改写 import 源字符串（@/x ↔ ./x），import/order 只调整
@@ -19,7 +26,7 @@ export default {
         properties: {
           srcDir: {
             type: 'string',
-            default: 'src',
+            default: DEFAULT_OPTIONS.srcDir,
           },
         },
         additionalProperties: false,
@@ -32,21 +39,29 @@ export default {
     },
   },
   create(context) {
-    const options = context.options[0] || {};
-    const srcDirName = options.srcDir ?? 'src';
+    const { srcDir } = { ...DEFAULT_OPTIONS, ...context.options[0] };
 
     /*
      * 归一为正斜杠后提取 src/ 之后的部分；后续所有路径运算都在「相对 src 的 posix 空间」里进行，
      * 全是相对正斜杠字符串（无盘符、无 OS 分隔符、不依赖 cwd），从而跨平台稳定、修复输出恒为合法 import 路径。
      */
     const filename = normalizePath(context.filename);
-    const srcIndex = filename.lastIndexOf(`/${srcDirName}/`);
+
+    /*
+     * 测试 / mock 文件豁免：__tests__ 镜像目录与被测模块不同层，
+     * 测试按 @/ 别名引用被测模块是约定写法，改成相对路径既冗长又随文件移动而失效。
+     */
+    if (isExemptFile(filename)) {
+      return {};
+    }
+
+    const srcIndex = filename.lastIndexOf(`/${srcDir}/`);
     if (srcIndex === -1) {
       return {};
     }
 
     // 当前文件相对 src 的路径（如 'apis/foo.ts'）及其所属一级模块（如 'apis'）
-    const relativeToSrc = filename.substring(srcIndex + srcDirName.length + 2);
+    const relativeToSrc = filename.substring(srcIndex + srcDir.length + 2);
     const currentModule = relativeToSrc.split('/')[0];
     // 当前文件所在目录（相对 src），顶层文件时为 '.'
     const currentDir = path.posix.dirname(relativeToSrc);

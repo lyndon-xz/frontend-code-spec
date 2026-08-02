@@ -16,27 +16,21 @@
     "email": "wuxianzhi052@gmail.com"
   },
   "type": "module",
-  "files": [
-    "eslint",
-    "eslint.config.js",
-    "src",
-    "LICENSE"
-  ],
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check \"**/*.{json,yml,yaml,md,scss,css,html}\" --ignore-unknown",
     "lint": "eslint .",
     "lint:filename": "ls-lint",
     "lint:fix": "eslint . --fix",
-    "lint:md": "zhlint \".gitlab/**/*.md\" \"eslint/**/*.md\" \"src/**/*.md\"",
-    "lint:md:fix": "zhlint \".gitlab/**/*.md\" \"eslint/**/*.md\" \"src/**/*.md\" --fix",
+    "lint:md": "zhlint \"{**,.*/**}/*.md\"",
+    "lint:md:fix": "zhlint \"{**,.*/**}/*.md\" --fix",
+    "lint:pkg": "sort-package-json --check",
     "lint:style": "stylelint \"**/*.scss\" --allow-empty-input",
     "lint:style:fix": "stylelint \"**/*.scss\" --fix --allow-empty-input",
     "prepare": "husky",
     "test": "vitest",
     "test:cov": "vitest run --coverage",
-    "type-check": "tsc --noEmit",
-    "verify": "pnpm run type-check && pnpm run lint && pnpm run format:check && pnpm run lint:filename && pnpm run lint:md && pnpm run test:cov"
+    "type-check": "tsc --noEmit"
   },
   "lint-staged": {
     "{src,eslint}/**/*": [
@@ -69,7 +63,7 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.33.0",
     "@ls-lint/ls-lint": "^2.3.1",
-    "@types/node": "^25.1.0",
+    "@types/node": "^22",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
@@ -98,7 +92,12 @@
   },
   "packageManager": "pnpm@10.12.4",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0",
+    "node": ">=22.12.0",
     "pnpm": ">=10.12.4"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "unrs-resolver"
+    ]
   }
 }

@@ -18,6 +18,15 @@ ruleTester.run('no-handle-prefix', rule, {
     'const obj = { handleData: 5 };',
     // 类字段 handle 前缀但值非函数不校验
     'class C { handleData = 5; }',
+    // 匿名默认导出函数无标识符可校验
+    'export default function () {}',
+    // 字符串字面量键不是标识符，不校验
+    'class C { "handleClick" = () => {}; }',
+    'const obj = { "handleClick": () => {} };',
+    // 解构出的同名变量（值非函数）不校验
+    'const { handleClick } = props;',
+    // 测试 / mock 文件豁免：桩函数常沿用被 mock 的原名
+    { code: 'const handleSubmit = () => {};', filename: 'src/apis/foo.test.ts' },
   ],
   invalid: [
     {

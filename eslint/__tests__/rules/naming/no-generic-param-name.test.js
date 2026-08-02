@@ -17,6 +17,24 @@ ruleTester.run('no-generic-param-name', rule, {
       code: 'function f(data) { return data; }',
       options: [{ bannedNames: ['callback'] }],
     },
+    // 类方法 / 对象方法的具体命名参数
+    'class C { save(flight) { return flight; } }',
+    'const api = { save(flight) { return flight; } };',
+    /*
+     * bannedNames 含正则元字符时按字面量匹配：`data.*` 只禁名为 `data.*` 的参数（实际不存在），
+     * 不应被当成通配把 dataX 也算进去。
+     */
+    {
+      code: 'function f(dataX) { return dataX; }',
+      options: [{ bannedNames: ['data.*'] }],
+    },
+    {
+      code: 'function f(payload) { return payload; }',
+      options: [{ bannedNames: ['data|payload'] }],
+    },
+    // 测试 / mock 文件豁免：桩函数用 data 作参数名是合理的
+    { code: 'function f(data) { return data; }', filename: 'src/apis/foo.test.ts' },
+    { code: 'function f(data) { return data; }', filename: 'src/__mocks__/axios.ts' },
   ],
   invalid: [
     {
@@ -32,6 +50,26 @@ ruleTester.run('no-generic-param-name', rule, {
       // 可通过 bannedNames 扩展黑名单
       code: 'function f(params) { return params; }',
       options: [{ bannedNames: ['data', 'callback', 'params'] }],
+      errors: [{ messageId: 'noGenericParam' }],
+    },
+    {
+      // 类方法参数
+      code: 'class C { save(data) { return data; } }',
+      errors: [{ messageId: 'noGenericParam' }],
+    },
+    {
+      // 对象方法参数
+      code: 'const api = { save(data) { return data; } };',
+      errors: [{ messageId: 'noGenericParam' }],
+    },
+    {
+      // 类的箭头字段参数
+      code: 'class C { save = (data) => data; }',
+      errors: [{ messageId: 'noGenericParam' }],
+    },
+    {
+      // 默认值参数
+      code: 'function f(data = {}) { return data; }',
       errors: [{ messageId: 'noGenericParam' }],
     },
   ],

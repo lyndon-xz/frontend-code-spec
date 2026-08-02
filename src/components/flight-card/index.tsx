@@ -4,11 +4,13 @@ import type { MouseEventHandler } from 'react';
 export interface FlightCardProps {
   airline: string;
   flightNo: string;
+  /** 售价，单位与接口一致为「分」，展示时换算成元 */
   price: number;
   isRecommended: boolean;
   onSelect: MouseEventHandler<HTMLButtonElement>;
 }
 
+const CENTS_PER_YUAN = 100;
 const PRICE_FRACTION_DIGITS = 2;
 
 /**
@@ -22,7 +24,7 @@ export default function FlightCard(props: FlightCardProps) {
     <button type="button" onClick={onSelect}>
       <span>{airline}</span>
       <span>{flightNo}</span>
-      <span>{price.toFixed(PRICE_FRACTION_DIGITS)}</span>
+      <span>{(price / CENTS_PER_YUAN).toFixed(PRICE_FRACTION_DIGITS)}</span>
       {isRecommended ? <span>推荐</span> : null}
     </button>
   );
