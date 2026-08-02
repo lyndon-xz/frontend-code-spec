@@ -1,7 +1,8 @@
 /** 解构写法 — 在何处使用解构 */
 export default [
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    // 与语言无关，规则源码与各类配置文件同样适用
+    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {
       // 禁函数签名解构，统一在函数体首部解构
       'custom/no-param-destructuring': 'error',

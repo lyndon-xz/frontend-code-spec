@@ -95,20 +95,26 @@ export default [
   },
   {
     /*
-     * 自研命名规则统一作用于 src 源码。哪些文件豁免由规则内的 isExemptFile 判定（唯一来源）：
-     * 会被测试桩倒逼命名的规则（mock 的 handleXxx / onXxx、桩数据的 data 参数）自行豁免，
-     * 其余（如 ref 后缀、状态字段命名）在测试里同样成立，不豁免。
+     * 与框架、目录分层都无关的命名约定，仓库内所有代码一律适用。
+     * 哪些文件豁免由规则内的 isExemptFile 判定（唯一来源）：会被测试桩倒逼命名的规则
+     * （mock 的 handleXxx / onXxx、桩数据的 data 参数）自行豁免。
      */
-    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {
       // 函数/变量禁 handle 前缀
       'custom/no-handle-prefix': 'error',
       // 参数禁泛化命名（默认 data/callback；可通过 bannedNames 扩展）
       'custom/no-generic-param-name': 'error',
-      // useRef 变量必须以 Ref 结尾
-      'custom/ref-suffix-naming': 'error',
       // on 前缀仅用于 Props 回调，内部函数禁用
       'custom/no-internal-on-prefix': 'error',
+    },
+  },
+  {
+    // 依赖 React API、状态范式或业务文件命名约定，只对 src 源码成立
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      // useRef 变量必须以 Ref 结尾
+      'custom/ref-suffix-naming': 'error',
       // 文件名禁用实现类后缀（-modal/-type/-enum/-config/-util(s) 等）与纯实现整名（columns/form-config）；业务集合名如 review-list 放行
       'custom/no-implementation-suffix-filename': 'error',
       // 数据/异步状态字段强制后缀式命名（isLoadingXxx / xxxError）

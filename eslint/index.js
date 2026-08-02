@@ -8,11 +8,10 @@ import globals from 'globals';
 import commentsConfig from './configs/comments.js';
 import controlFlowConfig from './configs/control-flow.js';
 import destructuringConfig from './configs/destructuring.js';
-import hygieneConfig from './configs/hygiene.js';
 import importsConfig from './configs/imports.js';
+import javascriptConfig from './configs/javascript.js';
 import namingConfig from './configs/naming.js';
 import reactConfig from './configs/react.js';
-import selfCheckConfig from './configs/self-check.js';
 import structureConfig from './configs/structure.js';
 import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
@@ -110,13 +109,12 @@ export default [
   },
 
   /**
-   * 通用基线：只用第三方规则，故在 rules/ 下没有对应的领域目录。
-   * 两者都自行声明 files，把 TS 源码与规则源码一并覆盖。
+   * 领域配置。每个领域自行声明 files：与语言、框架、目录分层无关的规则一律覆盖 JS / TS / TSX，
+   * 规则集源码因此同受约束；依赖类型信息、React 或 src 分层的规则各自收窄。
+   * 正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线。
    */
-  ...hygieneConfig,
+  ...javascriptConfig,
   ...importsConfig,
-
-  /** 领域配置（与 rules/<domain>/ 一一对应；正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线） */
   ...commentsConfig,
   ...controlFlowConfig,
   ...destructuringConfig,
@@ -124,7 +122,4 @@ export default [
   ...namingConfig,
   ...reactConfig,
   ...structureConfig,
-
-  /** 收窄到规则源码自身：领域配置面向 TS/TSX，此处挑出与技术栈无关的那批用于自校验 */
-  ...selfCheckConfig,
 ];

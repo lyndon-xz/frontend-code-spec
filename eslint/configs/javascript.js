@@ -1,10 +1,10 @@
 /**
- * 写法卫生 — 复杂度与基础写法约束。
- * 这批规则与语言、框架都无关，TS 源码与规则源码（Node 端 .js）用的是同一套，故合在一个 scope 里声明。
+ * JS 语言层的写法与复杂度约束，与 typescript.js 的类型层约束相对。
+ * 这批规则不依赖类型信息、框架或目录分层，因此对仓库里所有 JS / TS / TSX 一律生效。
  */
 export default [
   {
-    files: ['**/*.ts', '**/*.tsx', 'eslint/**/*.js'],
+    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {
       // 三元表达式最多嵌套一层，超过一层需改用 if-else 或映射对象
       'no-nested-ternary': 'error',

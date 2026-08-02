@@ -22,7 +22,7 @@ const IMPORT_ORDER_RULE = {
 /**
  * Import 排序。拆成两个 scope 的原因是解析条件不同：
  * TS 源码要走 typescript resolver 才认得 @/ 别名与省略的扩展名；
- * 规则源码是 Node 端 .js，默认解析即可，但 import 插件需在此单独注册 —— 顶层只为 TS/TSX 注册了插件。
+ * JS 用默认解析即可，但 import 插件需在此单独注册 —— 顶层只为 TS/TSX 注册了插件。
  */
 export default [
   {
@@ -41,7 +41,7 @@ export default [
     },
   },
   {
-    files: ['eslint/**/*.js'],
+    files: ['**/*.js'],
     plugins: {
       import: importPlugin,
     },
