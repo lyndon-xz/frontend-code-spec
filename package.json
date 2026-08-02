@@ -32,28 +32,6 @@
     "test:cov": "vitest run --coverage",
     "type-check": "tsc --noEmit"
   },
-  "lint-staged": {
-    "{src,eslint}/**/*": [
-      "ls-lint"
-    ],
-    "package.json": [
-      "sort-package-json"
-    ],
-    "*.{ts,tsx,js,mjs}": [
-      "eslint --fix"
-    ],
-    "*.scss": [
-      "stylelint --fix",
-      "prettier --write"
-    ],
-    "*.md": [
-      "zhlint --fix",
-      "prettier --write"
-    ],
-    "*.{json,yml,yaml}": [
-      "prettier --write"
-    ]
-  },
   "dependencies": {
     "antd": "^6.5.2",
     "axios": "^1.13.2"
