@@ -119,6 +119,15 @@ ruleTester.run('comment-style', rule, {
       errors: [{ messageId: 'notAbove' }],
     },
     {
+      /*
+       * 行相邻但归属不同代码：第二条挂在 const x 行尾，它后面的代码已经是 const y，
+       * 与第一条的后继 token 不同，因此不算堆叠、不合并。
+       */
+      code: '// 归属 x\nconst x = 1; // 行尾\nconst y = 2;',
+      output: '// 归属 x\n// 行尾\nconst x = 1;\nconst y = 2;',
+      errors: [{ messageId: 'notAbove' }],
+    },
+    {
       // 代码前同行的块注释不合规且不自动修复
       code: '/* 说明 */ const a = 1;',
       output: null,

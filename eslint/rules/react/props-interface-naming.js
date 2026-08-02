@@ -70,10 +70,9 @@ export default {
     }
 
     return {
+      // interface 的名字由语法保证存在，无需判空
       TSInterfaceDeclaration(node) {
-        if (node.id?.type === 'Identifier') {
-          interfaces.push({ node, name: node.id.name });
-        }
+        interfaces.push({ node, name: node.id.name });
       },
 
       // 收集函数组件 — const Xxx = (props: XxxProps) => {} 或 const Xxx: React.FC<XxxProps> = () => {}
@@ -122,8 +121,11 @@ export default {
           );
           if (!matchingInterface) continue;
 
-          // 无法安全自动修复：多个组件共用同一 interface（期望名互相冲突），或目标名已被占用
-          const isShared = (componentCountByProps.get(component.propsTypeName) ?? 0) > 1;
+          /*
+           * 无法安全自动修复：多个组件共用同一 interface（期望名互相冲突），或目标名已被占用
+           * 计数表由 components 本身构建，故当前组件的 propsTypeName 必然在表内
+           */
+          const isShared = componentCountByProps.get(component.propsTypeName) > 1;
           const isNameTaken = existingNames.has(expectedPropsName);
           /*
            * 组件名形如 IXxx（I 后紧跟大写）时，期望名会命中 @typescript-eslint/naming-convention
@@ -142,6 +144,7 @@ export default {
                   const idNodes = [];
                   for (const variable of variables) {
                     for (const def of variable.defs) {
+                      // 过滤没有标识符节点的定义，避免把 undefined 交给 fixer
                       if (def.name) idNodes.push(def.name);
                     }
                     for (const ref of variable.references) {

@@ -45,6 +45,16 @@ ruleTester.run('props-interface-naming', rule, {
       code: 'const Bar: SomeType = () => null;',
       filename: 'Bar.tsx',
     },
+    // 变量标注不是类型引用（此处为函数类型），取不到泛型参数
+    {
+      code: 'const Bar: () => null = () => null;',
+      filename: 'Bar.tsx',
+    },
+    // Props 类型声明在别的文件里，本文件无同名 interface 可改，只能跳过
+    {
+      code: "import type { ExternalProps } from './types';\nfunction Foo(props: ExternalProps) { return null; }",
+      filename: 'Foo.tsx',
+    },
     // 非函数初值的大写变量不是组件
     {
       code: 'interface Props {}\nconst Config: Props = {};',
