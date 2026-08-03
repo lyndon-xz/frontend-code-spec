@@ -8,7 +8,6 @@ const EXPECTED_RULE_NAMES = [
   'no-promise-chain',
   'no-param-destructuring',
   'require-unit-suffix',
-  'no-direct-http-client',
   'require-enum-initializer',
   'no-handle-prefix',
   'no-generic-param-name',
@@ -20,8 +19,6 @@ const EXPECTED_RULE_NAMES = [
   'props-interface-naming',
   'import-path-boundary',
   'no-barrel',
-  'no-component-sidecar-files',
-  'file-element-order',
   'require-tsx-default-export',
   'no-ts-default-export',
 ];

@@ -26,11 +26,8 @@ import requireUnitSuffix from './rules/naming/require-unit-suffix.js';
 import statusFieldNaming from './rules/naming/status-field-naming.js';
 import noUnnecessaryArrowWrapper from './rules/react/no-unnecessary-arrow-wrapper.js';
 import propsInterfaceNaming from './rules/react/props-interface-naming.js';
-import fileElementOrder from './rules/structure/file-element-order.js';
 import importPathBoundary from './rules/structure/import-path-boundary.js';
 import noBarrel from './rules/structure/no-barrel.js';
-import noComponentSidecarFiles from './rules/structure/no-component-sidecar-files.js';
-import noDirectHttpClient from './rules/structure/no-direct-http-client.js';
 import noTsDefaultExport from './rules/structure/no-ts-default-export.js';
 import requireTsxDefaultExport from './rules/structure/require-tsx-default-export.js';
 import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
@@ -41,7 +38,6 @@ const customRules = {
   'no-promise-chain': noPromiseChain,
   'no-param-destructuring': noParamDestructuring,
   'require-unit-suffix': requireUnitSuffix,
-  'no-direct-http-client': noDirectHttpClient,
   'require-enum-initializer': requireEnumInitializer,
   'no-handle-prefix': noHandlePrefix,
   'no-generic-param-name': noGenericParamName,
@@ -53,8 +49,6 @@ const customRules = {
   'props-interface-naming': propsInterfaceNaming,
   'import-path-boundary': importPathBoundary,
   'no-barrel': noBarrel,
-  'no-component-sidecar-files': noComponentSidecarFiles,
-  'file-element-order': fileElementOrder,
   'require-tsx-default-export': requireTsxDefaultExport,
   'no-ts-default-export': noTsDefaultExport,
 };
