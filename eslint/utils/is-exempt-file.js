@@ -1,15 +1,15 @@
 import { normalizePath } from './normalize-path.js';
 
 /*
- * 「哪些文件豁免规则校验」的唯一来源：测试 / mock / 类型声明 / 配置文件。
- * 需要两种形态——运行时按路径判定用正则（规则内调用 isExemptFile），flat config 的 ignores 用 glob，
- * 故在同一处成对声明，避免两套口径漂移。规则一律走 isExemptFile，只有无法自校验的第三方规则才用 EXEMPT_GLOBS。
+ * 「哪些文件豁免规则校验」的唯一来源：测试 / mock / 类型声明 / 配置文件。运行时判定用正则、
+ * flat config 的 ignores 用 glob，两种形态在此成对声明避免口径漂移。
+ * 规则一律走 isExemptFile，只有无法自校验的第三方规则才用 EXEMPT_GLOBS。
  */
 
 // 按完整路径段匹配，避免子串误判（如 my-mocks-project 不算 mocks 目录）
 const EXEMPT_DIR_SEGMENTS = new Set(['__tests__', '__mocks__', 'mocks']);
 
-// 匹配真实扩展名（含 .cts/.mts/.cjs/.mjs），避免误伤目录名或普通文件
+// 匹配真实扩展名，避免误伤目录名或普通文件
 const EXEMPT_FILENAME_PATTERNS = [
   /\.test\.[cm]?[jt]sx?$/,
   // 仅 .d.ts，不含 .d.tsx
@@ -26,7 +26,6 @@ export const EXEMPT_GLOBS = [
 ];
 
 /**
- * 判断文件是否豁免自定义规则校验（测试 / mock / 类型声明 / 配置文件）。
  * 入参取自 context.filename：它恒为非空字符串（未提供文件名时为 `<input>`），故不设空值守卫。
  * @param {string} filename
  * @returns {boolean}
@@ -35,7 +34,6 @@ export function isExemptFile(filename) {
   const segments = normalizePath(filename).split('/');
   const basename = segments[segments.length - 1];
 
-  // 父路径中存在豁免目录段
   if (segments.slice(0, -1).some((segment) => EXEMPT_DIR_SEGMENTS.has(segment))) {
     return true;
   }

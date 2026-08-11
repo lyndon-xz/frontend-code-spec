@@ -5,10 +5,7 @@ import { RequestStatus, reportAnalytics } from '../utils/analytics-reporter';
 import { RequestError, RequestErrorType } from '../utils/error';
 import { generateRequestId } from '../utils/trace';
 
-/*
- * 从 config 提取埋点公共字段。若缺少 requestId/startTimeMs（未经埋点请求拦截器的请求），
- * 返回 null，调用方据此跳过上报。
- */
+// 缺少 requestId / startTimeMs（未经埋点请求拦截器）时返回 null，调用方据此跳过上报
 const extractTrace = (config?: AxiosRequestConfig) => {
   const {
     __requestId: requestId,
@@ -32,9 +29,9 @@ const extractTrace = (config?: AxiosRequestConfig) => {
 
 export const analyticsReqInterceptor: ReqInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
-    // request 层已在重试循环外生成 id 的情况下沿用，重试才能与首次尝试串在同一条链路上
+    // 沿用 request 层在重试循环外生成的 id，重试才能与首次尝试串在同一条链路上
     config.__requestId ??= generateRequestId(config);
-    // startTimeMs 每次尝试独立刷新，耗时统计的是单次尝试而非含重试的总时长
+    // 每次尝试独立刷新，耗时统计的是单次尝试而非含重试的总时长
     config.__requestStartTimeMs = Date.now();
 
     return config;

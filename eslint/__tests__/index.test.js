@@ -7,6 +7,7 @@ const EXPECTED_RULE_NAMES = [
   'comment-style',
   'no-promise-chain',
   'no-param-destructuring',
+  'hoist-module-scope-destructuring',
   'require-unit-suffix',
   'require-enum-initializer',
   'no-handle-prefix',

@@ -1,25 +1,31 @@
-import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import axios, { AxiosError } from 'axios';
-import type { Mock } from 'vitest';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import axios, {
+  type AxiosAdapter,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+  AxiosError,
+} from 'axios';
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createGetRequest } from '@/apis/request';
-import type { AnalyticsSender } from '@/apis/utils/analytics-reporter';
 import {
+  type AnalyticsSender,
   RequestStatus,
   resetAnalyticsSender,
   setAnalyticsSender,
 } from '@/apis/utils/analytics-reporter';
 import { RequestErrorType } from '@/apis/utils/error';
-import type { ErrorNotifier } from '@/apis/utils/error-notifier';
-import { resetErrorNotifier, setErrorNotifier } from '@/apis/utils/error-notifier';
+import {
+  type ErrorNotifier,
+  resetErrorNotifier,
+  setErrorNotifier,
+} from '@/apis/utils/error-notifier';
 import { Environment } from '@/constants/environment';
 import { getEnvironment } from '@/utils/environment';
 
 /*
- * 本文件与 request.test.ts 的分工：那边把 axios 实例整体替换成假对象，只验证 createRequest 自身的编排；
- * 这里保留真实 axios 与全部拦截器，只在最底层换掉 adapter，用来守住跨拦截器的契约
- * （重试期间的提示抑制、失败埋点、拆包），这类契约在实例被 mock 掉时无人校验。
+ * 与 request.test.ts 的分工：那边把 axios 实例整体换成假对象，只验证 createRequest 自身的编排；
+ * 这里保留真实 axios 与全部拦截器、只换掉最底层 adapter，守住跨拦截器的契约
+ * （重试期间的提示抑制、失败埋点、拆包）——这类契约在实例被 mock 掉时无人校验。
  */
 
 vi.mock('@/utils/environment', () => ({
@@ -108,9 +114,8 @@ describe('拦截器链端到端', () => {
     expect(result).toBeNull();
 
     /*
-     * 三次尝试（首次 + 两次重试）里只有最后一次该提示：前两次的错误带着 __retriesLeft > 0，
-     * 网络拦截器据此静默。这条断言依赖 classifyAxiosError 在无 response 的分支上把 config 带出来，
-     * 一旦 config 丢失，retriesLeft 恒为 0，用户会连收三条提示。
+     * 三次尝试里只有最后一次该提示：前两次的错误带着 __retriesLeft > 0，网络拦截器据此静默。
+     * 依赖 classifyAxiosError 在无 response 的分支上带出 config，config 丢了就会连收三条提示。
      */
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledWith('网络连接失败，请检查网络后重试');

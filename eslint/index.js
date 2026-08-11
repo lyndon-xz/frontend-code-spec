@@ -16,6 +16,7 @@ import structureConfig from './configs/structure.js';
 import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
 import noPromiseChain from './rules/control-flow/no-promise-chain.js';
+import hoistModuleScopeDestructuring from './rules/destructuring/hoist-module-scope-destructuring.js';
 import noParamDestructuring from './rules/destructuring/no-param-destructuring.js';
 import noGenericParamName from './rules/naming/no-generic-param-name.js';
 import noHandlePrefix from './rules/naming/no-handle-prefix.js';
@@ -37,6 +38,7 @@ const customRules = {
   'comment-style': commentStyle,
   'no-promise-chain': noPromiseChain,
   'no-param-destructuring': noParamDestructuring,
+  'hoist-module-scope-destructuring': hoistModuleScopeDestructuring,
   'require-unit-suffix': requireUnitSuffix,
   'require-enum-initializer': requireEnumInitializer,
   'no-handle-prefix': noHandlePrefix,
@@ -84,7 +86,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
-      import: importPlugin,
+      'import': importPlugin,
       react,
       'react-hooks': reactHooks,
     },
@@ -103,8 +105,7 @@ export default [
   },
 
   /**
-   * 领域配置。每个领域自行声明 files：与语言、框架、目录分层无关的规则一律覆盖 JS / TS / TSX，
-   * 规则集源码因此同受约束；依赖类型信息、React 或 src 分层的规则各自收窄。
+   * 领域配置各自声明 files：与语言、框架、分层无关的规则覆盖 JS / TS / TSX，规则集源码因此同受约束。
    * 正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线。
    */
   ...javascriptConfig,

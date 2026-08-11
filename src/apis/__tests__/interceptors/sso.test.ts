@@ -5,8 +5,8 @@ import { UNAUTHORIZED_CODE } from '@/apis/constants/code';
 import type { ResInterceptor } from '@/apis/types/interceptor';
 
 /*
- * isRedirecting 为模块级状态，用 resetModules + 动态导入让每个用例拿到全新副本；
- * RequestError 也一并动态导入，确保与 sso 内抛出的实例来自同一模块图，instanceof 才成立
+ * isRedirecting 是模块级状态，用 resetModules + 动态导入让每个用例拿到全新副本；
+ * RequestError 一并动态导入，确保与 sso 内抛出的实例来自同一模块图，instanceof 才成立。
  */
 let ssoInterceptor: ResInterceptor;
 let resetSsoRedirectState: typeof import('@/apis/interceptors/sso').resetSsoRedirectState;
@@ -35,10 +35,7 @@ describe('ssoInterceptor.onFulfilled', () => {
     expect(ssoInterceptor.onFulfilled!(response)).toBe(response);
   });
 
-  /*
-   * returncode 为字符串时不认作 SSO 信封：谓词若只查字段存在性，
-   * "-100" !== -100 会让未授权响应被当成已登录放行，把登录态问题变成空数据渲染。
-   */
+  // 谓词若只查字段存在性，"-100" !== -100 会让未授权响应被当成已登录放行
   it('returncode 为字符串时不视为 SSO 响应', () => {
     const response = buildResponse({ returncode: String(UNAUTHORIZED_CODE) });
 

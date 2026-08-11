@@ -19,7 +19,7 @@ export default {
     };
 
     /**
-     * 解析成员调用的方法名，仅识别 then / catch / finally（含计算成员 obj['then']）
+     * 含计算成员形态 obj['then']
      * @param {import('estree').Expression | import('estree').Super} property
      * @param {boolean} computed
      * @returns {'then' | 'catch' | 'finally' | null}

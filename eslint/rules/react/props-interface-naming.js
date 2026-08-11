@@ -2,23 +2,11 @@ import { isExemptFile } from '../../utils/is-exempt-file.js';
 import { isFunctionNode } from '../../utils/is-function-node.js';
 
 /**
- * Props 接口必须使用「组件名Props」命名格式。
- * 仅对 .tsx 生效；收集组件与其 Props 类型（首参标注或 React.FC 泛型参数），
- * 若命名不为 `${组件名}Props` 则重命名对应 interface。
+ * 收集组件与其 Props 类型（首参标注或 React.FC 泛型参数），命名不为 `${组件名}Props` 则重命名 interface。
+ * `type XxxProps = {}` 由 consistent-type-definitions 先转成 interface，故不单独处理。
  *
- * 覆盖范围：
- * - Props 类型声明：`interface XxxProps {}`
- *   （`type XxxProps = {}` 由 `@typescript-eslint/consistent-type-definitions` 统一转为 interface 后再由本规则接管，故不单独处理）；
- * - 组件形态：`function C(props: XxxProps)`、`const C = (props: XxxProps) => {}`、
- *   `const C: React.FC<XxxProps> = () => {}`。
- *
- * autofix 安全策略：
- * - 通过作用域引用重命名该 interface 在「当前文件内」的全部引用（声明、参数标注、extends、泛型等），
- *   而非只改声明与单个使用处，避免遗漏引用导致改坏代码；
- * - 同一 interface 被多个组件共用时，各自期望名互相冲突，无法自动满足，只告警不 fix；
- * - 目标名已被其它 interface 占用时，为避免产生重名声明，只告警不 fix；
- * - 注意：ESLint 自动修复只作用于当前文件，若该 interface 被导出并被其它文件按旧名引用，
- *   跨文件引用需另行处理（本规则无法感知其它文件）。
+ * autofix 走作用域引用改写当前文件内的全部引用（声明、参数标注、extends、泛型），避免遗漏引用改坏代码。
+ * 修复只作用于当前文件：interface 被导出并在别处按旧名引用时，跨文件引用需另行处理。
  */
 export default {
   meta: {
@@ -35,17 +23,12 @@ export default {
   create(context) {
     const { filename, sourceCode } = context;
 
-    /*
-     * 仅对 .tsx 生效；测试 / mock 里的包装组件常直接复用被测组件的 Props 类型
-     * （如 const Wrapper = (props: FlightCardProps) => ...），按组件名改名会改坏引用，故一并豁免。
-     */
+    // 测试里的包装组件常复用被测组件的 Props 类型，按组件名改名会改坏引用，故一并豁免
     if (!filename.endsWith('.tsx') || isExemptFile(filename)) {
       return {};
     }
 
-    // 收集 interface 声明，元素形态 { node, name }
     const interfaces = [];
-    // 收集函数组件，元素形态 { name, propsTypeName }
     const components = [];
 
     function typeRefName(annotation) {
@@ -64,19 +47,19 @@ export default {
     function propsNameFromFcAnnotation(idNode) {
       const annotation = idNode.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== 'TSTypeReference') return null;
-      // 取泛型参数：typeArguments / typeParameters 两种字段名都要兜底
+      // typeArguments / typeParameters 两种字段名都要兜底
       const typeArgs = annotation.typeArguments ?? annotation.typeParameters;
       return typeRefName(typeArgs?.params?.[0]);
     }
 
     return {
       // interface 的名字由语法保证存在，无需判空
-      TSInterfaceDeclaration(node) {
+      'TSInterfaceDeclaration'(node) {
         interfaces.push({ node, name: node.id.name });
       },
 
-      // 收集函数组件 — const Xxx = (props: XxxProps) => {} 或 const Xxx: React.FC<XxxProps> = () => {}
-      VariableDeclarator(node) {
+      // const Xxx = (props: XxxProps) => {} 或 const Xxx: React.FC<XxxProps> = () => {}
+      'VariableDeclarator'(node) {
         if (
           node.id.type === 'Identifier' &&
           /^[A-Z]/.test(node.id.name) &&
@@ -89,8 +72,8 @@ export default {
         }
       },
 
-      // 收集 function Xxx(props: XxxProps) {}
-      FunctionDeclaration(node) {
+      // function Xxx(props: XxxProps) {}
+      'FunctionDeclaration'(node) {
         // 匿名默认导出函数无 id，跳过
         const componentName = node.id?.name;
         if (componentName === undefined || !/^[A-Z]/.test(componentName)) return;
@@ -102,7 +85,7 @@ export default {
       },
 
       'Program:exit'() {
-        // 用于识别「多个组件共用同一 interface」的期望名冲突
+        // 识别「多个组件共用同一 interface」的期望名冲突
         const componentCountByProps = new Map();
         for (const component of components) {
           const count = componentCountByProps.get(component.propsTypeName) ?? 0;
@@ -121,15 +104,12 @@ export default {
           );
           if (!matchingInterface) continue;
 
-          /*
-           * 无法安全自动修复：多个组件共用同一 interface（期望名互相冲突），或目标名已被占用
-           * 计数表由 components 本身构建，故当前组件的 propsTypeName 必然在表内
-           */
+          // 计数表由 components 本身构建，故当前组件的 propsTypeName 必然在表内
           const isShared = componentCountByProps.get(component.propsTypeName) > 1;
           const isNameTaken = existingNames.has(expectedPropsName);
           /*
-           * 组件名形如 IXxx（I 后紧跟大写）时，期望名会命中 @typescript-eslint/naming-convention
-           * 的 ^I[A-Z] 接口禁令，自动改名反而产出被另一条规则判非法的代码，故此情形只告警不 fix
+           * 组件名形如 IXxx 时期望名会命中 naming-convention 的 ^I[A-Z] 接口禁令，
+           * 自动改名反而产出被另一条规则判非法的代码，故只告警不 fix
            */
           const violatesInterfaceIPrefix = /^I[A-Z]/.test(expectedPropsName);
           const canFix = !isShared && !isNameTaken && !violatesInterfaceIPrefix;
@@ -144,7 +124,7 @@ export default {
                   const idNodes = [];
                   for (const variable of variables) {
                     for (const def of variable.defs) {
-                      // 过滤没有标识符节点的定义，避免把 undefined 交给 fixer
+                      // 没有标识符节点的定义要滤掉，避免把 undefined 交给 fixer
                       if (def.name) idNodes.push(def.name);
                     }
                     for (const ref of variable.references) {

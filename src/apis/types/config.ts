@@ -4,34 +4,36 @@ import type { ReqInterceptor, ResInterceptor } from './interceptor';
 
 /** 业务码错误（code !== 0）的提示策略 */
 export interface BusinessErrorOptions {
-  /** 静默处理，不弹出错误提示 */
   isSilent?: boolean;
-  /** 自定义错误提示，不设置则使用服务端返回的 message */
+  /** 不设置则使用服务端返回的 message */
   customMessage?: string;
 }
 
 /** 网络错误的提示策略 */
 export interface NetworkErrorOptions {
-  /** 静默处理，不弹出错误提示 */
   isSilent?: boolean;
-  /** 自定义错误提示，不设置则使用归一后的默认文案 */
+  /** 不设置则使用归一后的默认文案 */
   customMessage?: string;
 }
 
 /** 自动重试策略，仅对网络错误、超时、5xx 等可恢复错误生效 */
 export interface RetryOptions {
-  /** 最大重试次数（不含首次请求） */
+  /** 最大重试次数，不含首次请求 */
   count: number;
-  /** 重试基础间隔，默认 300 */
   delayMs?: number;
-  /** 是否指数退避（第 n 次重试等待 delayMs * 2^(n-1)），默认 true */
+  /** 是否指数退避：第 n 次重试等待 delayMs * 2^(n-1) */
   isBackoff?: boolean;
+  /**
+   * 是否把本请求当作幂等的。不设置时按 HTTP 方法判定：GET / HEAD / OPTIONS / PUT / DELETE 可重试；
+   * POST / PATCH 不重试——它们超时最常见的情形是服务端已处理完、只是响应没回来，重试等于重复提交。
+   * 接口带幂等键时显式置 true 才重试。
+   */
+  isIdempotent?: boolean;
 }
 
 /*
- * 通过模块增强把请求扩展字段挂到 axios 配置上，好处有二：
- * 1. 内部字段（__ 前缀）随 config 生命周期存活，用于埋点串联与重试计数，避免模块级 Map 造成泄漏；
- * 2. 业务字段（businessError 等）让各拦截器直接从 config / error.config 读取，无需再做类型断言。
+ * 通过模块增强把扩展字段挂到 axios 配置上：内部字段（__ 前缀）随 config 生命周期存活，
+ * 免去模块级 Map 造成泄漏；业务字段让各拦截器直接从 config / error.config 读取，无需类型断言。
  */
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -43,28 +45,23 @@ declare module 'axios' {
     businessError?: BusinessErrorOptions;
     networkError?: NetworkErrorOptions;
     retry?: RetryOptions;
-    /*
-     * 是否对相同请求去重：开启后，同一请求（method + url + 参数）再次发起时，
-     * 会取消上一次仍在飞行中的请求，避免竞态导致旧响应覆盖新结果。默认关闭。
-     */
+    // 开启后同一请求（method + url + 参数）再次发起时取消上一次，避免旧响应覆盖新结果
     isDeduped?: boolean;
     /*
-     * 是否启用异常兜底。
-     * true（默认）：任何错误都被吞掉，请求以 null 返回。被去重取消的请求同样返回 null，
-     *   调用方无法区分「取消」与「失败」，若拿 null 去清空列表，旧请求的取消就会覆盖新请求的结果；
-     * false：错误以 RequestError 原样抛出，由调用方自行 try/catch，按 type === Canceled 区分取消。
+     * 默认 true：任何错误都被吞掉，请求以 null 返回。被去重取消的请求同样返回 null，
+     * 调用方无法区分「取消」与「失败」，拿 null 去清空列表就会让旧请求的取消覆盖新结果。
+     * 置 false 则抛出 RequestError，调用方可按 type === Canceled 区分取消。
      */
     isErrorSwallowed?: boolean;
   }
 }
 
-/** 单个请求配置：仅强制 url 必传，其余字段复用 axios 配置与上面的增强字段 */
 export interface EnhancedRequestConfig extends AxiosRequestConfig {
   url: string;
 }
 
 export interface InstanceConfig extends AxiosRequestConfig {
-  /** 服务编码，用于生成 baseURL */
+  /** 用于生成 baseURL */
   serviceCode: string;
   reqInterceptors: ReqInterceptor[];
   resInterceptors: ResInterceptor[];

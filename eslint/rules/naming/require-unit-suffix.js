@@ -1,16 +1,18 @@
 /*
- * 数值量纲字段必须带单位后缀。金额、时长、尺寸只写 price / duration / size 时，
- * 单位就只活在口头约定和注释里：接口给「分」、卡片按「元」渲染，一次误解就是 100 倍的金额事故。
- *
- * 只校验类型成员（interface / type 的字段）：它们是跨端、跨模块传递的契约，单位歧义在这里代价最大；
- * 局部变量与函数参数不校验，否则噪音会铺满整个代码库，而它们的生命周期短、上下文就在眼前。
+ * 数值量纲字段只写 price / duration / size 时，单位就只活在口头约定里：接口给「分」、卡片按「元」渲染，
+ * 一次误解就是 100 倍的金额事故。只校验类型成员——它们是跨端传递的契约，单位歧义在这里代价最大；
+ * 局部变量与函数参数生命周期短、上下文就在眼前，校验只会把噪音铺满代码库。
  */
 
-// 量纲：词根命中且类型为数值时，字段名必须以其中一个单位后缀结尾
+// 词根命中且类型为数值时，字段名必须以其中一个单位后缀结尾
 const DEFAULT_DIMENSIONS = [
+  /*
+   * 不收 `price`：它是最高频的金额词，`totalPrice` / `pricePerNight` 本身已说清是什么，
+   * 强制后缀会把后缀铺满整个领域模型。真要区分分与元，`type Cents = number` 比命名更硬。
+   */
   {
     name: '金额',
-    roots: ['price', 'amount', 'fee', 'cost', 'balance', 'salary', 'discount', 'deposit'],
+    roots: ['amount', 'fee', 'cost', 'balance', 'salary', 'discount', 'deposit'],
     suffixes: ['Cents', 'Yuan'],
   },
   {
@@ -19,8 +21,8 @@ const DEFAULT_DIMENSIONS = [
     suffixes: ['Ms', 'Seconds', 'Minutes', 'Hours', 'Days'],
   },
   /*
-   * 时间点与时长同为数值时间，歧义却更常见：秒级时间戳、毫秒级时间戳、ISO 字符串三者混用是接口联调的常客。
-   * 不收 `at` 结尾（createdAt / updatedAt 已是社区共识的时间戳命名，强制 createdAtMs 属反惯例）。
+   * 秒级时间戳、毫秒级时间戳、ISO 字符串三者混用是接口联调的常客。
+   * 不收 `at` 结尾：createdAt / updatedAt 已是社区共识，强制 createdAtMs 属反惯例。
    */
   {
     name: '时间点',
@@ -40,7 +42,7 @@ const DEFAULT_OPTIONS = {
   ignoredFields: [],
 };
 
-// 数值类型判定停留在语法层：number 本体，或联合类型里含 number（price: number | null）
+// 判定停留在语法层：number 本体，或联合类型里含 number（price: number | null）
 function isNumericAnnotation(annotation) {
   if (annotation == null) return false;
   if (annotation.type === 'TSNumberKeyword') return true;
@@ -49,10 +51,9 @@ function isNumericAnnotation(annotation) {
 }
 
 /*
- * 先剥掉尾部的单位后缀，再看剩下的部分是否以词根结尾：
- * priceCents 剥成 price（命中且已带单位，合规），price 剥不掉（命中但没单位，报错），
- * unitPrice / totalAmount 这类复合命名也一并命中。
- * 代价是未登记的单位写法（priceFen）识别不出来，属于有意的漏报换低噪音——补 dimensions 即可覆盖。
+ * 先剥掉尾部单位后缀，再看剩下部分是否以词根结尾：priceCents 剥成 price（合规），
+ * price 剥不掉（报错），unitPrice / totalAmount 这类复合命名一并命中。
+ * 未登记的单位写法（priceFen）识别不出来，属于用漏报换低噪音——补 dimensions 即可覆盖。
  */
 function matchDimension(fieldName, dimensions) {
   for (const dimension of dimensions) {

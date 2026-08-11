@@ -10,8 +10,8 @@ const DEFAULT_OPTIONS = {
 };
 
 /**
- * 与 import/order 的 fix 关系：本规则只改写 import 源字符串（@/x ↔ ./x），import/order 只调整
- * import 语句顺序，二者正交、互不覆盖。改写幂等，故 ESLint 多轮 fix 必然收敛，不会抖动或死循环。
+ * 本规则只改写 import 源字符串（@/x ↔ ./x），import/order 只调整语句顺序，二者正交。
+ * 改写幂等，故 ESLint 多轮 fix 必然收敛，不会抖动或死循环。
  */
 export default {
   meta: {
@@ -42,15 +42,12 @@ export default {
     const { srcDir } = { ...DEFAULT_OPTIONS, ...context.options[0] };
 
     /*
-     * 归一为正斜杠后提取 src/ 之后的部分；后续所有路径运算都在「相对 src 的 posix 空间」里进行，
-     * 全是相对正斜杠字符串（无盘符、无 OS 分隔符、不依赖 cwd），从而跨平台稳定、修复输出恒为合法 import 路径。
+     * 后续路径运算都在「相对 src 的 posix 空间」里进行：无盘符、无 OS 分隔符、不依赖 cwd，
+     * 从而跨平台稳定、修复输出恒为合法 import 路径。
      */
     const filename = normalizePath(context.filename);
 
-    /*
-     * 测试 / mock 文件豁免：__tests__ 镜像目录与被测模块不同层，
-     * 测试按 @/ 别名引用被测模块是约定写法，改成相对路径既冗长又随文件移动而失效。
-     */
+    // __tests__ 镜像目录与被测模块不同层，按 @/ 引用是约定写法，改成相对路径既冗长又随文件移动失效
     if (isExemptFile(filename)) {
       return {};
     }
@@ -60,10 +57,10 @@ export default {
       return {};
     }
 
-    // 当前文件相对 src 的路径（如 'apis/foo.ts'）及其所属一级模块（如 'apis'）；+2 跳过 srcDir 前后的两个斜杠
+    // +2 跳过 srcDir 前后的两个斜杠，得到 'apis/foo.ts' 这样的相对路径
     const relativeToSrc = filename.substring(srcIndex + srcDir.length + 2);
     const currentModule = relativeToSrc.split('/')[0];
-    // 当前文件所在目录（相对 src），顶层文件时为 '.'
+    // 顶层文件时为 '.'
     const currentDir = path.posix.dirname(relativeToSrc);
 
     return {
@@ -75,7 +72,7 @@ export default {
           return;
         }
 
-        // ---- @/ 别名导入：@/ 后即 src 下路径 ----
+        // @/ 别名导入：@/ 后即 src 下路径
         if (source.startsWith('@/')) {
           const importPath = source.substring(2);
           const targetModule = importPath.split('/')[0];
@@ -101,15 +98,14 @@ export default {
           return;
         }
 
-        // ---- 相对路径导入：只关注向上跨目录的 ../ ----
+        // 相对路径导入只关注向上跨目录的 ../，同级 ./ 肯定是模块内部
         if (!source.startsWith('../')) {
-          // 同级 ./ 导入肯定是模块内部，跳过
           return;
         }
 
         const targetRelativeToSrc = path.posix.join(currentDir, source);
 
-        // 逃出 src（.. 开头）→ 非 src 内引用，跳过
+        // .. 开头说明逃出了 src，非 src 内引用
         if (targetRelativeToSrc.startsWith('..')) {
           return;
         }

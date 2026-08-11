@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DedupeRequest } from '@/apis/utils/dedupe';
-import { registerDedupe } from '@/apis/utils/dedupe';
+import { type DedupeRequest, registerDedupe } from '@/apis/utils/dedupe';
 
 // 每个用例用独立 url 生成唯一签名，隔离模块级 pendingRequests 的跨用例状态
 let seq = 0;

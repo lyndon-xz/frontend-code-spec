@@ -1,8 +1,8 @@
 import { createPrefixRule } from '../../utils/create-prefix-rule.js';
 
 /**
- * 覆盖内部函数的四种形态：函数声明、函数型变量、类方法、类箭头字段。
- * 刻意不覆盖对象属性与接口/类型成员：那里常是回调 Props 的合法声明处（如 { onClick }、interface Props { onClick }），覆盖会误报。
+ * 刻意不覆盖对象属性与类型成员：那里常是回调 Props 的合法声明处
+ * （{ onClick }、interface Props { onClick }），覆盖会误报。
  */
 export default createPrefixRule({
   prefix: 'on',

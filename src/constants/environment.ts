@@ -1,4 +1,3 @@
-/** 运行环境 */
 export enum Environment {
   Development = 'development',
   Production = 'production',
@@ -7,7 +6,7 @@ export enum Environment {
 /** 构建期注入的环境标识键：Vite 的 define、webpack 的 DefinePlugin 都会把它替换成字面量 */
 export const APP_ENV_KEY = 'APP_ENV';
 
-/** 指向本机的域名：含 IPv4/IPv6 回环与 0.0.0.0，仅在未注入构建期标识时作兜底判断 */
+/** 指向本机的域名，仅在未注入构建期标识时作兜底判断 */
 export const LOCAL_HOSTNAMES = ['localhost', '0.0.0.0', '::1', '[::1]'];
 
 /** 回环网段前缀：127.0.0.0/8 整段都是本机，不止 127.0.0.1 */

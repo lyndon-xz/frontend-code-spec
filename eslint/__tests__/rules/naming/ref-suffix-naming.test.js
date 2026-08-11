@@ -21,10 +21,7 @@ ruleTester.run('ref-suffix-naming', rule, {
       errors: [{ messageId: 'refSuffix' }],
     },
     {
-      /*
-       * 裸 `ref` 同样违规：它没有指向对象，与 no-generic-param-name 禁 `data` 同理属泛化命名，
-       * 要求写成 inputRef / containerRef 这类「指向 + Ref」形态。
-       */
+      // 裸 `ref` 没说清指向谁，与 no-generic-param-name 禁 `data` 同理属泛化命名
       code: 'const ref = useRef(null);',
       errors: [{ messageId: 'refSuffix' }],
     },

@@ -20,10 +20,7 @@ ruleTester.run('no-generic-param-name', rule, {
     // 类方法 / 对象方法的具体命名参数
     'class C { save(flight) { return flight; } }',
     'const api = { save(flight) { return flight; } };',
-    /*
-     * bannedNames 含正则元字符时按字面量匹配：`data.*` 只禁名为 `data.*` 的参数（实际不存在），
-     * 不应被当成通配把 dataX 也算进去。
-     */
+    // 含正则元字符时按字面量匹配：`data.*` 不该被当成通配把 dataX 也算进去
     {
       code: 'function f(dataX) { return dataX; }',
       options: [{ bannedNames: ['data.*'] }],

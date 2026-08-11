@@ -6,6 +6,8 @@ export default [
     rules: {
       // 禁函数签名解构，统一在函数体首部解构
       'custom/no-param-destructuring': 'error',
+      // 模块级绑定（actions 对象、映射表）的解构提到模块顶层，不写在函数体内
+      'custom/hoist-module-scope-destructuring': 'error',
     },
   },
 ];

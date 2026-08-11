@@ -2,11 +2,8 @@ import { isExemptFile } from './is-exempt-file.js';
 import { isFunctionNode } from './is-function-node.js';
 
 /**
- * 生成「禁止以某前缀命名函数」的规则。
- * handle / on 两条命名规则的判定逻辑完全一致，只差前缀、报错文案与是否覆盖对象字面量属性，
- * 故收敛为一个工厂；「值是否为函数」统一走 isFunctionNode。
- *
- * 覆盖形态：函数声明、函数型变量、类方法、类箭头字段，以及（可选）对象字面量的函数属性。
+ * 生成「禁止以某前缀命名函数」的规则。handle / on 两条规则的判定逻辑完全一致，
+ * 只差前缀、报错文案与是否覆盖对象字面量属性，故收敛为一个工厂。
  * @param {object} spec
  * @param {string} spec.prefix 被禁前缀，如 'handle'
  * @param {object} spec.meta 规则 meta，原样透传（docs/messages 是各规则的对外契约）
@@ -25,10 +22,7 @@ export function createPrefixRule(spec) {
   return {
     meta,
     create(context) {
-      /*
-       * 测试 / mock 文件豁免：桩函数常按被 mock 的 Props 回调原名声明
-       * （const onClick = vi.fn()、mock 出的 handleSubmit），在这里报错等于倒逼改桩名。
-       */
+      // 桩函数常按被 mock 的 Props 回调原名声明，在这里报错等于倒逼改桩名
       if (isExemptFile(context.filename)) return {};
 
       function report(node, messageId) {

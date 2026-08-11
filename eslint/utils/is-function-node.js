@@ -1,5 +1,4 @@
 /**
- * 判断节点是否为函数值（箭头函数或函数表达式）。
  * 命名规则借此区分函数成员与普通数据成员，避免误报名词属性。
  * @param {object|null|undefined} node
  * @returns {boolean}

@@ -1,10 +1,4 @@
-/**
- * 为防误修的分档策略：
- * - callee 为 MemberExpression（obj.fn）有 this 绑定丢失风险，直接跳过；
- * - async 箭头改写后会丢失 async 语义，直接跳过；
- * - 无参包裹 () => fn() 有 event 隐式透传风险，只告警不自动 fix；
- * - 仅「参数逐一透传」(e) => fn(e) 提供 fix。
- */
+/** 为防误修分档：只有「参数逐一透传」(e) => fn(e) 提供 fix，其余形态跳过或只告警（见各分支） */
 export default {
   meta: {
     type: 'suggestion',

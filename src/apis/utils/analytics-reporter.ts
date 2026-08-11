@@ -8,13 +8,12 @@ export interface AnalyticsData {
   requestParams: unknown;
   responseData: unknown;
   status: RequestStatus;
-  /** 错误信息，仅在失败时有值 */
   errorMessage?: string;
   startTimeMs: number;
   endTimeMs: number;
 }
 
-/** 生产环境埋点上报实现；默认空实现，业务侧通过 setAnalyticsSender 接入 */
+/** 生产环境上报实现，默认空实现，业务侧通过 setAnalyticsSender 接入 */
 export type AnalyticsSender = (analyticsData: AnalyticsData) => void;
 
 export enum RequestStatus {
@@ -22,13 +21,11 @@ export enum RequestStatus {
   Error = 'error',
 }
 
-const noopSender: AnalyticsSender = (analyticsData) => {
-  void analyticsData;
-};
+const noopSender: AnalyticsSender = () => {};
 
-let analyticsSender: AnalyticsSender = noopSender;
+let activeAnalyticsSender: AnalyticsSender = noopSender;
 
-// 开发环境用分组日志便于调试
+/* eslint-disable no-console -- 开发环境的埋点观察通道，控制台输出即本函数的全部职责 */
 const logToConsole = (analyticsData: AnalyticsData) => {
   const {
     method,
@@ -58,20 +55,19 @@ const logToConsole = (analyticsData: AnalyticsData) => {
 
   console.groupEnd();
 };
+/* eslint-enable no-console */
 
-/** 替换生产环境埋点上报实现 */
 export const setAnalyticsSender = (sender: AnalyticsSender) => {
-  analyticsSender = sender;
+  activeAnalyticsSender = sender;
 };
 
-/** 恢复为默认空实现 */
 export const resetAnalyticsSender = () => {
-  analyticsSender = noopSender;
+  activeAnalyticsSender = noopSender;
 };
 
 /**
- * 埋点上报出口。开发环境打印分组日志便于调试，生产环境走可注入的上报实现，
- * 避免生产控制台刷屏与请求数据泄漏。
+ * 埋点上报出口。上报数据含完整请求参数与响应体，其中可能有身份证号、手机号这类个人标识，
+ * 接入真实上报实现时须先按业务的敏感字段清单脱敏；本层只保证「生产不打控制台」这一条。
  */
 export const reportAnalytics = (analyticsData: AnalyticsData) => {
   if (getEnvironment() === Environment.Development) {
@@ -79,5 +75,5 @@ export const reportAnalytics = (analyticsData: AnalyticsData) => {
     return;
   }
 
-  analyticsSender(analyticsData);
+  activeAnalyticsSender(analyticsData);
 };

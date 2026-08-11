@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AnalyticsData } from '@/apis/utils/analytics-reporter';
 import {
+  type AnalyticsData,
   reportAnalytics,
   RequestStatus,
   resetAnalyticsSender,

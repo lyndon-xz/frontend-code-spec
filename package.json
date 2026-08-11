@@ -1,6 +1,6 @@
 {
   "name": "@lyndon/frontend-code-spec",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "为业务仓库制定 lint 规则与代码写法的源头仓库：ESLint 规则集 + 请求层范式样板，不发布为 npm 包",
   "license": "MIT",
@@ -23,7 +23,8 @@
     "prepare": "husky",
     "test": "vitest",
     "test:cov": "vitest run --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "verify": "pnpm type-check && pnpm lint && pnpm lint:filename && pnpm lint:style && pnpm lint:pkg && pnpm format:check && vitest run"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
@@ -54,7 +55,9 @@
     "sort-package-json": "^4.0.0",
     "stylelint": "^17.4.0",
     "stylelint-config-css-modules": "^4.6.0",
+    "stylelint-config-recess-order": "^7.7.0",
     "stylelint-config-standard-scss": "^17.0.0",
+    "stylelint-order": "^8.1.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.2",
     "zhlint": "^0.8.2"

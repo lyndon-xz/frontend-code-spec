@@ -1,7 +1,4 @@
-/**
- * 兼容 useRef(...) 与 xxx.useRef(...) 两种调用形态，覆盖变量声明与类字段。
- * 裸 `ref` 同样违规：它没有指向对象，属泛化命名，要求写成 inputRef / containerRef 这类「指向 + Ref」形态。
- */
+/** 裸 `ref` 同样违规：它没说清指向谁，要求写成 inputRef / containerRef 这类「指向 + Ref」形态 */
 export default {
   meta: {
     type: 'suggestion',

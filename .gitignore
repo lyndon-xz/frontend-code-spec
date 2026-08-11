@@ -1,7 +1,7 @@
 # 依赖
 node_modules/
 
-# 避免多包管理器混用
+# 只用 pnpm，避免多包管理器混用
 package-lock.json
 yarn.lock
 bun.lockb
@@ -9,40 +9,25 @@ bun.lockb
 # 构建产物
 dist/
 build/
-out/
-.output/
-.next/
-.nuxt/
-.svelte-kit/
-*.tgz
 
 # 缓存
 .cache/
-.turbo/
-*.tsbuildinfo
 .eslintcache
-.stylelintcache
+*.tsbuildinfo
 
 # 测试
 coverage/
-test-results/
-playwright-report/
-
-# 环境变量与密钥
-.env
-.env.*
-!.env.example
-!.env.*.example
-*.local
-*.pem
 
 # 日志
 *.log
 
+# 环境变量与密钥
+.env*
+!.env*.example
+
 # 编辑器
-.vscode/*
-!.vscode/settings.json
 .idea/
+.vscode/
 
 # 操作系统
 .DS_Store

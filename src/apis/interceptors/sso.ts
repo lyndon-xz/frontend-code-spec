@@ -5,10 +5,10 @@ import type { ResInterceptor } from '../types/interceptor';
 import type { SsoResponse } from '../types/response';
 import { RequestError, RequestErrorType } from '../utils/error';
 
-// 多个请求同时未授权时，只触发一次跳转；业务可在取消登录回流后调用 resetSsoRedirectState 复位
+// 多个请求同时未授权时只触发一次跳转
 let isRedirecting = false;
 
-// 判定是否为 SSO 信封；与 business 拦截器口径一致地校验类型，否则 returncode 为 "-100" 时未授权会被当成已登录放行
+// 严格校验数值类型，否则 returncode 为 "-100" 时未授权会被当成已登录放行
 const isSsoResponse = (body: unknown): body is SsoResponse => {
   return (
     typeof body === 'object' &&
@@ -18,7 +18,7 @@ const isSsoResponse = (body: unknown): body is SsoResponse => {
   );
 };
 
-// 仅允许跳转到 http/https 目标，拦截 javascript:/data: 等危险协议，避免开放重定向
+// 只放行 http/https，拦掉 javascript:/data: 等危险协议
 const isSafeRedirectUrl = (rawUrl: string): boolean => {
   try {
     const { protocol } = new URL(rawUrl, window.location.origin);
@@ -28,7 +28,7 @@ const isSafeRedirectUrl = (rawUrl: string): boolean => {
   }
 };
 
-// 通过临时 a 标签触发跳转（兼容部分环境下 location.href 被拦截的场景）
+// 用临时 a 标签而非 location.href：后者在部分环境下会被拦截
 const redirectTo = (url: string) => {
   const redirectLink = document.createElement('a');
   redirectLink.setAttribute('href', url);

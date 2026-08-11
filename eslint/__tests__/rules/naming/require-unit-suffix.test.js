@@ -8,6 +8,9 @@ ruleTester.run('require-unit-suffix', rule, {
     // 带单位后缀的量纲字段
     'interface Flight { priceCents: number; }',
     'interface Flight { priceYuan: number; }',
+    // price 不在金额词根内：它自身已说清是什么，强制后缀会铺满整个领域模型
+    'interface Flight { price: number; }',
+    'interface Order { totalPrice: number; }',
     'interface Config { timeoutMs: number; }',
     'interface Flight { departureTimeMs: number; arrivalTimeIso: string; }',
     // createdAt / updatedAt 是社区共识的时间戳命名，不在时间点量纲的词根里
@@ -49,7 +52,7 @@ ruleTester.run('require-unit-suffix', rule, {
   invalid: [
     {
       // 最典型的事故源：接口给「分」、展示按「元」
-      code: 'interface Flight { price: number; }',
+      code: 'interface Wallet { balance: number; }',
       errors: [{ messageId: 'missingUnit' }],
     },
     {
@@ -64,7 +67,7 @@ ruleTester.run('require-unit-suffix', rule, {
     },
     {
       // 联合类型里含 number 就算数值量纲
-      code: 'interface Fare { price: number | null; }',
+      code: 'interface Fare { fee: number | null; }',
       errors: [{ messageId: 'missingUnit' }],
     },
     {

@@ -1,5 +1,4 @@
-import type { AxiosRequestConfig } from 'axios';
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 
 interface RequestErrorMeta {
   // 仅 http / unauthorized 类错误有值
@@ -12,21 +11,16 @@ interface RequestErrorMeta {
   cause?: unknown;
 }
 
-/** 请求错误类型，供调用方按类型区分处理 */
 export enum RequestErrorType {
-  /** 网络不可达 */
   Network = 'network',
-  /** 请求超时 */
   Timeout = 'timeout',
   /** HTTP 状态码错误（4xx / 5xx） */
   Http = 'http',
   /** 业务码错误（HTTP 2xx 但 code !== 0） */
   Business = 'business',
-  /** 未登录 / 无权限 */
   Unauthorized = 'unauthorized',
-  /** 请求被主动取消 */
   Canceled = 'canceled',
-  /** 非请求链路的未知异常（如拦截器内部报错），不代表网络或服务端故障 */
+  /** 非请求链路的异常（如拦截器内部报错），不代表网络或服务端故障 */
   Unknown = 'unknown',
 }
 
@@ -41,6 +35,9 @@ const HTTP_STATUS_MESSAGE: Record<number, string> = {
   504: '网关超时，请稍后重试',
 };
 
+/** 退避等待期间的取消也复用此文案（见 retry.ts 的 delay），两处必须是同一份 */
+export const CANCELED_MESSAGE = '请求已取消';
+
 const DEFAULT_NETWORK_MESSAGE = '网络连接失败，请检查网络后重试';
 const DEFAULT_TIMEOUT_MESSAGE = '请求超时，请稍后重试';
 const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
@@ -48,10 +45,7 @@ const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
 const DEFAULT_REQUEST_MESSAGE = '请求失败，请稍后重试';
 const DEFAULT_UNKNOWN_MESSAGE = '请求出现异常，请稍后重试';
 
-/**
- * 统一的请求错误。各拦截器主动抛错时都用它携带 config，
- * 既保证 analytics 拦截器能通过 config 上报，也让 isErrorSwallowed:false 的调用方拿到结构化错误。
- */
+/** 统一的请求错误。各拦截器抛错时都用它携带 config，下游据此上报埋点、抑制重复提示 */
 export class RequestError extends Error {
   public readonly type: RequestErrorType;
   public readonly status?: number;
@@ -71,14 +65,14 @@ export class RequestError extends Error {
 
 /**
  * 把 axios / 取消 / 未知错误归一成带类型与提示文案的 RequestError。
- * 所有 axios 错误分支都必须带上 config：下游靠它读取 __retriesLeft 抑制重试期间的重复提示、读取 __requestId 串联埋点。
+ * 所有 axios 错误分支都必须带上 config，下游靠它读 __retriesLeft 抑制重复提示、读 __requestId 串联埋点。
  */
 export const classifyAxiosError = (error: unknown): RequestError => {
   if (error instanceof RequestError) return error;
 
   if (axios.isCancel(error)) {
     const config = axios.isAxiosError(error) ? error.config : undefined;
-    return new RequestError(RequestErrorType.Canceled, '请求已取消', { config });
+    return new RequestError(RequestErrorType.Canceled, CANCELED_MESSAGE, { config });
   }
 
   if (axios.isAxiosError(error)) {
@@ -98,7 +92,7 @@ export const classifyAxiosError = (error: unknown): RequestError => {
       return new RequestError(type, message, { status, config });
     }
 
-    // 无 response：请求没能到达服务端，属网络不可达
+    // 无 response 说明请求没能到达服务端
     return new RequestError(RequestErrorType.Network, DEFAULT_NETWORK_MESSAGE, { config });
   }
 
@@ -106,7 +100,7 @@ export const classifyAxiosError = (error: unknown): RequestError => {
   return new RequestError(RequestErrorType.Unknown, DEFAULT_UNKNOWN_MESSAGE, { cause: error });
 };
 
-/** 是否为可重试错误：网络不可达、超时、5xx 视为瞬时故障可重试；4xx、业务错误与未知异常不重试 */
+/** 只有网络不可达、超时、5xx 算瞬时故障；4xx、业务错误与未知异常不重试 */
 export const isRetryableError = (error: unknown): boolean => {
   if (!(error instanceof RequestError)) return false;
 

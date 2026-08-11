@@ -11,7 +11,6 @@ const DEFAULT_OPTIONS = {
 };
 
 /*
- * 解析文件路径，判定它是不是 index 文件、是不是公共库 index。
  * 公共库 index 的判据是「直接父目录为公共库目录且位于 src 内」，与层级深浅无关：
  * src/utils/index.ts 与 src/apis/utils/index.ts 同为公共库桶，都要禁。
  */
@@ -37,13 +36,9 @@ function analyzeIndexPath(filename, layout) {
 }
 
 /**
- * 禁止 barrel（桶）入口，按路径分两档策略，同一文件只落其中一档，不会重复报错：
- * - 公共库 index（父目录为 constants/utils/types/hooks 的 index.*）→ 直接禁文件存在（不看内容），
- *   公共库必须按领域文件直引，连手写聚合入口都不许有。
- * - 其它任意 index.ts(x) → 只禁 re-export 桶：`export * from` 与带 source 的 `export { x } from`，
- *   index 仍可包含自身声明，只是不许当转发中枢。
- *
- * publicLibDirs 与 srcDir 可通过 options 覆盖，业务目录约定不写死在规则里。
+ * 按路径分两档，同一文件只落其中一档，不会重复报错：
+ * - 公共库 index 直接禁文件存在（不看内容），公共库必须按领域文件直引，连手写聚合入口都不许有；
+ * - 其余 index.ts(x) 只禁 re-export 桶，index 仍可包含自身声明，只是不许当转发中枢。
  */
 export default {
   meta: {

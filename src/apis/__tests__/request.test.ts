@@ -1,5 +1,4 @@
-import type { AxiosInstance } from 'axios';
-import axios from 'axios';
+import axios, { type AxiosInstance, type Method } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -30,8 +29,12 @@ vi.mock('@/apis/utils/dedupe', () => ({
   registerDedupe: vi.fn(),
 }));
 
-// delay 直接 resolve，避免真实定时器拖慢重试用例
-vi.mock('@/apis/utils/retry', () => ({
+/*
+ * 只替换 delay 与 getRetryDelay 以避开真实定时器；canRetry 保留真实实现——
+ * 它承载「非幂等方法不重试」的判定，整体 mock 掉等于把这条防线从测试里摘掉。
+ */
+vi.mock('@/apis/utils/retry', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/utils/retry')>()),
   delay: vi.fn(() => Promise.resolve()),
   getRetryDelay: vi.fn(() => 0),
 }));
@@ -69,10 +72,11 @@ const nextServiceCode = () => {
 };
 
 // 便捷创建：返回请求函数与其底层 fake 实例，实例的 request 由用例自行编排
-const setupRequest = () => {
+const setupRequest = (options: { method?: Method } = {}) => {
+  const { method = 'GET' } = options;
   const instance = buildFakeInstance();
   mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
-  const run = createGetRequest(nextServiceCode());
+  const run = createRequest(nextServiceCode(), method);
   return { instance, run };
 };
 
@@ -132,6 +136,28 @@ describe('createRequest', () => {
       instance.request.mockRejectedValue(new RequestError(RequestErrorType.Timeout, '超时'));
 
       await expect(run({ url: '/x', retry: { count: 1 } })).resolves.toBeNull();
+      expect(instance.request).toHaveBeenCalledTimes(2);
+    });
+
+    it('非幂等方法即使配了 retry 也不重试', async () => {
+      const { instance, run } = setupRequest({ method: 'POST' });
+      instance.request.mockRejectedValue(new RequestError(RequestErrorType.Timeout, '超时'));
+
+      await expect(run({ url: '/x', retry: { count: 3 } })).resolves.toBeNull();
+      // POST 超时可能是服务端已处理、只是响应没回来，重试会重复提交
+      expect(instance.request).toHaveBeenCalledTimes(1);
+      expect(mockDelay).not.toHaveBeenCalled();
+    });
+
+    it('非幂等方法显式声明幂等后才重试', async () => {
+      const { instance, run } = setupRequest({ method: 'POST' });
+      instance.request
+        .mockRejectedValueOnce(new RequestError(RequestErrorType.Timeout, '超时'))
+        .mockResolvedValueOnce({ data: { ok: true } });
+
+      await expect(run({ url: '/x', retry: { count: 1, isIdempotent: true } })).resolves.toEqual({
+        ok: true,
+      });
       expect(instance.request).toHaveBeenCalledTimes(2);
     });
 

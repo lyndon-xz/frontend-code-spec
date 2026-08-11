@@ -18,6 +18,13 @@ ruleTester.run('require-tsx-default-export', rule, {
     { code: 'export const a = 1;', filename: 'foo.ts' },
     // 豁免文件放行
     { code: 'export const a = 1;', filename: 'C.test.tsx' },
+    // 应用入口：无任何导出，只有挂载副作用
+    {
+      code: 'createRoot(document.getElementById("root")).render(<App />);',
+      filename: 'main.tsx',
+    },
+    // 入口名不限于 main
+    { code: 'mount(<App />);', filename: 'entry.tsx' },
   ],
   invalid: [
     {

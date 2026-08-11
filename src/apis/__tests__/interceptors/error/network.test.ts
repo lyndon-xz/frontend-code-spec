@@ -46,7 +46,29 @@ describe('networkErrorInterceptor.onRejected', () => {
 
   it('仍有重试次数且错误可重试时不提示', async () => {
     const error = new RequestError(RequestErrorType.Timeout, '请求超时', {
-      config: { __retriesLeft: 2 },
+      config: { method: 'GET', __retriesLeft: 2 },
+    });
+
+    await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
+    expect(mockNotifyError).not.toHaveBeenCalled();
+  });
+
+  /*
+   * 抑制提示的判定必须与 sendWithRetry 的 canRetry 同源：只看错误类型的话这个请求会被当成
+   * 「即将重试」而静默，而 POST 实际不重试，用户既没等到重试也没看到提示。
+   */
+  it('非幂等方法即使有重试次数也提示', async () => {
+    const error = new RequestError(RequestErrorType.Timeout, '请求超时', {
+      config: { method: 'POST', __retriesLeft: 2 },
+    });
+
+    await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
+    expect(mockNotifyError).toHaveBeenCalledWith('请求超时');
+  });
+
+  it('非幂等方法显式声明幂等后抑制提示', async () => {
+    const error = new RequestError(RequestErrorType.Timeout, '请求超时', {
+      config: { method: 'POST', __retriesLeft: 2, retry: { count: 2, isIdempotent: true } },
     });
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);
@@ -56,7 +78,7 @@ describe('networkErrorInterceptor.onRejected', () => {
   it('有重试次数但错误不可重试时仍提示', async () => {
     const error = new RequestError(RequestErrorType.Http, '请求参数有误', {
       status: 400,
-      config: { __retriesLeft: 2 },
+      config: { method: 'GET', __retriesLeft: 2 },
     });
 
     await expect(networkErrorInterceptor.onRejected!(error)).rejects.toBe(error);

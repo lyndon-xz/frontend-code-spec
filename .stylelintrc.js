@@ -1,5 +1,10 @@
 export default {
-  extends: ['stylelint-config-standard-scss', 'stylelint-config-css-modules'],
+  // recess-order 排在末位：它只提供 properties-order，放最后确保这份顺序不被前面的 config 覆盖
+  extends: [
+    'stylelint-config-standard-scss',
+    'stylelint-config-css-modules',
+    'stylelint-config-recess-order',
+  ],
   rules: {
     // 强制 CSS 变量使用 kebab-case
     'custom-property-pattern': [
@@ -15,6 +20,16 @@ export default {
         message: 'Expected class selector to be camelCase, matching CSS Module rules.',
       },
     ],
+    /*
+     * 自定义属性按语义分组时中间会留空行（颜色一组、字体一组），不禁。
+     * standard 的默认值 except: after-custom-property 只允许连续变量紧挨着写。
+     */
+    'custom-property-empty-line-before': null,
+    /*
+     * 字体族名是专有名词（Georgia、Inter），大小写不该被拉平；
+     * 自定义属性的值 stylelint 判不出语义，一并跳过。
+     */
+    'value-keyword-case': ['lower', { ignoreProperties: ['font-family', 'font', '/^--/'] }],
     // 限制最大嵌套层级为 3 层
     'max-nesting-depth': [
       3,
@@ -34,4 +49,22 @@ export default {
       'z-index': ['/var\\(/', '-1', '0', '1', '2', '3', '4', '5'],
     },
   },
+  overrides: [
+    {
+      /*
+       * 全局样式表（基线样式、第三方主题覆盖）用 kebab-case：类名不经 JS 引用，
+       * 且覆盖 antd 这类库时必须照抄它的 kebab-case 类名。CSS Module 仍按上面的 camelCase 判。
+       * 注意 stylelint 的 files 不支持 ! 取反，这里靠命名取反：*.scss 里排除 *.module.scss 的写法是列举后缀。
+       */
+      files: ['**/global.scss', '**/globals.scss', '**/theme.scss', '**/*.global.scss'],
+      rules: {
+        'selector-class-pattern': [
+          '^([a-z][a-z0-9]*)(-[a-z0-9]+)*$',
+          {
+            message: 'Expected class selector in global stylesheet to be kebab-case',
+          },
+        ],
+      },
+    },
+  ],
 };

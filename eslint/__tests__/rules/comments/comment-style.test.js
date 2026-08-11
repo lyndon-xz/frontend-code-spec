@@ -11,10 +11,7 @@ ruleTester.run('comment-style', rule, {
     '// 普通说明\nconst a = 1;',
     // 空行隔断的两段单行 // 不视为堆叠，各自合规
     '// 第一段\n\n// 第二段\nconst a = 1;',
-    /*
-     * 堆叠中夹工具指令时停止合并：指令注释不参与风格校验，
-     * 把它并进块注释会连带改变它对 ESLint 的语义。
-     */
+    // 堆叠中夹工具指令时停止合并：并进块注释会改变它对 ESLint 的语义
     '// 第一段\n// eslint-disable-next-line no-console\nconsole.log(1);',
     // 文件末尾的注释后面没有代码，按非导出位置的单行注释处理
     'const a = 1;\n// 收尾说明\n',
@@ -119,10 +116,7 @@ ruleTester.run('comment-style', rule, {
       errors: [{ messageId: 'notAbove' }],
     },
     {
-      /*
-       * 行相邻但归属不同代码：第二条挂在 const x 行尾，它后面的代码已经是 const y，
-       * 与第一条的后继 token 不同，因此不算堆叠、不合并。
-       */
+      // 行相邻但后继 token 不同（第二条挂在 const x 行尾），不算堆叠、不合并
       code: '// 归属 x\nconst x = 1; // 行尾\nconst y = 2;',
       output: '// 归属 x\n// 行尾\nconst x = 1;\nconst y = 2;',
       errors: [{ messageId: 'notAbove' }],

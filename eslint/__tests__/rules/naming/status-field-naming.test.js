@@ -18,9 +18,8 @@ ruleTester.run('status-field-naming', rule, {
     'const initialState = { total: 0 };',
 
     /*
-     * 误报守卫：以下标识符都带 error / loading 词根，但不处于状态上下文内，不应被校验。
-     * 这类命名（errorHandler / errorNotifier / loadingSpinner）无法靠通用词白名单穷举放行，
-     * 放行必须来自上下文判定本身，故逐个钉住。
+     * 误报守卫：以下标识符都带 error / loading 词根却不在状态上下文内。
+     * 这类命名无法靠通用词白名单穷举放行，放行必须来自上下文判定本身，故逐个钉住。
      */
     'const errorHandler = (error) => report(error);',
     'const errorNotifier = defaultNotifier;',
