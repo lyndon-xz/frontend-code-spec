@@ -37,7 +37,6 @@ const redirectTo = (url: string) => {
   redirectLink.remove();
 };
 
-/** 复位 SSO 跳转闩锁（SPA 回流 / 测试场景） */
 export const resetSsoRedirectState = () => {
   isRedirecting = false;
 };

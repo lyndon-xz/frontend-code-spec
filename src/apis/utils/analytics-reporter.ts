@@ -13,7 +13,6 @@ export interface AnalyticsData {
   endTimeMs: number;
 }
 
-/** 生产环境上报实现，默认空实现，业务侧通过 setAnalyticsSender 接入 */
 export type AnalyticsSender = (analyticsData: AnalyticsData) => void;
 
 export enum RequestStatus {
@@ -65,10 +64,7 @@ export const resetAnalyticsSender = () => {
   activeAnalyticsSender = noopSender;
 };
 
-/**
- * 埋点上报出口。上报数据含完整请求参数与响应体，其中可能有身份证号、手机号这类个人标识，
- * 接入真实上报实现时须先按业务的敏感字段清单脱敏；本层只保证「生产不打控制台」这一条。
- */
+/** 上报数据含完整请求参数与响应体，接入真实上报实现前须按敏感字段清单脱敏 */
 export const reportAnalytics = (analyticsData: AnalyticsData) => {
   if (getEnvironment() === Environment.Development) {
     logToConsole(analyticsData);

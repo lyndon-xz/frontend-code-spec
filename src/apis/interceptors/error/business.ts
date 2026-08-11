@@ -8,7 +8,7 @@ import { notifyError } from '../../utils/error-notifier';
 
 const DEFAULT_BUSINESS_MESSAGE = '操作失败，请稍后重试';
 
-// 非信封响应（如文件流、三方接口）直接放行
+// 非信封响应（文件流、三方接口）直接放行
 const isBusinessResponse = (body: unknown): body is BusinessResponse => {
   return (
     typeof body === 'object' && body !== null && 'code' in body && typeof body.code === 'number'

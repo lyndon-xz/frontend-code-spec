@@ -9,9 +9,8 @@ ruleTester.run('ref-suffix-naming', rule, {
     'const inputRef = React.useRef(null);',
     'class C { inputRef = useRef(null); }',
     'class C { inputRef = React.useRef(null); }',
-    // 非 useRef 调用不受约束
     'const input = getInput();',
-    // 计算键的类字段不校验（覆盖 computed 守卫分支）
+    // 覆盖 computed 守卫分支
     'class C { [dynamicKey] = useRef(null); }',
     'class C { [dynamicKey] = React.useRef(null); }',
   ],
@@ -21,7 +20,7 @@ ruleTester.run('ref-suffix-naming', rule, {
       errors: [{ messageId: 'refSuffix' }],
     },
     {
-      // 裸 `ref` 没说清指向谁，与 no-generic-param-name 禁 `data` 同理属泛化命名
+      // 裸 ref 没说清指向谁，与禁用 data 同理属泛化命名
       code: 'const ref = useRef(null);',
       errors: [{ messageId: 'refSuffix' }],
     },

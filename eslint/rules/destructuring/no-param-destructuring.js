@@ -10,30 +10,21 @@ export default {
     },
   },
   create(context) {
-    /**
-     * @param {import('estree').Node} node
-     * @returns {boolean}
-     */
     function isDestructuringPattern(node) {
       return node.type === 'ObjectPattern' || node.type === 'ArrayPattern';
     }
 
-    /**
-     * @param {import('estree').Pattern} param
-     */
     function checkParam(param) {
       if (isDestructuringPattern(param)) {
         context.report({ node: param, messageId: 'noParamDestructure' });
         return;
       }
 
-      // ({ a } = {}) / ([a] = [])
       if (param.type === 'AssignmentPattern' && isDestructuringPattern(param.left)) {
         context.report({ node: param.left, messageId: 'noParamDestructure' });
         return;
       }
 
-      // ...{ a } / ...[a]
       if (param.type === 'RestElement' && isDestructuringPattern(param.argument)) {
         context.report({ node: param.argument, messageId: 'noParamDestructure' });
       }

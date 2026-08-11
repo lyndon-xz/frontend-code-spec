@@ -2,11 +2,8 @@ import { isExemptFile } from '../../utils/is-exempt-file.js';
 import { isFunctionNode } from '../../utils/is-function-node.js';
 
 /**
- * 收集组件与其 Props 类型（首参标注或 React.FC 泛型参数），命名不为 `${组件名}Props` 则重命名 interface。
  * `type XxxProps = {}` 由 consistent-type-definitions 先转成 interface，故不单独处理。
- *
- * autofix 走作用域引用改写当前文件内的全部引用（声明、参数标注、extends、泛型），避免遗漏引用改坏代码。
- * 修复只作用于当前文件：interface 被导出并在别处按旧名引用时，跨文件引用需另行处理。
+ * autofix 只改写当前文件内的引用：interface 被导出并在别处按旧名引用时，跨文件引用需另行处理。
  */
 export default {
   meta: {
@@ -37,13 +34,11 @@ export default {
       return typeName?.endsWith('Props') === true ? typeName : null;
     }
 
-    // 首参类型标注：(props: XxxProps)
     function propsNameFromParam(fnNode) {
       const firstParam = fnNode.params[0];
       return typeRefName(firstParam?.typeAnnotation?.typeAnnotation);
     }
 
-    // 变量类型标注的首个泛型参数：const C: React.FC<XxxProps> = ...
     function propsNameFromFcAnnotation(idNode) {
       const annotation = idNode.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== 'TSTypeReference') return null;
@@ -58,7 +53,6 @@ export default {
         interfaces.push({ node, name: node.id.name });
       },
 
-      // const Xxx = (props: XxxProps) => {} 或 const Xxx: React.FC<XxxProps> = () => {}
       'VariableDeclarator'(node) {
         if (
           node.id.type === 'Identifier' &&
@@ -72,7 +66,6 @@ export default {
         }
       },
 
-      // function Xxx(props: XxxProps) {}
       'FunctionDeclaration'(node) {
         // 匿名默认导出函数无 id，跳过
         const componentName = node.id?.name;
@@ -85,7 +78,7 @@ export default {
       },
 
       'Program:exit'() {
-        // 识别「多个组件共用同一 interface」的期望名冲突
+        // 多个组件共用同一 interface 时期望名会互相冲突，故先计数
         const componentCountByProps = new Map();
         for (const component of components) {
           const count = componentCountByProps.get(component.propsTypeName) ?? 0;
@@ -107,10 +100,7 @@ export default {
           // 计数表由 components 本身构建，故当前组件的 propsTypeName 必然在表内
           const isShared = componentCountByProps.get(component.propsTypeName) > 1;
           const isNameTaken = existingNames.has(expectedPropsName);
-          /*
-           * 组件名形如 IXxx 时期望名会命中 naming-convention 的 ^I[A-Z] 接口禁令，
-           * 自动改名反而产出被另一条规则判非法的代码，故只告警不 fix
-           */
+          // 期望名形如 IXxx 会命中 naming-convention 的接口禁令，改名反而产出非法代码，故只告警不 fix
           const violatesInterfaceIPrefix = /^I[A-Z]/.test(expectedPropsName);
           const canFix = !isShared && !isNameTaken && !violatesInterfaceIPrefix;
 

@@ -2,10 +2,7 @@ import path from 'path';
 
 import { isExemptFile } from '../../utils/is-exempt-file.js';
 
-/*
- * 文件名禁用 UI 限定符（-modal / -popup）与技术类型（-type / -config）后缀，强制业务名词主导：
- * 类型应由代码自身暴露，文件名体现功能领域。分层结构文件名（index / store / types / utils 等）放行。
- */
+// 类型应由代码自身暴露，故文件名只体现功能领域；分层结构文件名（index / store / types 等）放行
 
 // -list 不在其中：业务集合视图（review-list）用它表意
 const SUFFIX_PATTERN =

@@ -1,6 +1,6 @@
 import type { Method } from 'axios';
 
-/** 参与去重的请求标识：同一服务下 method + url + 参数完全相同才算同一请求 */
+/** 去重标识：同一服务下 method + url + 参数完全相同才算同一请求 */
 export interface DedupeRequest {
   /** 必须并入签名，否则不同服务的同名接口会跨服务误取消 */
   serviceCode: string;
@@ -10,10 +10,7 @@ export interface DedupeRequest {
   data?: unknown;
 }
 
-/**
- * 去重登记句柄。签名只在登记时算一次，release 通过闭包复用同一个 key，
- * 避免登记与注销两处各自重算签名而出现口径漂移。
- */
+/** release 复用登记时算出的 key，避免两处各自重算签名而口径漂移 */
 export interface DedupeHandle {
   signal: AbortSignal;
   release: () => void;
@@ -28,7 +25,7 @@ const isSerializable = (value: unknown): boolean => {
   return Object.getPrototypeOf(value) === Object.prototype;
 };
 
-// 参数不可稳定序列化（宿主对象 / 循环引用）时返回 null，表示该请求不参与去重
+// 参数不可稳定序列化时返回 null，表示该请求不参与去重
 const buildRequestKey = (request: DedupeRequest): string | null => {
   const { serviceCode, method, url, params, data } = request;
   if (!isSerializable(params) || !isSerializable(data)) return null;
@@ -40,10 +37,7 @@ const buildRequestKey = (request: DedupeRequest): string | null => {
   }
 };
 
-/**
- * 为请求登记去重控制器：若已有同签名请求在飞行中，先取消它再登记本次请求。
- * 不可去重的请求只返回 signal 与空 release，不进入登记表。
- */
+/** 已有同签名请求在飞行中时先取消它；不可去重的请求不进入登记表 */
 export const registerDedupe = (request: DedupeRequest): DedupeHandle => {
   const controller = new AbortController();
   const key = buildRequestKey(request);

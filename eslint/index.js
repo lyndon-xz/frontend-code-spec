@@ -104,10 +104,7 @@ export default [
     },
   },
 
-  /**
-   * 领域配置各自声明 files：与语言、框架、分层无关的规则覆盖 JS / TS / TSX，规则集源码因此同受约束。
-   * 正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线。
-   */
+  /** 各领域配置自行声明 files；正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线 */
   ...javascriptConfig,
   ...importsConfig,
   ...commentsConfig,

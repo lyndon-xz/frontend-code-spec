@@ -1,10 +1,6 @@
 /*
- * 禁前缀式、强制后缀式：`loadingXxx` → `isLoadingXxx`，`errorXxx` → `xxxError`。
- * 前缀式让并发多流程状态互相覆盖，读起来也别扭（"error flight list"）。
- *
- * 只在状态上下文（useState 声明、State 结尾的类型成员、State 结尾的状态对象字面量）内校验，
- * 这样 errorHandler / loadingSpinner 这类非状态标识符从构造上就不会被扫到，
- * 无需靠通用词白名单穷举放行——穷举必漏，漏了就是规则倒逼命名。
+ * 只在状态上下文（useState 声明、State 结尾的类型成员与状态对象字面量）内校验，
+ * 这样 errorHandler / loadingSpinner 从构造上就不会被扫到，无需靠通用词白名单穷举放行。
  */
 
 // error / loading 后紧跟这些通用属性词时放行：命名的是对象自身属性（errorMessage），不是领域状态流
@@ -30,12 +26,9 @@ const GENERIC_ATTR = new Set([
   'placeholder',
 ]);
 
-// loading 开头但不是 isLoading/shouldLoading 等布尔前缀形态
 const LOADING_PREFIX = /^loading[A-Z]/;
-// errorMessage 这类通用属性词随后由 GENERIC_ATTR 放行
 const ERROR_PREFIX = /^error[A-Z]/;
 
-// 状态类型与状态对象的命名约定：State、FlightState、initialState
 const STATE_NAME = /State$/;
 
 // 含 React.useState(...) 形态
@@ -110,7 +103,6 @@ export default {
   },
   create(context) {
     return {
-      // useState 声明：const [loadingList, setLoadingList] = useState(false) / const loadingList = useState(false)
       'VariableDeclarator'(node) {
         if (!isUseStateCall(node.init)) return;
 
@@ -119,13 +111,11 @@ export default {
           checkName(context, stateId);
         }
       },
-      // 状态类型成员：interface FlightState { errorOrder: string }
       'TSPropertySignature > Identifier.key'(node) {
         if (!node.parent.computed && isInStateType(node)) {
           checkName(context, node);
         }
       },
-      // 状态对象字面量：const initialState = { loadingList: false }
       'Property > Identifier.key'(node) {
         if (!node.parent.computed && isInStateObject(node.parent)) {
           checkName(context, node);

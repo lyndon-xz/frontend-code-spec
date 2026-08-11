@@ -1,23 +1,14 @@
 import { normalizePath } from './normalize-path.js';
 
-/*
- * 「哪些文件豁免规则校验」的唯一来源：测试 / mock / 类型声明 / 配置文件。运行时判定用正则、
- * flat config 的 ignores 用 glob，两种形态在此成对声明避免口径漂移。
- * 规则一律走 isExemptFile，只有无法自校验的第三方规则才用 EXEMPT_GLOBS。
- */
+// 豁免判定的唯一来源：规则一律走 isExemptFile，只有无法自校验的第三方规则才用 EXEMPT_GLOBS
 
 // 按完整路径段匹配，避免子串误判（如 my-mocks-project 不算 mocks 目录）
 const EXEMPT_DIR_SEGMENTS = new Set(['__tests__', '__mocks__', 'mocks']);
 
 // 匹配真实扩展名，避免误伤目录名或普通文件
-const EXEMPT_FILENAME_PATTERNS = [
-  /\.test\.[cm]?[jt]sx?$/,
-  // 仅 .d.ts，不含 .d.tsx
-  /\.d\.ts$/,
-  /\.config\.[cm]?[jt]sx?$/,
-];
+const EXEMPT_FILENAME_PATTERNS = [/\.test\.[cm]?[jt]sx?$/, /\.d\.ts$/, /\.config\.[cm]?[jt]sx?$/];
 
-/** 与上述目录段 / 文件名口径对应的 glob，供 flat config 的 ignores 使用 */
+/** 与运行时判定口径对应的 glob，供 flat config 的 ignores 使用 */
 export const EXEMPT_GLOBS = [
   ...[...EXEMPT_DIR_SEGMENTS].map((segment) => `**/${segment}/**`),
   '**/*.test.*',
@@ -25,11 +16,7 @@ export const EXEMPT_GLOBS = [
   '**/*.config.*',
 ];
 
-/**
- * 入参取自 context.filename：它恒为非空字符串（未提供文件名时为 `<input>`），故不设空值守卫。
- * @param {string} filename
- * @returns {boolean}
- */
+/** 入参取自 context.filename：它恒为非空字符串（未提供文件名时为 `<input>`），故不设空值守卫 */
 export function isExemptFile(filename) {
   const segments = normalizePath(filename).split('/');
   const basename = segments[segments.length - 1];

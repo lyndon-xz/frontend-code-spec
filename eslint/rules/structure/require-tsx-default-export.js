@@ -1,6 +1,5 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
 
-/** 测试 / mock / 类型声明 / 配置文件豁免；无任何导出的 TSX 视为应用入口，同样豁免。 */
 export default {
   meta: {
     type: 'problem',
@@ -20,10 +19,7 @@ export default {
         if (!filename.endsWith('.tsx') || isExemptFile(filename)) {
           return;
         }
-        /*
-         * 一个导出都没有的 TSX 是应用入口（挂载 root、注册全局配置），没有默认导出可谈。
-         * 用「有无导出」而非文件名判定：入口名各仓库不同（main/app/entry），组件文件必然对外导出。
-         */
+        // 一个导出都没有的 TSX 是应用入口，没有默认导出可谈；入口名各仓库不同，故按有无导出判定而非文件名
         const exportKinds = new Set([
           'ExportDefaultDeclaration',
           'ExportNamedDeclaration',

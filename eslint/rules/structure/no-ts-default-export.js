@@ -1,6 +1,5 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
 
-/** .d.ts / .config.ts / 测试 / mock 文件豁免。 */
 export default {
   meta: {
     type: 'problem',

@@ -11,10 +11,7 @@ export const networkErrorInterceptor: ResInterceptor = {
     const { isSilent = false, customMessage } = config?.networkError ?? {};
     const errorMessage = customMessage ?? defaultMessage;
     const retriesLeft = config?.__retriesLeft ?? 0;
-    /*
-     * 必须与 sendWithRetry 用同一个 canRetry 判定，否则两处会漂移：只看错误类型会把「POST 超时」
-     * 当成即将重试而抑制提示，而它实际不重试。method 读不到时按不重试处理——宁可多提示一次。
-     */
+    // 必须与 sendWithRetry 用同一个 canRetry 判定，否则抑制提示与实际重试两处会漂移
     const willRetry =
       retriesLeft > 0 &&
       config?.method != null &&

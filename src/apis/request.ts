@@ -14,7 +14,7 @@ import { registerDedupe } from './utils/dedupe';
 import { canRetry, delay, getRetryDelay } from './utils/retry';
 import { generateRequestId } from './utils/trace';
 
-/** 实例级可覆盖配置（同一 serviceCode 首次创建生效，后续差异会在开发环境告警） */
+/** 实例级可覆盖配置，同一 serviceCode 仅首次创建时生效 */
 export type RequestInstanceOptions = Pick<
   AxiosRequestConfig,
   'timeout' | 'withCredentials' | 'headers'
@@ -23,7 +23,7 @@ export type RequestInstanceOptions = Pick<
 const DEFAULT_TIMEOUT = 3000;
 const DEFAULT_HEADERS = { 'Content-Type': 'application/json' };
 
-// 同一 serviceCode 在运行期只创建一个实例；两张表按 serviceCode 对齐，签名用于配置漂移告警
+// 两张表按 serviceCode 对齐，签名用于配置漂移告警
 const serviceInstances = new Map<string, AxiosInstance>();
 const serviceSignatures = new Map<string, string>();
 
@@ -47,7 +47,7 @@ const getServiceInstance = (config: InstanceConfig): AxiosInstance => {
     ...restConfig
   } = config;
 
-  // 浅合并而非整体替换：调用方只想加一个 header 时，不该连默认 Content-Type 一起丢掉
+  // 浅合并而非整体替换，否则调用方只加一个 header 就会丢掉默认 Content-Type
   const mergedHeaders = { ...DEFAULT_HEADERS, ...headers };
 
   const signature = JSON.stringify({
@@ -95,7 +95,7 @@ interface RetryContext {
 
 const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
   const { instance, config, method, signal, maxRetries } = context;
-  // 在循环外生成：每次尝试都是新的 config 对象，交给拦截器生成会让同一请求的重试拿到互不关联的 id
+  // 在循环外生成，否则每次尝试的新 config 会让同一请求的重试拿到互不关联的 id
   const requestId = generateRequestId({ ...config, method });
 
   for (let attempt = 0; ; attempt += 1) {
@@ -117,10 +117,7 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
   }
 };
 
-/*
- * 响应拦截器按注册顺序 FIFO 执行：network（异常归一）→ sso（登录态）→ business（业务码、拆包）→ analytics（上报）。
- * 异常兜底（转 null / 重试）由下方 createRequest 统一处理，不放进拦截器链。
- */
+// 响应拦截器按注册顺序执行，顺序不可调整：异常归一 → 登录态 → 业务码拆包 → 上报
 const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}): AxiosInstance =>
   getServiceInstance({
     serviceCode,
@@ -134,10 +131,7 @@ const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}
     ],
   });
 
-/**
- * 创建指定 HTTP 方法的请求函数：自动剥离业务信封只返回 data，
- * 默认吞掉错误以 null 返回（可用 isErrorSwallowed: false 改为抛出 RequestError）。
- */
+/** 创建指定 HTTP 方法的请求函数，剥离业务信封后只返回 data */
 export const createRequest = (
   serviceCode: string,
   method: Method,

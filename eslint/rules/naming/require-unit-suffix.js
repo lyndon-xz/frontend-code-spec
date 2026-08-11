@@ -1,15 +1,10 @@
 /*
- * 数值量纲字段只写 price / duration / size 时，单位就只活在口头约定里：接口给「分」、卡片按「元」渲染，
- * 一次误解就是 100 倍的金额事故。只校验类型成员——它们是跨端传递的契约，单位歧义在这里代价最大；
- * 局部变量与函数参数生命周期短、上下文就在眼前，校验只会把噪音铺满代码库。
+ * 只校验类型成员：它们是跨端传递的契约，单位歧义在这里代价最大；
+ * 局部变量与函数参数生命周期短、上下文就在眼前，校验只会铺噪音。
  */
 
-// 词根命中且类型为数值时，字段名必须以其中一个单位后缀结尾
 const DEFAULT_DIMENSIONS = [
-  /*
-   * 不收 `price`：它是最高频的金额词，`totalPrice` / `pricePerNight` 本身已说清是什么，
-   * 强制后缀会把后缀铺满整个领域模型。真要区分分与元，`type Cents = number` 比命名更硬。
-   */
+  // 不收 `price`：`totalPrice` / `pricePerNight` 已说清是什么，强制后缀会铺满整个领域模型
   {
     name: '金额',
     roots: ['amount', 'fee', 'cost', 'balance', 'salary', 'discount', 'deposit'],
@@ -20,10 +15,7 @@ const DEFAULT_DIMENSIONS = [
     roots: ['duration', 'timeout', 'delay', 'interval', 'elapsed'],
     suffixes: ['Ms', 'Seconds', 'Minutes', 'Hours', 'Days'],
   },
-  /*
-   * 秒级时间戳、毫秒级时间戳、ISO 字符串三者混用是接口联调的常客。
-   * 不收 `at` 结尾：createdAt / updatedAt 已是社区共识，强制 createdAtMs 属反惯例。
-   */
+  // 不收 `at` 结尾：createdAt / updatedAt 已是社区共识，强制 createdAtMs 属反惯例
   {
     name: '时间点',
     roots: ['time', 'timestamp', 'deadline', 'expires'],
@@ -42,7 +34,7 @@ const DEFAULT_OPTIONS = {
   ignoredFields: [],
 };
 
-// 判定停留在语法层：number 本体，或联合类型里含 number（price: number | null）
+// 判定停留在语法层，不做类型推断：只认 number 本体与含 number 的联合类型
 function isNumericAnnotation(annotation) {
   if (annotation == null) return false;
   if (annotation.type === 'TSNumberKeyword') return true;
@@ -50,11 +42,7 @@ function isNumericAnnotation(annotation) {
   return false;
 }
 
-/*
- * 先剥掉尾部单位后缀，再看剩下部分是否以词根结尾：priceCents 剥成 price（合规），
- * price 剥不掉（报错），unitPrice / totalAmount 这类复合命名一并命中。
- * 未登记的单位写法（priceFen）识别不出来，属于用漏报换低噪音——补 dimensions 即可覆盖。
- */
+// 未登记的单位写法（priceFen）识别不出来，属于用漏报换低噪音——补 dimensions 即可覆盖
 function matchDimension(fieldName, dimensions) {
   for (const dimension of dimensions) {
     const { roots, suffixes } = dimension;

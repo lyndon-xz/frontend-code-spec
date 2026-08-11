@@ -5,7 +5,7 @@ import { RequestStatus, reportAnalytics } from '../utils/analytics-reporter';
 import { RequestError, RequestErrorType } from '../utils/error';
 import { generateRequestId } from '../utils/trace';
 
-// 缺少 requestId / startTimeMs（未经埋点请求拦截器）时返回 null，调用方据此跳过上报
+// 缺少 requestId / startTimeMs 时返回 null，调用方据此跳过上报
 const extractTrace = (config?: AxiosRequestConfig) => {
   const {
     __requestId: requestId,
@@ -54,7 +54,7 @@ export const analyticsResInterceptor: ResInterceptor = {
   },
 
   onRejected: async (error: unknown) => {
-    // 经过 network 拦截器归一后，到这里的错误必然是 RequestError（自带 config）
+    // network 拦截器已把错误归一为 RequestError，它自带 config
     if (!(error instanceof RequestError)) return Promise.reject(error);
 
     const { type, config, message: rawMessage } = error;

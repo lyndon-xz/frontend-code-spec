@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import plugin from '../index.js';
 
-// 自研规则清单，与 index.js 注册的 custom 命名空间应一一对应
 const EXPECTED_RULE_NAMES = [
   'comment-style',
   'no-promise-chain',

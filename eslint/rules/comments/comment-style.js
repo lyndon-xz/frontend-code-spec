@@ -5,9 +5,8 @@ function isExportNode(node) {
       return true;
     }
     /*
-     * 遇到函数体 / 对象体 / 类体 / 程序顶层就停止追溯：其内部的注释属于实现细节，
-     * 不应被上层的 export 语义传染成文档注释。ClassBody 与 ObjectExpression 对称，
-     * 保证导出类与导出对象的成员上方注释判定一致（均按非导出处理）。
+     * 遇到函数体 / 对象体 / 类体 / 顶层即停止追溯，内部注释不被上层 export 语义传染；
+     * ClassBody 与 ObjectExpression 成对出现，保证导出类与导出对象的成员注释判定一致。
      */
     if (
       current.type === 'FunctionDeclaration' ||
@@ -24,10 +23,7 @@ function isExportNode(node) {
   return false;
 }
 
-/*
- * 只按「行首形态」判断整行是否像 JS 语句 / 声明，避免把仅含 () / => 的中文散文
- * （如「通过 store.dispatch() 调用」）误判为被注释掉的代码。
- */
+// 只按行首形态判断，避免把含 () / => 的中文散文误判为被注释掉的代码
 function looksLikeCommentedCode(text) {
   if (
     /^(import|export|const|let|var|function|async|await|class|interface|type|enum|namespace|return|if|else|for|while|do|switch|case|break|continue|throw|new|delete|yield|console|window|document)\b/.test(
@@ -36,7 +32,6 @@ function looksLikeCommentedCode(text) {
   ) {
     return true;
   }
-  // 「标识符(...)」调用或「标识符 = ...」赋值
   if (/^[A-Za-z_$][\w$.]*\s*(\(|=[^=])/.test(text)) {
     return true;
   }
@@ -46,7 +41,6 @@ function looksLikeCommentedCode(text) {
   return false;
 }
 
-// 清洗成单行纯文本，去掉每行的前导 *
 function stripBlock(value) {
   return value
     .split('\n')
@@ -55,21 +49,16 @@ function stripBlock(value) {
     .join(' ');
 }
 
-/*
- * 判据是 comment.value 的首字符为 *，不可 trim——
- * 否则每行带 ` * ` 前缀的普通块注释会被误判为 JSDoc。
- */
+// 判据是 comment.value 的首字符为 *，不可 trim：否则每行带 ` * ` 前缀的普通块注释会被误判为 JSDoc
 function isJsdocBlock(comment) {
   return comment.type === 'Block' && comment.value.startsWith('*');
 }
 
-// 工具指令、三斜线引用、含标签的 JSDoc、被注释掉的代码都不参与位置与风格校验
 function isSkippableComment(comment) {
   const text = comment.value.trim();
   if (text.startsWith('eslint-') || text.startsWith('prettier-') || text.startsWith('@ts-')) {
     return true;
   }
-  // /// <reference ... />
   if (comment.type === 'Line' && /^\/\s*</.test(text)) {
     return true;
   }
@@ -99,10 +88,7 @@ function buildMoveAboveFix(sourceCode, comment, tokenBefore) {
   };
 }
 
-/*
- * 收集「连续堆叠、且同处一段代码上方」的注释组：从 startIdx 起，
- * 要求逐条行相邻、非可跳过、且共享同一后继代码 token。
- */
+// 成组的判据：逐条行相邻，且共享同一后继代码 token
 function collectCommentStack(scanContext) {
   const { sourceCode, comments, startIdx, tokenAfter } = scanContext;
   const stack = [comments[startIdx]];
@@ -121,26 +107,18 @@ function extractCommentLines(stack) {
   return stack.map((item) => (item.type === 'Block' ? stripBlock(item.value) : item.value.trim()));
 }
 
-/*
- * 内容含块注释结束符时不能包进块注释：会把块注释提前闭合，残留的结束符是语法错误。
- * 转义虽能编译，却改变了注释文字本身，同属改坏用户内容，故一律放弃自动修复、只报错。
- */
+// 含 `*/` 时不能包进块注释：会提前闭合而产生语法错误，转义则改动了注释文字，故放弃自动修复
 function canWrapInBlockComment(text) {
   return !text.includes('*/');
 }
 
-// opener 决定合并成文档注释还是普通块注释
 function buildMergedComment(stack, opener) {
   const indent = ' '.repeat(stack[0].loc.start.column);
   const lines = extractCommentLines(stack);
   return `${opener}\n${lines.map((line) => `${indent} * ${line}`).join('\n')}\n${indent} */`;
 }
 
-/**
- * 以「注释正下方的代码是否为 export」为唯一分界：export 上方用 `/** *\/`，
- * 其余位置单行用 `//`、多行用 `/* *\/`，多段堆叠各自合并为一个块。
- * 优先级：先放行指令 / 被注释掉的代码 / 内联参数注释，再判位置，最后判风格。
- */
+/** 优先级：先放行指令 / 被注释掉的代码 / 内联参数注释，再判位置，最后判风格 */
 export default {
   meta: {
     type: 'layout',
@@ -179,7 +157,6 @@ export default {
       });
     }
 
-    // 已是 /** */ 则合规，否则（// 或普通 /* */）转成 /** */
     function checkExportSingle(comment) {
       if (isJsdocBlock(comment)) return;
       const content = comment.type === 'Block' ? stripBlock(comment.value) : comment.value.trim();
@@ -192,7 +169,6 @@ export default {
       });
     }
 
-    // 行注释天然合规；单行块 → //；多行 JSDoc → 普通 /* */
     function checkInternalSingle(comment) {
       if (comment.type !== 'Block') return;
 
@@ -205,12 +181,10 @@ export default {
         });
         return;
       }
-      // 普通多行 /* */ 合规；只有多行 JSDoc 需降级
       if (isJsdocBlock(comment)) {
         context.report({
           loc: comment.loc,
           messageId: 'internalMultiLine',
-          // 去掉注释体开头的一个 *，把 /** 降级为 /*
           fix: (fixer) => fixer.replaceText(comment, `/*${comment.value.replace(/^\*/, '')}*/`),
         });
       }
@@ -228,7 +202,6 @@ export default {
           const tokenBefore = sourceCode.getTokenBefore(comment, { includeComments: false });
           const tokenAfter = sourceCode.getTokenAfter(comment, { includeComments: false });
 
-          // 位置：必须在目标代码上方独占一行
           const sameLineBefore = tokenBefore && tokenBefore.loc.end.line === comment.loc.start.line;
           const sameLineAfter = tokenAfter && tokenAfter.loc.start.line === comment.loc.end.line;
           if (sameLineBefore || sameLineAfter) {
@@ -244,7 +217,6 @@ export default {
             return;
           }
 
-          // 语义：按下方代码是否为 export 分流。先收堆叠、多段合并，否则按位置处理单条
           const nodeAfter = sourceCode.getNodeByRangeIndex(
             tokenAfter ? tokenAfter.range[0] : comment.range[1],
           );

@@ -22,11 +22,7 @@ import {
 import { Environment } from '@/constants/environment';
 import { getEnvironment } from '@/utils/environment';
 
-/*
- * 与 request.test.ts 的分工：那边把 axios 实例整体换成假对象，只验证 createRequest 自身的编排；
- * 这里保留真实 axios 与全部拦截器、只换掉最底层 adapter，守住跨拦截器的契约
- * （重试期间的提示抑制、失败埋点、拆包）——这类契约在实例被 mock 掉时无人校验。
- */
+// 与 request.test.ts 分工：那边整体替换 axios 实例，这里只换最底层 adapter，守住跨拦截器契约
 
 vi.mock('@/utils/environment', () => ({
   getEnvironment: vi.fn(),
@@ -113,10 +109,7 @@ describe('拦截器链端到端', () => {
 
     expect(result).toBeNull();
 
-    /*
-     * 三次尝试里只有最后一次该提示：前两次的错误带着 __retriesLeft > 0，网络拦截器据此静默。
-     * 依赖 classifyAxiosError 在无 response 的分支上带出 config，config 丢了就会连收三条提示。
-     */
+    // 前两次错误带 __retriesLeft > 0 被网络拦截器静默，config 丢了就会连收三条提示
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledWith('网络连接失败，请检查网络后重试');
 

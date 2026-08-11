@@ -5,22 +5,20 @@ interface RequestErrorMeta {
   status?: number;
   // 仅 business 类错误有值
   code?: number;
-  // 下游靠它抑制重试期间的重复提示、串联埋点，各归一分支都应带上
+  // 各归一分支都必须带上，下游靠它抑制重试期间的重复提示、串联埋点
   config?: AxiosRequestConfig;
-  // 仅 unknown 类错误有值，保留现场便于定位真正的异常来源
+  // 仅 unknown 类错误有值
   cause?: unknown;
 }
 
 export enum RequestErrorType {
   Network = 'network',
   Timeout = 'timeout',
-  /** HTTP 状态码错误（4xx / 5xx） */
   Http = 'http',
-  /** 业务码错误（HTTP 2xx 但 code !== 0） */
   Business = 'business',
   Unauthorized = 'unauthorized',
   Canceled = 'canceled',
-  /** 非请求链路的异常（如拦截器内部报错），不代表网络或服务端故障 */
+  /** 非请求链路的异常，不代表网络或服务端故障 */
   Unknown = 'unknown',
 }
 
@@ -35,17 +33,16 @@ const HTTP_STATUS_MESSAGE: Record<number, string> = {
   504: '网关超时，请稍后重试',
 };
 
-/** 退避等待期间的取消也复用此文案（见 retry.ts 的 delay），两处必须是同一份 */
+/** 退避等待期间的取消也复用此文案，两处必须同源 */
 export const CANCELED_MESSAGE = '请求已取消';
 
 const DEFAULT_NETWORK_MESSAGE = '网络连接失败，请检查网络后重试';
 const DEFAULT_TIMEOUT_MESSAGE = '请求超时，请稍后重试';
 const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
-// 未映射的 4xx：请求已到达服务端，与网络无关，故用不归因的中性文案
+// 未映射的 4xx 已到达服务端，与网络无关，故用不归因的中性文案
 const DEFAULT_REQUEST_MESSAGE = '请求失败，请稍后重试';
 const DEFAULT_UNKNOWN_MESSAGE = '请求出现异常，请稍后重试';
 
-/** 统一的请求错误。各拦截器抛错时都用它携带 config，下游据此上报埋点、抑制重复提示 */
 export class RequestError extends Error {
   public readonly type: RequestErrorType;
   public readonly status?: number;
@@ -63,10 +60,7 @@ export class RequestError extends Error {
   }
 }
 
-/**
- * 把 axios / 取消 / 未知错误归一成带类型与提示文案的 RequestError。
- * 所有 axios 错误分支都必须带上 config，下游靠它读 __retriesLeft 抑制重复提示、读 __requestId 串联埋点。
- */
+/** 归一成带类型与提示文案的 RequestError，每个 axios 错误分支都必须带上 config */
 export const classifyAxiosError = (error: unknown): RequestError => {
   if (error instanceof RequestError) return error;
 
@@ -96,7 +90,7 @@ export const classifyAxiosError = (error: unknown): RequestError => {
     return new RequestError(RequestErrorType.Network, DEFAULT_NETWORK_MESSAGE, { config });
   }
 
-  // 非 axios 错误只可能来自链路内部（拦截器抛错等），归到 Network 会把代码 bug 伪装成网络问题
+  // 非 axios 错误来自链路内部，归到 Network 会把代码 bug 伪装成网络问题
   return new RequestError(RequestErrorType.Unknown, DEFAULT_UNKNOWN_MESSAGE, { cause: error });
 };
 

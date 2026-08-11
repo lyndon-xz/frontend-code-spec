@@ -68,7 +68,7 @@ const FLIGHT_SERVICE_CODE = '33251';
 const get = createGetRequest(FLIGHT_SERVICE_CODE);
 const post = createPostRequest(FLIGHT_SERVICE_CODE);
 
-/** 去重签名含 params，只挡「同一筛选条件被连续触发」；改筛选条件属不同请求，不会取消上一次 */
+/** 去重签名含 params，只挡同一筛选条件的连续触发，改条件不会取消上一次 */
 export const fetchFlights = (query: FlightListParams) =>
   get<FlightListResult>({
     url: '/flight/list',
@@ -99,7 +99,7 @@ export const fetchFlightDetailWithCustomError = (flightNo: string) =>
 export const bookFlight = (payload: BookFlightPayload) =>
   post<BookFlightResult>({ url: '/flight/book', data: payload });
 
-/** 抛出 RequestError 由调用方按错误类型 / 业务码自行处理，故一并关掉默认提示 */
+/** 错误交调用方按类型 / 业务码自行处理，故一并关掉默认提示 */
 export const bookFlightOrThrow = (payload: BookFlightPayload) =>
   post<BookFlightResult>({
     url: '/flight/book',

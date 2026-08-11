@@ -4,10 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNAUTHORIZED_CODE } from '@/apis/constants/code';
 import type { ResInterceptor } from '@/apis/types/interceptor';
 
-/*
- * isRedirecting 是模块级状态，用 resetModules + 动态导入让每个用例拿到全新副本；
- * RequestError 一并动态导入，确保与 sso 内抛出的实例来自同一模块图，instanceof 才成立。
- */
+// isRedirecting 是模块级状态，靠 resetModules + 动态导入隔离；RequestError 同源导入才让 instanceof 成立
 let ssoInterceptor: ResInterceptor;
 let resetSsoRedirectState: typeof import('@/apis/interceptors/sso').resetSsoRedirectState;
 let RequestError: typeof import('@/apis/utils/error').RequestError;

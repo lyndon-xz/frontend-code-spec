@@ -2,7 +2,6 @@ import type { InternalAxiosRequestConfig } from 'axios';
 
 import type { ReqInterceptor } from '../types/interceptor';
 
-/** token 读取实现，业务方可替换为内存 / cookie / 状态管理 */
 export type AuthTokenProvider = () => string | null;
 
 const AUTH_TOKEN_KEY = 'auth_token';

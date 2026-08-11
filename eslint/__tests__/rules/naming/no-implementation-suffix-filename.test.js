@@ -5,15 +5,12 @@ const ruleTester = createRuleTester();
 
 ruleTester.run('no-implementation-suffix-filename', rule, {
   valid: [
-    // 业务名词主导
     { code: 'const a = 1;', filename: 'flight-detail.ts' },
-    // index 放行
     { code: 'const a = 1;', filename: 'index.ts' },
-    // 业务集合名 -list 放行
+    // 业务集合名 -list 不算实现后缀
     { code: 'const a = 1;', filename: 'review-list.ts' },
     // 分层结构文件名放行
     { code: 'const a = 1;', filename: 'constants.ts' },
-    // 豁免文件（测试文件）
     { code: 'const a = 1;', filename: 'flight-modal.test.ts' },
   ],
   invalid: [

@@ -5,17 +5,14 @@ const ruleTester = createRuleTester();
 
 ruleTester.run('props-interface-naming', rule, {
   valid: [
-    // 命名合规：组件名Props
     {
       code: 'interface FooProps {}\nfunction Foo(props: FooProps) { return null; }',
       filename: 'Foo.tsx',
     },
-    // React.FC 泛型参数命名合规
     {
       code: 'interface BarProps {}\nconst Bar: React.FC<BarProps> = () => null;',
       filename: 'Bar.tsx',
     },
-    // 箭头函数组件命名合规
     {
       code: 'interface BazProps {}\nconst Baz = (props: BazProps) => null;',
       filename: 'Baz.tsx',
@@ -30,7 +27,7 @@ ruleTester.run('props-interface-naming', rule, {
       code: 'function Foo(props) { return null; }',
       filename: 'Foo.tsx',
     },
-    // 首参类型非类型引用（基础类型），不收集
+    // 首参类型非类型引用，不收集为组件
     {
       code: 'function Foo(props: string) { return null; }',
       filename: 'Foo.tsx',
@@ -45,12 +42,12 @@ ruleTester.run('props-interface-naming', rule, {
       code: 'const Bar: SomeType = () => null;',
       filename: 'Bar.tsx',
     },
-    // 变量标注不是类型引用（此处为函数类型），取不到泛型参数
+    // 变量标注非类型引用，取不到泛型参数
     {
       code: 'const Bar: () => null = () => null;',
       filename: 'Bar.tsx',
     },
-    // Props 类型声明在别的文件里，本文件无同名 interface 可改，只能跳过
+    // Props 类型在别的文件，本文件无同名 interface 可改，只能跳过
     {
       code: "import type { ExternalProps } from './types';\nfunction Foo(props: ExternalProps) { return null; }",
       filename: 'Foo.tsx',
@@ -73,7 +70,6 @@ ruleTester.run('props-interface-naming', rule, {
   ],
   invalid: [
     {
-      // 命名不合规，重命名全部引用
       code: 'interface Props {}\nfunction Foo(props: Props) { return null; }',
       filename: 'Foo.tsx',
       output: 'interface FooProps {}\nfunction Foo(props: FooProps) { return null; }',

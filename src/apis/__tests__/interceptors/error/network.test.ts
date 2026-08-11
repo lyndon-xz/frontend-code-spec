@@ -53,10 +53,7 @@ describe('networkErrorInterceptor.onRejected', () => {
     expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
-  /*
-   * 抑制提示的判定必须与 sendWithRetry 的 canRetry 同源：只看错误类型的话这个请求会被当成
-   * 「即将重试」而静默，而 POST 实际不重试，用户既没等到重试也没看到提示。
-   */
+  // 抑制提示的判定须与 sendWithRetry 的 canRetry 同源，只看错误类型会让不重试的 POST 静默
   it('非幂等方法即使有重试次数也提示', async () => {
     const error = new RequestError(RequestErrorType.Timeout, '请求超时', {
       config: { method: 'POST', __retriesLeft: 2 },

@@ -1,4 +1,3 @@
-/** 为防误修分档：只有「参数逐一透传」(e) => fn(e) 提供 fix，其余形态跳过或只告警（见各分支） */
 export default {
   meta: {
     type: 'suggestion',
@@ -32,15 +31,12 @@ export default {
 
         let callExpr;
         if (arrow.body.type === 'CallExpression') {
-          // () => fn()
           callExpr = arrow.body;
         } else if (arrow.body.type === 'BlockStatement' && arrow.body.body.length === 1) {
           const stmt = arrow.body.body[0];
           if (stmt.type === 'ExpressionStatement' && stmt.expression.type === 'CallExpression') {
-            // () => { fn(); }
             callExpr = stmt.expression;
           } else if (stmt.type === 'ReturnStatement' && stmt.argument?.type === 'CallExpression') {
-            // () => { return fn(); }
             callExpr = stmt.argument;
           } else {
             return;
@@ -52,7 +48,7 @@ export default {
         const arrowParams = arrow.params;
         const callArgs = callExpr.arguments;
 
-        // this 绑定丢失风险：onClick={(e) => obj.fn(e)} → onClick={obj.fn}
+        // 去掉包裹会丢 this 绑定，跳过
         if (callExpr.callee.type === 'MemberExpression') {
           return;
         }
@@ -64,7 +60,6 @@ export default {
           return;
         }
 
-        // 参数逐一透传：(e) => fn(e) 或 (a, b) => fn(a, b)
         if (
           arrowParams.length > 0 &&
           arrowParams.length === callArgs.length &&

@@ -1,13 +1,8 @@
 /*
- * actions 对象、映射表这类模块级常量不随渲染变化。解构写进组件体，它会和 useXxxModel() 那行并列，
- * 暗示它也随渲染变化；提到 import 之后、组件之前，组件体就只剩渲染真正依赖的东西。
- *
- * 判据是「右侧标识符解析到模块作用域」，而不是「在组件里」：props（参数）、useXxxModel()（调用）、
- * obj.nested（成员访问）都不报，只报 const { a } = importedActions。
+ * 判据是「右侧标识符解析到模块作用域」而非「在组件里」：props、useXxxModel()、obj.nested 都不报。
  * 只看 ObjectPattern：数组解构取的是位置而非成员，提到顶层没有意义。
  */
 
-// 模块顶层的解构本身就是目标形态，不必再查
 function isInModuleScope(scope) {
   return scope.type === 'module' || scope.type === 'global';
 }

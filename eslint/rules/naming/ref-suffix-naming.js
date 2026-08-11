@@ -1,4 +1,4 @@
-/** 裸 `ref` 同样违规：它没说清指向谁，要求写成 inputRef / containerRef 这类「指向 + Ref」形态 */
+/** 裸 `ref` 同样违规：它没说清指向谁 */
 export default {
   meta: {
     type: 'suggestion',

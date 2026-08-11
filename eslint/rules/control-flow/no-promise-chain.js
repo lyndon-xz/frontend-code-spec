@@ -18,12 +18,7 @@ export default {
       finally: 'noFinallyChain',
     };
 
-    /**
-     * 含计算成员形态 obj['then']
-     * @param {import('estree').Expression | import('estree').Super} property
-     * @param {boolean} computed
-     * @returns {'then' | 'catch' | 'finally' | null}
-     */
+    // 含计算成员形态 obj['then']
     function resolveChainMethod(property, computed) {
       const name = computed
         ? property.type === 'Literal' && property.value
