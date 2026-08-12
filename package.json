@@ -2,7 +2,7 @@
   "name": "@lyndon/frontend-code-spec",
   "version": "2.0.0",
   "private": true,
-  "description": "为业务仓库制定 lint 规则与代码写法的源头仓库：ESLint 规则集 + 请求层范式样板，不发布为 npm 包",
+  "description": "为业务仓库制定 lint 规则与代码写法的源头仓库：自定义 ESLint 规则集 + 全链路 lint 工具链 + 请求层范式样板，不发布为 npm 包",
   "license": "MIT",
   "author": {
     "name": "Lyndon",
