@@ -10,7 +10,7 @@ export interface DedupeRequest {
   data?: unknown;
 }
 
-/** release 复用登记时算出的 key，避免两处各自重算签名而口径漂移 */
+/** release 复用登记时算出的 key，避免两处各自重算签名口径漂移 */
 export interface DedupeHandle {
   signal: AbortSignal;
   release: () => void;
@@ -18,7 +18,7 @@ export interface DedupeHandle {
 
 const pendingRequests = new Map<string, AbortController>();
 
-// FormData/Blob/File 等宿主对象都会序列化成 "{}"，参与签名会让不同请求被误判为同一个
+// FormData/Blob 等序列化成 "{}"，参与签名会导致不同请求被误判相同
 const isSerializable = (value: unknown): boolean => {
   if (value === null || typeof value !== 'object') return true;
   if (Array.isArray(value)) return true;

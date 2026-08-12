@@ -68,7 +68,7 @@ const FLIGHT_SERVICE_CODE = '33251';
 const get = createGetRequest(FLIGHT_SERVICE_CODE);
 const post = createPostRequest(FLIGHT_SERVICE_CODE);
 
-/** 去重签名含 params，只挡同一筛选条件的连续触发，改条件不会取消上一次 */
+/** 去重签名含 params，只挡同一筛选条件的连续触发 */
 export const fetchFlights = (query: FlightListParams) =>
   get<FlightListResult>({
     url: '/flight/list',
@@ -95,11 +95,11 @@ export const fetchFlightDetailWithCustomError = (flightNo: string) =>
     businessError: { customMessage: '获取航班信息失败，请稍后重试' },
   });
 
-/** 变更类请求不重试、不去重，避免重复下单 */
+/** 变更类请求不重试、不去重 */
 export const bookFlight = (payload: BookFlightPayload) =>
   post<BookFlightResult>({ url: '/flight/book', data: payload });
 
-/** 错误交调用方按类型 / 业务码自行处理，故一并关掉默认提示 */
+/** 错误交调用方自行处理，关掉默认提示 */
 export const bookFlightOrThrow = (payload: BookFlightPayload) =>
   post<BookFlightResult>({
     url: '/flight/book',

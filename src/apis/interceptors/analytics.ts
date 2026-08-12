@@ -29,9 +29,9 @@ const extractTrace = (config?: AxiosRequestConfig) => {
 
 export const analyticsReqInterceptor: ReqInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
-    // 沿用 request 层在重试循环外生成的 id，重试才能与首次尝试串在同一条链路上
+    // 沿用 request 层在循环外生成的 id，重试与首次尝试串在同一链路
     config.__requestId ??= generateRequestId(config);
-    // 每次尝试独立刷新，耗时统计的是单次尝试而非含重试的总时长
+    // 每次尝试独立刷新，统计单次耗时
     config.__requestStartTimeMs = Date.now();
 
     return config;

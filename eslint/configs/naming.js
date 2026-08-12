@@ -13,7 +13,7 @@ export default [
           },
         },
         {
-          // 解构出的变量不校验布尔前缀，它们常来自外部接口 / 库
+          // 解构出的变量不校验布尔前缀，常来自外部接口
           selector: 'variable',
           modifiers: ['destructured'],
           types: ['boolean'],
@@ -26,7 +26,7 @@ export default [
           prefix: ['is', 'should', 'has', 'can', 'did', 'will'],
         },
         {
-          // variable 选择器不覆盖类型字段，而字段才是跨模块传递的契约
+          // variable 选择器不覆盖类型字段，字段才是跨模块传递的契约
           selector: 'typeProperty',
           types: ['boolean'],
           format: ['PascalCase'],
@@ -37,7 +37,7 @@ export default [
           format: ['PascalCase'],
         },
         {
-          // 单字母是 TS 社区惯例且不会与具体类型混淆；多字母仍要 T 前缀，避免与具体类型同形
+          // 单字母是 TS 惯例；多字母仍要 T 前缀
           selector: 'typeParameter',
           format: ['PascalCase'],
           custom: {
@@ -46,7 +46,7 @@ export default [
           },
         },
         {
-          // 不禁 Type 后缀：它在业务里多半是领域词（RoomType），正则区分不了领域词与冗余命名
+          // 不禁 Type 后缀：业务里多半是领域词（RoomType）
           selector: 'typeAlias',
           format: ['PascalCase'],
           custom: {
@@ -84,7 +84,7 @@ export default [
     },
   },
   {
-    // 哪些文件豁免由规则内的 isExemptFile 判定（唯一来源），配置层不声明 ignores
+    // 哪些文件豁免由规则内 isExemptFile 判定
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {
       'custom/no-handle-prefix': 'error',
@@ -93,13 +93,12 @@ export default [
     },
   },
   {
-    // 依赖 React API、状态范式或业务文件命名约定，只对 src 源码成立
+    // 依赖 React API 或业务文件命名约定，只对 src 源码成立
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     rules: {
       'custom/ref-suffix-naming': 'error',
       'custom/no-implementation-suffix-filename': 'error',
       'custom/status-field-naming': 'error',
-      // 不豁免测试：桩数据里的字段同样来自契约，单位写错的桩会把错误的预期固化下来
       'custom/require-unit-suffix': 'error',
     },
   },

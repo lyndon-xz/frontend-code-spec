@@ -8,11 +8,8 @@ const alias = {
 };
 
 /**
- * 两类测试的运行环境不同，故拆成两个 project：
- * - eslint-rules：RuleTester 纯静态分析，不碰 DOM，用 node 环境省掉 jsdom 的初始化开销。
- * - request-layer：请求层范式部分依赖 window，必须用 jsdom。
- *
- * coverage 只在根级生效（project 级会被忽略），因此阈值与统计范围统一放在这里。
+ * eslint-rules 用 node（纯静态分析，省掉 jsdom 开销）；request-layer 依赖 window，须 jsdom。
+ * coverage 只在根级生效，project 级会被忽略。
  */
 export default defineConfig({
   test: {

@@ -9,7 +9,7 @@ const DEFAULT_OPTIONS = {
   srcDir: DEFAULT_SRC_DIR,
 };
 
-/** 只改写 import 源字符串，与只调语句顺序的 import/order 正交；改写幂等，多轮 fix 必然收敛 */
+/** 只改写 import 源字符串，与只调语句顺序的 import/order 正交 */
 export default {
   meta: {
     type: 'suggestion',
@@ -38,10 +38,10 @@ export default {
   create(context) {
     const { srcDir } = { ...DEFAULT_OPTIONS, ...context.options[0] };
 
-    // 后续路径运算都在「相对 src 的 posix 空间」里进行，跨平台稳定且输出恒为合法 import 路径
+    // 后续路径运算都在「相对 src 的 posix 空间」里进行
     const filename = normalizePath(context.filename);
 
-    // __tests__ 镜像目录与被测模块不同层，按 @/ 引用是约定写法，改成相对路径既冗长又随文件移动失效
+    // __tests__ 与被测模块不同层，用 @/ 引用是约定写法
     if (isExemptFile(filename)) {
       return {};
     }

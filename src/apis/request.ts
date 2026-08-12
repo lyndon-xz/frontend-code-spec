@@ -23,7 +23,6 @@ export type RequestInstanceOptions = Pick<
 const DEFAULT_TIMEOUT = 3000;
 const DEFAULT_HEADERS = { 'Content-Type': 'application/json' };
 
-// 两张表按 serviceCode 对齐，签名用于配置漂移告警
 const serviceInstances = new Map<string, AxiosInstance>();
 const serviceSignatures = new Map<string, string>();
 
@@ -47,7 +46,6 @@ const getServiceInstance = (config: InstanceConfig): AxiosInstance => {
     ...restConfig
   } = config;
 
-  // 浅合并而非整体替换，否则调用方只加一个 header 就会丢掉默认 Content-Type
   const mergedHeaders = { ...DEFAULT_HEADERS, ...headers };
 
   const signature = JSON.stringify({
@@ -95,7 +93,7 @@ interface RetryContext {
 
 const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
   const { instance, config, method, signal, maxRetries } = context;
-  // 在循环外生成，否则每次尝试的新 config 会让同一请求的重试拿到互不关联的 id
+  // 循环外生成，保证重试共用同一个 requestId
   const requestId = generateRequestId({ ...config, method });
 
   for (let attempt = 0; ; attempt += 1) {
@@ -117,7 +115,7 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
   }
 };
 
-// 响应拦截器按注册顺序执行，顺序不可调整：异常归一 → 登录态 → 业务码拆包 → 上报
+// 响应拦截器顺序不可调：归一 → 登录态 → 业务码拆包 → 上报
 const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}): AxiosInstance =>
   getServiceInstance({
     serviceCode,
@@ -131,7 +129,7 @@ const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}
     ],
   });
 
-/** 创建指定 HTTP 方法的请求函数，剥离业务信封后只返回 data */
+/** 剥离业务信封后只返回 data */
 export const createRequest = (
   serviceCode: string,
   method: Method,
@@ -142,7 +140,7 @@ export const createRequest = (
   return async <T = unknown>(config: EnhancedRequestConfig): Promise<T | null> => {
     const { url, params, data, retry, isDeduped, signal: userSignal, isErrorSwallowed } = config;
     const maxRetries = retry?.count ?? 0;
-    // 调用方自带 signal 时不接管取消控制，避免覆盖它
+    // 调用方自带 signal 时不接管取消控制
     const dedupe =
       isDeduped && userSignal == null
         ? registerDedupe({ serviceCode, method, url, params, data })

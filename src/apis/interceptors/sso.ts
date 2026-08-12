@@ -8,7 +8,7 @@ import { RequestError, RequestErrorType } from '../utils/error';
 // 多个请求同时未授权时只触发一次跳转
 let isRedirecting = false;
 
-// 严格校验数值类型，否则 returncode 为 "-100" 时未授权会被当成已登录放行
+// 严格校验数值类型，否则 returncode 为 "-100" 时会被误判
 const isSsoResponse = (body: unknown): body is SsoResponse => {
   return (
     typeof body === 'object' &&
@@ -28,7 +28,7 @@ const isSafeRedirectUrl = (rawUrl: string): boolean => {
   }
 };
 
-// 用临时 a 标签而非 location.href：后者在部分环境下会被拦截
+// 用临时 a 标签而非 location.href：部分环境下后者会被拦截
 const redirectTo = (url: string) => {
   const redirectLink = document.createElement('a');
   redirectLink.setAttribute('href', url);

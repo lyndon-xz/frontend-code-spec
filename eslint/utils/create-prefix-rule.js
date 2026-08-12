@@ -1,7 +1,7 @@
 import { isExemptFile } from './is-exempt-file.js';
 import { isFunctionNode } from './is-function-node.js';
 
-/** handle / on 两条规则判定逻辑一致，只差前缀、文案与是否覆盖对象字面量属性，故收敛为一个工厂 */
+/** handle / on 两条规则判定逻辑一致，只差前缀与是否覆盖对象属性，故收敛为工厂 */
 export function createPrefixRule(spec) {
   const { prefix, meta, functionMessageId, variableMessageId, checkObjectProperties } = spec;
   const namePattern = new RegExp(`^${prefix}[A-Z]`);

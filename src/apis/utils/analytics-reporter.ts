@@ -64,7 +64,7 @@ export const resetAnalyticsSender = () => {
   activeAnalyticsSender = noopSender;
 };
 
-/** 上报数据含完整请求参数与响应体，接入真实上报实现前须按敏感字段清单脱敏 */
+/** 上报数据含完整请求参数与响应体，接入真实实现前须脱敏 */
 export const reportAnalytics = (analyticsData: AnalyticsData) => {
   if (getEnvironment() === Environment.Development) {
     logToConsole(analyticsData);

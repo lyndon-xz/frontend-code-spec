@@ -1,6 +1,6 @@
 import { createPrefixRule } from '../../utils/create-prefix-rule.js';
 
-/** 刻意不覆盖对象属性与类型成员：那里常是回调 Props 的合法声明处（{ onClick }），覆盖会误报 */
+/** `on` 前缀仅用于 Props 回调声明，内部函数禁用；不覆盖对象属性，避免误报 { onClick } */
 export default createPrefixRule({
   prefix: 'on',
   checkObjectProperties: false,

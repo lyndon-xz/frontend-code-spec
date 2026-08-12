@@ -1,6 +1,6 @@
 import { createPrefixRule } from '../../utils/create-prefix-rule.js';
 
-/** 全程按「函数值」过滤，避免误伤名词属性（handleId 指句柄 / 账号，并非事件处理器） */
+/** 全程按「函数值」过滤，避免误伤名词属性（handleId 指句柄，并非事件处理器） */
 export default createPrefixRule({
   prefix: 'handle',
   checkObjectProperties: true,

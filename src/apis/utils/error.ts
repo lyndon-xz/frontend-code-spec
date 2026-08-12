@@ -1,13 +1,9 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
 interface RequestErrorMeta {
-  // 仅 http / unauthorized 类错误有值
   status?: number;
-  // 仅 business 类错误有值
   code?: number;
-  // 各归一分支都必须带上，下游靠它抑制重试期间的重复提示、串联埋点
   config?: AxiosRequestConfig;
-  // 仅 unknown 类错误有值
   cause?: unknown;
 }
 
@@ -33,13 +29,12 @@ const HTTP_STATUS_MESSAGE: Record<number, string> = {
   504: '网关超时，请稍后重试',
 };
 
-/** 退避等待期间的取消也复用此文案，两处必须同源 */
+/** 退避等待期间的取消也复用此文案 */
 export const CANCELED_MESSAGE = '请求已取消';
 
 const DEFAULT_NETWORK_MESSAGE = '网络连接失败，请检查网络后重试';
 const DEFAULT_TIMEOUT_MESSAGE = '请求超时，请稍后重试';
 const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
-// 未映射的 4xx 已到达服务端，与网络无关，故用不归因的中性文案
 const DEFAULT_REQUEST_MESSAGE = '请求失败，请稍后重试';
 const DEFAULT_UNKNOWN_MESSAGE = '请求出现异常，请稍后重试';
 
@@ -60,7 +55,7 @@ export class RequestError extends Error {
   }
 }
 
-/** 归一成带类型与提示文案的 RequestError，每个 axios 错误分支都必须带上 config */
+/** 归一成带类型与提示文案的 RequestError */
 export const classifyAxiosError = (error: unknown): RequestError => {
   if (error instanceof RequestError) return error;
 
@@ -86,15 +81,15 @@ export const classifyAxiosError = (error: unknown): RequestError => {
       return new RequestError(type, message, { status, config });
     }
 
-    // 无 response 说明请求没能到达服务端
+    // 无 response 说明请求没到达服务端
     return new RequestError(RequestErrorType.Network, DEFAULT_NETWORK_MESSAGE, { config });
   }
 
-  // 非 axios 错误来自链路内部，归到 Network 会把代码 bug 伪装成网络问题
+  // 非 axios 错误归到 Unknown，不把代码 bug 伪装成网络问题
   return new RequestError(RequestErrorType.Unknown, DEFAULT_UNKNOWN_MESSAGE, { cause: error });
 };
 
-/** 只有网络不可达、超时、5xx 算瞬时故障；4xx、业务错误与未知异常不重试 */
+/** 网络不可达、超时、5xx 算瞬时故障可重试；4xx 与业务错误不重试 */
 export const isRetryableError = (error: unknown): boolean => {
   if (!(error instanceof RequestError)) return false;
 

@@ -51,11 +51,7 @@ export default {
   },
   overrides: [
     {
-      /*
-       * 全局样式表（基线样式、第三方主题覆盖）用 kebab-case：类名不经 JS 引用，
-       * 且覆盖 antd 这类库时必须照抄它的 kebab-case 类名。CSS Module 仍按上面的 camelCase 判。
-       * 注意 stylelint 的 files 不支持 ! 取反，这里靠命名取反：*.scss 里排除 *.module.scss 的写法是列举后缀。
-       */
+      // 全局样式表用 kebab-case：类名不经 JS 引用，且覆盖 antd 时必须照抄它的类名
       files: ['**/global.scss', '**/globals.scss', '**/theme.scss', '**/*.global.scss'],
       rules: {
         'selector-class-pattern': [

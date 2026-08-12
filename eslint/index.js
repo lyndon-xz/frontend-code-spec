@@ -33,7 +33,6 @@ import noTsDefaultExport from './rules/structure/no-ts-default-export.js';
 import requireTsxDefaultExport from './rules/structure/require-tsx-default-export.js';
 import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
 
-// 规则 id 保持扁平（custom/<rule-name>），领域只体现在源码目录，不进 id。
 const customRules = {
   'comment-style': commentStyle,
   'no-promise-chain': noPromiseChain,
@@ -104,7 +103,6 @@ export default [
     },
   },
 
-  /** 各领域配置自行声明 files；正交的 Prettier 格式化基线在仓库顶层 eslint.config.js 配线 */
   ...javascriptConfig,
   ...importsConfig,
   ...commentsConfig,

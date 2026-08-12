@@ -22,13 +22,13 @@ export const businessErrorInterceptor: ResInterceptor = {
 
     const { code, message: responseMessage, data } = body;
     if (code === SUCCESS_CODE) {
-      // 拆包：对外只暴露 data；无 data 时归一为 null 以对齐 T | null 契约
+      // 拆包：对外只暴露 data，无 data 时归一为 null
       response.data = data ?? null;
       return response;
     }
 
     const { isSilent = false, customMessage } = config?.businessError ?? {};
-    // 服务端 message 为空时兜底，避免弹出空 toast
+    // 服务端 message 为空时兜底
     const serverMessage =
       typeof responseMessage === 'string' && responseMessage.length > 0
         ? responseMessage

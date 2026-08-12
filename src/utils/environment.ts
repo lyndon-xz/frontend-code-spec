@@ -23,7 +23,7 @@ const isLocalHostname = (hostname: string): boolean => {
   return hostname.endsWith(LOCAL_HOSTNAME_SUFFIX);
 };
 
-// 构建期注入的 APP_ENV 为唯一可信来源；取不到 window 时按生产处理，避免调试旁路带到服务端
+// 构建期注入的 APP_ENV 为唯一可信来源；取不到 window 时按生产处理
 const detectEnvironment: EnvironmentProvider = () => {
   const injected = readInjectedEnvironment();
   if (injected !== null) return injected;
@@ -36,7 +36,7 @@ const detectEnvironment: EnvironmentProvider = () => {
 
 let activeEnvironmentProvider: EnvironmentProvider = detectEnvironment;
 
-/** 构建期变量的名字与读取方式随框架而异，故由业务侧注入，请求层不绑定构建工具 */
+/** 构建期变量的读取方式随框架而异，由业务侧注入 */
 export const setEnvironmentProvider = (provider: EnvironmentProvider) => {
   activeEnvironmentProvider = provider;
 };

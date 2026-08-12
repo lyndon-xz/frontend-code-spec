@@ -2,8 +2,8 @@ import { isExemptFile } from '../../utils/is-exempt-file.js';
 import { isFunctionNode } from '../../utils/is-function-node.js';
 
 /**
- * `type XxxProps = {}` 由 consistent-type-definitions 先转成 interface，故不单独处理。
- * autofix 只改写当前文件内的引用：interface 被导出并在别处按旧名引用时，跨文件引用需另行处理。
+ * autofix 只改写当前文件内的引用；跨文件引用需另行处理。
+ * `type XxxProps = {}` 由 consistent-type-definitions 先转成 interface，不单独处理。
  */
 export default {
   meta: {
@@ -20,7 +20,7 @@ export default {
   create(context) {
     const { filename, sourceCode } = context;
 
-    // 测试里的包装组件常复用被测组件的 Props 类型，按组件名改名会改坏引用，故一并豁免
+    // 测试里的包装组件常复用被测组件的 Props 类型，一并豁免
     if (!filename.endsWith('.tsx') || isExemptFile(filename)) {
       return {};
     }
