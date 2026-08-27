@@ -95,9 +95,15 @@ function collectCommentStack(scanContext) {
   for (let j = startIdx + 1; j < comments.length; j++) {
     const next = comments[j];
     const prev = stack[stack.length - 1];
-    if (isSkippableComment(next)) break;
-    if (next.loc.start.line !== prev.loc.end.line + 1) break;
-    if (sourceCode.getTokenAfter(next, { includeComments: false }) !== tokenAfter) break;
+    if (isSkippableComment(next)) {
+      break;
+    }
+    if (next.loc.start.line !== prev.loc.end.line + 1) {
+      break;
+    }
+    if (sourceCode.getTokenAfter(next, { includeComments: false }) !== tokenAfter) {
+      break;
+    }
     stack.push(next);
   }
   return stack;
@@ -158,7 +164,9 @@ export default {
     }
 
     function checkExportSingle(comment) {
-      if (isJsdocBlock(comment)) return;
+      if (isJsdocBlock(comment)) {
+        return;
+      }
       const content = comment.type === 'Block' ? stripBlock(comment.value) : comment.value.trim();
       context.report({
         loc: comment.loc,
@@ -170,7 +178,9 @@ export default {
     }
 
     function checkInternalSingle(comment) {
-      if (comment.type !== 'Block') return;
+      if (comment.type !== 'Block') {
+        return;
+      }
 
       const isMultiLine = comment.loc.start.line !== comment.loc.end.line;
       if (!isMultiLine) {
@@ -196,7 +206,9 @@ export default {
         const visited = new Set();
 
         comments.forEach((comment, idx) => {
-          if (visited.has(comment) || isSkippableComment(comment)) return;
+          if (visited.has(comment) || isSkippableComment(comment)) {
+            return;
+          }
 
           const isBlock = comment.type === 'Block';
           const tokenBefore = sourceCode.getTokenBefore(comment, { includeComments: false });
@@ -206,7 +218,9 @@ export default {
           const sameLineAfter = tokenAfter && tokenAfter.loc.start.line === comment.loc.end.line;
           if (sameLineBefore || sameLineAfter) {
             // 内联参数块注释放行：foo(/* name */ 'bar')
-            if (isBlock && sameLineBefore && sameLineAfter) return;
+            if (isBlock && sameLineBefore && sameLineAfter) {
+              return;
+            }
             context.report({
               loc: comment.loc,
               messageId: 'notAbove',
@@ -220,8 +234,19 @@ export default {
           const nodeAfter = sourceCode.getNodeByRangeIndex(
             tokenAfter ? tokenAfter.range[0] : comment.range[1],
           );
-          const isExport = isExportNode(nodeAfter);
           const stack = collectCommentStack({ sourceCode, comments, startIdx: idx, tokenAfter });
+          /*
+           * 与下一个声明之间空了一行的注释不是那个声明的文档注释：文件顶部讲整个模块在做什么
+           * 的说明就是这种形态，它后面往往还隔着别的注释与 import。不断开归属的话，模块说明会
+           * 被要求写成紧随其后那个 export 的 JSDoc，语义就错位了。断开后按非导出位置判形态。
+           *
+           * 比的是注释栈末条与声明的行距，不是当前这条：多段堆叠的注释之间没有空行，
+           * 拿第一条去比会把「中间还有别的注释」当成「隔了空行」。
+           */
+          const lastInStack = stack[stack.length - 1];
+          const detachedFromNode =
+            tokenAfter !== null && tokenAfter.loc.start.line > lastInStack.loc.end.line + 1;
+          const isExport = !detachedFromNode && isExportNode(nodeAfter);
           stack.forEach((item) => visited.add(item));
 
           if (stack.length > 1) {

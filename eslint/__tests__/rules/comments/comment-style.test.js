@@ -9,6 +9,13 @@ ruleTester.run('comment-style', rule, {
     '// 普通说明\nconst a = 1;',
     // 空行隔断的两段不视为堆叠
     '// 第一段\n\n// 第二段\nconst a = 1;',
+    /*
+     * 与 export 之间空了一行的块注释是模块级说明、不是那个 export 的文档注释，
+     * 按非导出位置判形态。要求它改成 JSDoc 会让语义错位。
+     */
+    '/*\n * 模块在做什么\n */\n\n/** 文档注释 */\nexport const x = 1;',
+    // 单行的模块级说明同理：空行断开后按非导出位置判，// 就是对的
+    '// 模块在做什么\n\nexport const x = 1;',
     // 堆叠中夹工具指令时停止合并，并进块注释会改变它对 ESLint 的语义
     '// 第一段\n// eslint-disable-next-line no-console\nconsole.log(1);',
     // 末尾注释后没有代码，按非导出位置处理
