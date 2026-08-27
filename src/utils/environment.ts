@@ -12,23 +12,35 @@ export type EnvironmentProvider = () => Environment;
 const readInjectedEnvironment = (): Environment | null => {
   const injected = typeof process === 'undefined' ? undefined : process.env[APP_ENV_KEY];
 
-  if (injected === Environment.Development) return Environment.Development;
-  if (injected === Environment.Production) return Environment.Production;
+  if (injected === Environment.Development) {
+    return Environment.Development;
+  }
+  if (injected === Environment.Production) {
+    return Environment.Production;
+  }
   return null;
 };
 
 const isLocalHostname = (hostname: string): boolean => {
-  if (LOCAL_HOSTNAMES.includes(hostname)) return true;
-  if (hostname.startsWith(LOOPBACK_HOSTNAME_PREFIX)) return true;
+  if (LOCAL_HOSTNAMES.includes(hostname)) {
+    return true;
+  }
+  if (hostname.startsWith(LOOPBACK_HOSTNAME_PREFIX)) {
+    return true;
+  }
   return hostname.endsWith(LOCAL_HOSTNAME_SUFFIX);
 };
 
 // 构建期注入的 APP_ENV 为唯一可信来源；取不到 window 时按生产处理
 const detectEnvironment: EnvironmentProvider = () => {
   const injected = readInjectedEnvironment();
-  if (injected !== null) return injected;
+  if (injected !== null) {
+    return injected;
+  }
 
-  if (typeof window === 'undefined') return Environment.Production;
+  if (typeof window === 'undefined') {
+    return Environment.Production;
+  }
 
   const { hostname } = window.location;
   return isLocalHostname(hostname) ? Environment.Development : Environment.Production;

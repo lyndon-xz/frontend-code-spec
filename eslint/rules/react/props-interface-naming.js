@@ -29,7 +29,9 @@ export default {
     const components = [];
 
     function typeRefName(annotation) {
-      if (annotation?.type !== 'TSTypeReference') return null;
+      if (annotation?.type !== 'TSTypeReference') {
+        return null;
+      }
       const typeName = annotation.typeName?.name;
       return typeName?.endsWith('Props') === true ? typeName : null;
     }
@@ -41,7 +43,9 @@ export default {
 
     function propsNameFromFcAnnotation(idNode) {
       const annotation = idNode.typeAnnotation?.typeAnnotation;
-      if (annotation?.type !== 'TSTypeReference') return null;
+      if (annotation?.type !== 'TSTypeReference') {
+        return null;
+      }
       // typeArguments / typeParameters 两种字段名都要兜底
       const typeArgs = annotation.typeArguments ?? annotation.typeParameters;
       return typeRefName(typeArgs?.params?.[0]);
@@ -69,7 +73,9 @@ export default {
       'FunctionDeclaration'(node) {
         // 匿名默认导出函数无 id，跳过
         const componentName = node.id?.name;
-        if (componentName === undefined || !/^[A-Z]/.test(componentName)) return;
+        if (componentName === undefined || !/^[A-Z]/.test(componentName)) {
+          return;
+        }
 
         const propsTypeName = propsNameFromParam(node);
         if (propsTypeName) {
@@ -90,12 +96,16 @@ export default {
 
         for (const component of components) {
           const expectedPropsName = `${component.name}Props`;
-          if (component.propsTypeName === expectedPropsName) continue;
+          if (component.propsTypeName === expectedPropsName) {
+            continue;
+          }
 
           const matchingInterface = interfaces.find(
             (item) => item.name === component.propsTypeName,
           );
-          if (!matchingInterface) continue;
+          if (!matchingInterface) {
+            continue;
+          }
 
           // 计数表由 components 本身构建，故当前组件的 propsTypeName 必然在表内
           const isShared = componentCountByProps.get(component.propsTypeName) > 1;
@@ -115,14 +125,18 @@ export default {
                   for (const variable of variables) {
                     for (const def of variable.defs) {
                       // 没有标识符节点的定义要滤掉，避免把 undefined 交给 fixer
-                      if (def.name) idNodes.push(def.name);
+                      if (def.name) {
+                        idNodes.push(def.name);
+                      }
                     }
                     for (const ref of variable.references) {
                       idNodes.push(ref.identifier);
                     }
                   }
                   // 兜底：作用域信息缺失时，至少改写声明本身
-                  if (idNodes.length === 0) idNodes.push(matchingInterface.node.id);
+                  if (idNodes.length === 0) {
+                    idNodes.push(matchingInterface.node.id);
+                  }
 
                   return idNodes.map((idNode) => fixer.replaceText(idNode, expectedPropsName));
                 }

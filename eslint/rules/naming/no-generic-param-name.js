@@ -36,7 +36,9 @@ export default {
 
   create(context) {
     // 桩函数与 vi.mock 工厂里的 (data) 是合理的，不该倒逼改桩
-    if (isExemptFile(context.filename)) return {};
+    if (isExemptFile(context.filename)) {
+      return {};
+    }
 
     const bannedNames = context.options[0]?.bannedNames ?? DEFAULT_BANNED_NAMES;
     const namePattern = buildNamePattern(bannedNames);
@@ -44,7 +46,9 @@ export default {
     const FN = ':matches(FunctionDeclaration, ArrowFunctionExpression, FunctionExpression)';
 
     const reportIfBanned = (node) => {
-      if (!namePattern.test(node.name)) return;
+      if (!namePattern.test(node.name)) {
+        return;
+      }
       context.report({ node, messageId: 'noGenericParam', data: { names: namesText } });
     };
 

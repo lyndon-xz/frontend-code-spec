@@ -57,7 +57,9 @@ export class RequestError extends Error {
 
 /** 归一成带类型与提示文案的 RequestError */
 export const classifyAxiosError = (error: unknown): RequestError => {
-  if (error instanceof RequestError) return error;
+  if (error instanceof RequestError) {
+    return error;
+  }
 
   if (axios.isCancel(error)) {
     const config = axios.isAxiosError(error) ? error.config : undefined;
@@ -91,9 +93,13 @@ export const classifyAxiosError = (error: unknown): RequestError => {
 
 /** 网络不可达、超时、5xx 算瞬时故障可重试；4xx 与业务错误不重试 */
 export const isRetryableError = (error: unknown): boolean => {
-  if (!(error instanceof RequestError)) return false;
+  if (!(error instanceof RequestError)) {
+    return false;
+  }
 
   const { type, status } = error;
-  if (type === RequestErrorType.Network || type === RequestErrorType.Timeout) return true;
+  if (type === RequestErrorType.Network || type === RequestErrorType.Timeout) {
+    return true;
+  }
   return type === RequestErrorType.Http && status !== undefined && status >= 500;
 };

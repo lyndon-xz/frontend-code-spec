@@ -16,7 +16,9 @@ function analyzeIndexPath(filename, layout) {
   const parts = normalizePath(filename).split('/');
   const basename = parts[parts.length - 1];
   const isIndex = basename.replace(/\.(tsx?|jsx?)$/, '') === 'index';
-  if (!isIndex) return { isIndex: false, isPublicLib: false };
+  if (!isIndex) {
+    return { isIndex: false, isPublicLib: false };
+  }
 
   const srcIdx = parts.lastIndexOf(srcDir);
   const parentDir = parts[parts.length - 2];
@@ -68,7 +70,9 @@ export default {
     const layout = { ...DEFAULT_OPTIONS, ...context.options[0] };
     const { isIndex, isPublicLib, path } = analyzeIndexPath(context.filename, layout);
 
-    if (!isIndex) return {};
+    if (!isIndex) {
+      return {};
+    }
 
     if (isPublicLib) {
       return {

@@ -44,10 +44,14 @@ export const resetSsoRedirectState = () => {
 export const ssoInterceptor: ResInterceptor = {
   onFulfilled: (response: AxiosResponse) => {
     const { data, config } = response;
-    if (!isSsoResponse(data)) return response;
+    if (!isSsoResponse(data)) {
+      return response;
+    }
 
     const { returncode, redirectUrl } = data;
-    if (returncode !== UNAUTHORIZED_CODE) return response;
+    if (returncode !== UNAUTHORIZED_CODE) {
+      return response;
+    }
 
     if (redirectUrl == null || redirectUrl === '') {
       throw new RequestError(RequestErrorType.Unauthorized, 'SSO 重定向地址缺失', { config });

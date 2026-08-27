@@ -18,7 +18,9 @@ const isBusinessResponse = (body: unknown): body is BusinessResponse => {
 export const businessErrorInterceptor: ResInterceptor = {
   onFulfilled: (response: AxiosResponse) => {
     const { data: body, config } = response;
-    if (!isBusinessResponse(body)) return response;
+    if (!isBusinessResponse(body)) {
+      return response;
+    }
 
     const { code, message: responseMessage, data } = body;
     if (code === SUCCESS_CODE) {

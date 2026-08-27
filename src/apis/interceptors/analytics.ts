@@ -16,7 +16,9 @@ const extractTrace = (config?: AxiosRequestConfig) => {
     data,
   } = config ?? {};
 
-  if (typeof requestId !== 'string' || startTimeMs === undefined) return null;
+  if (typeof requestId !== 'string' || startTimeMs === undefined) {
+    return null;
+  }
 
   return {
     requestId,
@@ -55,7 +57,9 @@ export const analyticsResInterceptor: ResInterceptor = {
 
   onRejected: async (error: unknown) => {
     // network 拦截器已把错误归一为 RequestError，它自带 config
-    if (!(error instanceof RequestError)) return Promise.reject(error);
+    if (!(error instanceof RequestError)) {
+      return Promise.reject(error);
+    }
 
     const { type, config, message: rawMessage } = error;
     const trace = extractTrace(config);

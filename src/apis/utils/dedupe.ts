@@ -20,15 +20,21 @@ const pendingRequests = new Map<string, AbortController>();
 
 // FormData/Blob 等序列化成 "{}"，参与签名会导致不同请求被误判相同
 const isSerializable = (value: unknown): boolean => {
-  if (value === null || typeof value !== 'object') return true;
-  if (Array.isArray(value)) return true;
+  if (value === null || typeof value !== 'object') {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return true;
+  }
   return Object.getPrototypeOf(value) === Object.prototype;
 };
 
 // 参数不可稳定序列化时返回 null，表示该请求不参与去重
 const buildRequestKey = (request: DedupeRequest): string | null => {
   const { serviceCode, method, url, params, data } = request;
-  if (!isSerializable(params) || !isSerializable(data)) return null;
+  if (!isSerializable(params) || !isSerializable(data)) {
+    return null;
+  }
 
   try {
     return `${serviceCode} ${method.toUpperCase()} ${url} ${JSON.stringify(params ?? null)} ${JSON.stringify(data ?? null)}`;

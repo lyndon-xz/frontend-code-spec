@@ -36,9 +36,15 @@ const DEFAULT_OPTIONS = {
 
 // 判定停留在语法层，不做类型推断：只认 number 本体与含 number 的联合类型
 function isNumericAnnotation(annotation) {
-  if (annotation == null) return false;
-  if (annotation.type === 'TSNumberKeyword') return true;
-  if (annotation.type === 'TSUnionType') return annotation.types.some(isNumericAnnotation);
+  if (annotation == null) {
+    return false;
+  }
+  if (annotation.type === 'TSNumberKeyword') {
+    return true;
+  }
+  if (annotation.type === 'TSUnionType') {
+    return annotation.types.some(isNumericAnnotation);
+  }
   return false;
 }
 
@@ -104,14 +110,22 @@ export default {
     return {
       'TSPropertySignature > Identifier.key'(node) {
         const property = node.parent;
-        if (property.computed) return;
+        if (property.computed) {
+          return;
+        }
 
         const fieldName = node.name;
-        if (ignored.has(fieldName)) return;
-        if (!isNumericAnnotation(property.typeAnnotation?.typeAnnotation)) return;
+        if (ignored.has(fieldName)) {
+          return;
+        }
+        if (!isNumericAnnotation(property.typeAnnotation?.typeAnnotation)) {
+          return;
+        }
 
         const matched = matchDimension(fieldName, dimensions);
-        if (matched === null || matched.hasUnitSuffix) return;
+        if (matched === null || matched.hasUnitSuffix) {
+          return;
+        }
 
         const { name: dimensionName, suffixes } = matched.dimension;
 

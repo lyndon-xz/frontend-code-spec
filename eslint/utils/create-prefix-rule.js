@@ -12,7 +12,9 @@ export function createPrefixRule(spec) {
     meta,
     create(context) {
       // 桩函数常按被 mock 的 Props 回调原名声明，在这里报错等于倒逼改桩名
-      if (isExemptFile(context.filename)) return {};
+      if (isExemptFile(context.filename)) {
+        return {};
+      }
 
       function report(node, messageId) {
         context.report({ node, messageId });
@@ -49,7 +51,9 @@ export function createPrefixRule(spec) {
         ...visitors,
         // shorthand 属性（{ handleClick }）已在其变量声明处校验，跳过防重复
         Property(node) {
-          if (node.computed || node.shorthand) return;
+          if (node.computed || node.shorthand) {
+            return;
+          }
           if (isPrefixedIdentifier(node.key) && isFunctionNode(node.value)) {
             report(node.key, functionMessageId);
           }

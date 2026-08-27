@@ -8,7 +8,9 @@ const IDEMPOTENT_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE']);
 
 /** 瞬时故障与重发安全两个条件都要成立 */
 export const canRetry = (error: unknown, method: string, retry?: RetryOptions): boolean => {
-  if (!isRetryableError(error)) return false;
+  if (!isRetryableError(error)) {
+    return false;
+  }
 
   return retry?.isIdempotent ?? IDEMPOTENT_METHODS.has(method.toUpperCase());
 };

@@ -27,8 +27,12 @@ const serviceInstances = new Map<string, AxiosInstance>();
 const serviceSignatures = new Map<string, string>();
 
 const warnOnConfigDrift = (serviceCode: string, signature: string) => {
-  if (getEnvironment() !== Environment.Development) return;
-  if (serviceSignatures.get(serviceCode) === signature) return;
+  if (getEnvironment() !== Environment.Development) {
+    return;
+  }
+  if (serviceSignatures.get(serviceCode) === signature) {
+    return;
+  }
 
   console.warn(
     `[request] serviceCode "${serviceCode}" 已用首次配置创建实例，本次不同的实例级配置将被忽略`,
@@ -109,7 +113,9 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
       const response = await instance.request<T>(requestConfig);
       return response.data;
     } catch (error) {
-      if (attempt >= maxRetries || !canRetry(error, method, config.retry)) throw error;
+      if (attempt >= maxRetries || !canRetry(error, method, config.retry)) {
+        throw error;
+      }
       await delay(getRetryDelay(attempt + 1, config.retry), signal);
     }
   }
@@ -150,7 +156,9 @@ export const createRequest = (
     try {
       return await sendWithRetry<T>({ instance, config, method, signal, maxRetries });
     } catch (error) {
-      if (isErrorSwallowed !== false) return null;
+      if (isErrorSwallowed !== false) {
+        return null;
+      }
       throw error;
     } finally {
       dedupe?.release();

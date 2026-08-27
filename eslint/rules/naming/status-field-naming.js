@@ -33,10 +33,14 @@ const STATE_NAME = /State$/;
 
 // 含 React.useState(...) 形态
 function isUseStateCall(init) {
-  if (init?.type !== 'CallExpression') return false;
+  if (init?.type !== 'CallExpression') {
+    return false;
+  }
 
   const { callee } = init;
-  if (callee.type === 'Identifier') return callee.name === 'useState';
+  if (callee.type === 'Identifier') {
+    return callee.name === 'useState';
+  }
   return callee.type === 'MemberExpression' && callee.property.name === 'useState';
 }
 
@@ -104,7 +108,9 @@ export default {
   create(context) {
     return {
       'VariableDeclarator'(node) {
-        if (!isUseStateCall(node.init)) return;
+        if (!isUseStateCall(node.init)) {
+          return;
+        }
 
         const stateId = node.id.type === 'ArrayPattern' ? node.id.elements[0] : node.id;
         if (stateId?.type === 'Identifier') {
