@@ -9,8 +9,10 @@ ruleTester.run('no-implementation-suffix-filename', rule, {
     { code: 'const a = 1;', filename: 'index.ts' },
     // 业务集合名 -list 不算实现后缀
     { code: 'const a = 1;', filename: 'review-list.ts' },
-    // 分层结构文件名放行
-    { code: 'const a = 1;', filename: 'constants.ts' },
+    { code: 'const a = 1;', filename: 'config.ts' },
+    { code: 'const a = 1;', filename: 'store.ts' },
+    // 集合目录内的领域文件合法；禁的是文件名 constants.ts
+    { code: 'const a = 1;', filename: 'src/constants/environment.ts' },
     { code: 'const a = 1;', filename: 'flight-modal.test.ts' },
   ],
   invalid: [
@@ -37,6 +39,26 @@ ruleTester.run('no-implementation-suffix-filename', rule, {
     {
       code: 'const a = 1;',
       filename: 'form-config.ts',
+      errors: [{ messageId: 'exactForbidden' }],
+    },
+    {
+      code: 'const a = 1;',
+      filename: 'types.ts',
+      errors: [{ messageId: 'exactForbidden' }],
+    },
+    {
+      code: 'const a = 1;',
+      filename: 'utils.ts',
+      errors: [{ messageId: 'exactForbidden' }],
+    },
+    {
+      code: 'const a = 1;',
+      filename: 'helpers.ts',
+      errors: [{ messageId: 'exactForbidden' }],
+    },
+    {
+      code: 'const a = 1;',
+      filename: 'constants.ts',
       errors: [{ messageId: 'exactForbidden' }],
     },
   ],

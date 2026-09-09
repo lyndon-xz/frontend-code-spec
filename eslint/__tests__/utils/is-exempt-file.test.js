@@ -66,5 +66,23 @@ describe('isExemptFile', () => {
         '**/*.config.*',
       ]);
     });
+
+    /*
+     * 上面那条是快照断言，只改一侧不会失败；这条交叉校验两侧口径：
+     * 每条文件名 glob 都要有一个 isExemptFile 认得的实际路径，漏派生就在这里暴露。
+     */
+    it('每条文件名 glob 都对应一个 isExemptFile 认得的路径', () => {
+      const sampleByGlob = {
+        '**/*.test.*': 'a.test.ts',
+        '**/*.d.ts': 'a.d.ts',
+        '**/*.config.*': 'a.config.js',
+      };
+      const filenameGlobs = EXEMPT_GLOBS.filter((glob) => !glob.endsWith('/**'));
+
+      expect(filenameGlobs).toEqual(Object.keys(sampleByGlob));
+      for (const sample of Object.values(sampleByGlob)) {
+        expect(isExemptFile(sample)).toBe(true);
+      }
+    });
   });
 });

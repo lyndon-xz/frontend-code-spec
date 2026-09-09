@@ -5,7 +5,9 @@ const ruleTester = createRuleTester();
 
 ruleTester.run('no-barrel', rule, {
   valid: [
-    { code: 'export * from "./x";', filename: 'src/apis/foo.ts' },
+    { code: 'export const a = 1;', filename: 'src/apis/foo.ts' },
+    // 本文件声明后再具名导出，没有 from，不算转发
+    { code: 'const a = 1;\nexport { a };', filename: 'src/apis/foo.ts' },
     // 普通 index 仅含自身声明，不算桶
     { code: 'export const a = 1;', filename: 'src/apis/index.ts' },
     // 判据只看直接父目录，utils 在路径上层不算公共库桶
@@ -26,6 +28,17 @@ ruleTester.run('no-barrel', rule, {
     },
   ],
   invalid: [
+    {
+      // 转发不限于 index
+      code: 'export * from "./x";',
+      filename: 'src/apis/foo.ts',
+      errors: [{ messageId: 'noBarrelStar' }],
+    },
+    {
+      code: 'export { x } from "./x";',
+      filename: 'src/apis/foo.ts',
+      errors: [{ messageId: 'noReexport' }],
+    },
     {
       // 判据是直接父目录为公共库目录，与离 src 多远无关
       code: 'export const a = 1;',

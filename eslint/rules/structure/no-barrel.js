@@ -1,5 +1,6 @@
-import { normalizePath } from '../../utils/normalize-path.js';
 import { DEFAULT_SRC_DIR } from '../../utils/source-layout.js';
+import { stripSourceExtension } from '../../utils/strip-source-extension.js';
+import { toPosixPath } from '../../utils/to-posix-path.js';
 
 // 这些目录下的 index 视为「禁止存在」的桶入口
 const DEFAULT_PUBLIC_LIB_DIRS = ['constants', 'utils', 'types', 'hooks'];
@@ -12,48 +13,49 @@ const DEFAULT_OPTIONS = {
 
 // 判据是「直接父目录为公共库目录且位于 src 内」，与层级深浅无关：src/apis/utils/index.ts 同样是桶
 function analyzeIndexPath(filename, layout) {
-  const { publicLibDirs, srcDir } = layout;
-  const parts = normalizePath(filename).split('/');
-  const basename = parts[parts.length - 1];
-  const isIndex = basename.replace(/\.(tsx?|jsx?)$/, '') === 'index';
+  const segments = toPosixPath(filename).split('/');
+  const basename = segments[segments.length - 1];
+  const isIndex = stripSourceExtension(basename) === 'index';
   if (!isIndex) {
-    return { isIndex: false, isPublicLib: false };
+    return { isPublicLib: false };
   }
 
-  const srcIdx = parts.lastIndexOf(srcDir);
-  const parentDir = parts[parts.length - 2];
-  // srcIdx < parts.length - 2 保证 src 严格在父目录之上，排除 src/index.ts 自身
+  const { publicLibDirs, srcDir } = layout;
+  const srcIndex = segments.lastIndexOf(srcDir);
+  const parentDir = segments[segments.length - 2];
+  // srcIndex < segments.length - 2 保证 src 严格在父目录之上，排除 src/index.ts 自身
   const isPublicLib =
-    srcIdx !== -1 && srcIdx < parts.length - 2 && publicLibDirs.includes(parentDir);
+    srcIndex !== -1 && srcIndex < segments.length - 2 && publicLibDirs.includes(parentDir);
 
   return {
-    isIndex: true,
     isPublicLib,
     // 文案展示自 src 起的路径，深层公共库也能一眼定位
-    path: isPublicLib ? parts.slice(srcIdx).join('/') : null,
+    srcRelativePath: isPublicLib ? segments.slice(srcIndex).join('/') : null,
   };
 }
 
-/** 公共库 index 禁文件存在（不看内容），其余 index 只禁 re-export 桶；同一文件只落一档，不重复报错 */
+/** 公共库 index 禁文件存在（不看内容），其余文件禁转发导出；同一文件只落一档，不重复报错 */
 export default {
   meta: {
     type: 'problem',
     docs: {
       description:
-        '禁止 barrel 入口：公共库 index 禁文件存在，其余 index 禁桶导出（export *）与跨模块重导出（export { x } from）',
+        '禁止 barrel 入口：公共库 index 禁文件存在；任意文件禁桶导出（export *）与转发导出（export { x } from）',
     },
-    fixable: null,
     schema: [
       {
         type: 'object',
         properties: {
           publicLibDirs: {
             type: 'array',
-            items: { type: 'string' },
+            items: { type: 'string', minLength: 1 },
+            // 空数组会让公共库桶那一档静默失效
+            minItems: 1,
             default: DEFAULT_OPTIONS.publicLibDirs,
           },
           srcDir: {
             type: 'string',
+            minLength: 1,
             default: DEFAULT_OPTIONS.srcDir,
           },
         },
@@ -63,21 +65,17 @@ export default {
     messages: {
       noPublicBarrel: '禁止公共库桶文件 `{{path}}`：请按领域文件直引，勿设 barrel',
       noBarrelStar: '禁止使用桶导出（export * from "..."）',
-      noReexport: '禁止在 index.ts 中重导出其他模块的内容',
+      noReexport: '禁止转发导出其他模块的内容，请让消费方直接 import 定义处',
     },
   },
   create(context) {
     const layout = { ...DEFAULT_OPTIONS, ...context.options[0] };
-    const { isIndex, isPublicLib, path } = analyzeIndexPath(context.filename, layout);
-
-    if (!isIndex) {
-      return {};
-    }
+    const { isPublicLib, srcRelativePath } = analyzeIndexPath(context.filename, layout);
 
     if (isPublicLib) {
       return {
         Program(node) {
-          context.report({ node, messageId: 'noPublicBarrel', data: { path } });
+          context.report({ node, messageId: 'noPublicBarrel', data: { path: srcRelativePath } });
         },
       };
     }
