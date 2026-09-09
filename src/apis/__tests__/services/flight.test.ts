@@ -2,11 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   bookFlight,
-  bookFlightOrThrow,
   fetchFlightDetail,
-  fetchFlightDetailSilent,
-  fetchFlightDetailWithCustomError,
   fetchFlights,
+  SILENT_ERROR_HANDLING,
+  THROWN_ERROR_HANDLING,
 } from '@/apis/services/flight';
 
 // get / post 在模块加载期即被创建，用 hoisted 让工厂能引用到间谍
@@ -43,7 +42,7 @@ describe('flight service', () => {
     });
   });
 
-  it('fetchFlightDetail 按航班号查询详情', async () => {
+  it('fetchFlightDetail 不传错误策略时只带 url 与参数', async () => {
     await fetchFlightDetail('CA1234');
 
     expect(mockGet).toHaveBeenCalledWith({
@@ -52,8 +51,8 @@ describe('flight service', () => {
     });
   });
 
-  it('fetchFlightDetailSilent 静默业务与网络错误', async () => {
-    await fetchFlightDetailSilent('CA1234');
+  it('fetchFlightDetail 透传静默策略', async () => {
+    await fetchFlightDetail('CA1234', SILENT_ERROR_HANDLING);
 
     expect(mockGet).toHaveBeenCalledWith({
       url: '/flight/detail',
@@ -63,8 +62,10 @@ describe('flight service', () => {
     });
   });
 
-  it('fetchFlightDetailWithCustomError 使用自定义错误文案', async () => {
-    await fetchFlightDetailWithCustomError('CA1234');
+  it('fetchFlightDetail 透传自定义错误文案', async () => {
+    await fetchFlightDetail('CA1234', {
+      businessError: { customMessage: '获取航班信息失败，请稍后重试' },
+    });
 
     expect(mockGet).toHaveBeenCalledWith({
       url: '/flight/detail',
@@ -85,10 +86,10 @@ describe('flight service', () => {
     expect(mockPost).toHaveBeenCalledWith({ url: '/flight/book', data: payload });
   });
 
-  it('bookFlightOrThrow 关闭吞错并静默提示以便调用方自处理', async () => {
+  it('bookFlight 透传抛错策略时关闭吞错并静默提示', async () => {
     const payload = { flightNo: 'CA1234', fareId: 'F1', passengers: [] };
 
-    await bookFlightOrThrow(payload);
+    await bookFlight(payload, THROWN_ERROR_HANDLING);
 
     expect(mockPost).toHaveBeenCalledWith({
       url: '/flight/book',
