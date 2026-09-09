@@ -104,3 +104,18 @@ describe('getRetryDelay', () => {
     expect(getRetryDelay(3)).toBe(1200);
   });
 });
+
+describe('getRetryDelay 封顶', () => {
+  it('指数退避不超过默认封顶值', () => {
+    // 300 * 2^7 = 38400，无封顶时单次就要等 38 秒
+    expect(getRetryDelay(8, { count: 8 })).toBe(5000);
+  });
+
+  it('封顶值可由调用方覆盖', () => {
+    expect(getRetryDelay(8, { count: 8, maxDelayMs: 1000 })).toBe(1000);
+  });
+
+  it('关闭退避时同样受封顶约束', () => {
+    expect(getRetryDelay(1, { count: 1, delayMs: 9000, isBackoff: false })).toBe(5000);
+  });
+});

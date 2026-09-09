@@ -18,15 +18,27 @@ export interface DedupeHandle {
 
 const pendingRequests = new Map<string, AbortController>();
 
-// FormData/Blob 等序列化成 "{}"，参与签名会导致不同请求被误判相同
-const isSerializable = (value: unknown): boolean => {
+/*
+ * FormData/Blob 等序列化成 "{}"，参与签名会导致不同请求被误判相同。
+ * 必须递归：只判顶层的话 { file: aFile } 与 { file: bFile } 都成 {"file":{}}，两个不同请求的签名会撞在一起。
+ * seen 用于挡住循环引用——递归遇到自引用会栈溢出，而循环引用本身也无法稳定序列化，判为不可去重即可。
+ */
+const isSerializable = (value: unknown, seen = new WeakSet<object>()): boolean => {
   if (value === null || typeof value !== 'object') {
     return true;
   }
-  if (Array.isArray(value)) {
-    return true;
+  if (seen.has(value)) {
+    return false;
   }
-  return Object.getPrototypeOf(value) === Object.prototype;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.every((item) => isSerializable(item, seen));
+  }
+  if (Object.getPrototypeOf(value) !== Object.prototype) {
+    return false;
+  }
+  return Object.values(value).every((item) => isSerializable(item, seen));
 };
 
 // 参数不可稳定序列化时返回 null，表示该请求不参与去重

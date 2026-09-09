@@ -1,31 +1,30 @@
-import {
-  APP_ENV_KEY,
-  Environment,
-  LOCAL_HOSTNAME_SUFFIX,
-  LOCAL_HOSTNAMES,
-  LOOPBACK_HOSTNAME_PREFIX,
-} from '@/constants/environment';
+import { APP_ENV_KEY, Environment } from '@/constants/environment';
+
+import { createSwappable } from './swappable';
 
 export type EnvironmentProvider = () => Environment;
 
-// 只认已知取值，拼错或注入了别的值时视为未注入并继续兜底
+// 只认已知取值，拼错或注入了别的值时视为未注入并继续兜底；取值清单只有枚举这一个来源，加档不必改此处
 const readInjectedEnvironment = (): Environment | null => {
   const injected = typeof process === 'undefined' ? undefined : process.env[APP_ENV_KEY];
 
-  if (injected === Environment.Development) {
-    return Environment.Development;
-  }
-  if (injected === Environment.Production) {
-    return Environment.Production;
-  }
-  return null;
+  return Object.values(Environment).find((environment) => environment === injected) ?? null;
 };
+
+// 指向本机的域名，未注入构建期标识时用于兜底判断
+const LOCAL_HOSTNAMES = ['localhost', '0.0.0.0', '::1', '[::1]'];
+
+// 回环网段 127.0.0.0/8 整段都是本机，不止 127.0.0.1；按四段点分十进制校验，避免把 127.example.com 当本机
+const LOOPBACK_HOSTNAME_PATTERN = /^127(\.\d{1,3}){3}$/;
+
+// mDNS 与局域网自签域名后缀，如 my-mac.local
+const LOCAL_HOSTNAME_SUFFIX = '.local';
 
 const isLocalHostname = (hostname: string): boolean => {
   if (LOCAL_HOSTNAMES.includes(hostname)) {
     return true;
   }
-  if (hostname.startsWith(LOOPBACK_HOSTNAME_PREFIX)) {
+  if (LOOPBACK_HOSTNAME_PATTERN.test(hostname)) {
     return true;
   }
   return hostname.endsWith(LOCAL_HOSTNAME_SUFFIX);
@@ -46,15 +45,11 @@ const detectEnvironment: EnvironmentProvider = () => {
   return isLocalHostname(hostname) ? Environment.Development : Environment.Production;
 };
 
-let activeEnvironmentProvider: EnvironmentProvider = detectEnvironment;
+const environmentProviderSlot = createSwappable(detectEnvironment);
 
 /** 构建期变量的读取方式随框架而异，由业务侧注入 */
-export const setEnvironmentProvider = (provider: EnvironmentProvider) => {
-  activeEnvironmentProvider = provider;
-};
+export const setEnvironmentProvider = environmentProviderSlot.set;
 
-export const resetEnvironmentProvider = () => {
-  activeEnvironmentProvider = detectEnvironment;
-};
+export const resetEnvironmentProvider = environmentProviderSlot.reset;
 
-export const getEnvironment = (): Environment => activeEnvironmentProvider();
+export const getEnvironment = (): Environment => environmentProviderSlot.get()();

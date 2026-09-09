@@ -2,10 +2,10 @@ import { AxiosError, AxiosHeaders, CanceledError } from 'axios';
 import { describe, expect, it } from 'vitest';
 
 import {
-  classifyAxiosError,
   isRetryableError,
   RequestError,
   RequestErrorType,
+  toRequestError,
 } from '@/apis/utils/error';
 
 // 构造一个带 response 的 AxiosError，用于走 HTTP 状态码分支
@@ -42,11 +42,11 @@ describe('RequestError', () => {
   });
 });
 
-describe('classifyAxiosError', () => {
+describe('toRequestError', () => {
   it('原样返回已是 RequestError 的错误', () => {
     const original = new RequestError(RequestErrorType.Business, '业务错误', { code: 1 });
 
-    expect(classifyAxiosError(original)).toBe(original);
+    expect(toRequestError(original)).toBe(original);
   });
 
   it('取消类错误归一为 Canceled 并携带 config', () => {
@@ -54,7 +54,7 @@ describe('classifyAxiosError', () => {
     const canceled = new CanceledError('canceled');
     Object.assign(canceled, { config });
 
-    const result = classifyAxiosError(canceled);
+    const result = toRequestError(canceled);
 
     expect(result.type).toBe(RequestErrorType.Canceled);
     expect(result.message).toBe('请求已取消');
@@ -62,14 +62,14 @@ describe('classifyAxiosError', () => {
   });
 
   it('ECONNABORTED 归一为 Timeout', () => {
-    const result = classifyAxiosError(buildAxiosError({ code: 'ECONNABORTED' }));
+    const result = toRequestError(buildAxiosError({ code: 'ECONNABORTED' }));
 
     expect(result.type).toBe(RequestErrorType.Timeout);
     expect(result.message).toBe('请求超时，请稍后重试');
   });
 
   it('ETIMEDOUT 归一为 Timeout', () => {
-    const result = classifyAxiosError(buildAxiosError({ code: 'ETIMEDOUT' }));
+    const result = toRequestError(buildAxiosError({ code: 'ETIMEDOUT' }));
 
     expect(result.type).toBe(RequestErrorType.Timeout);
   });
@@ -78,7 +78,7 @@ describe('classifyAxiosError', () => {
     const error = buildAxiosError();
     error.response = { status: 401 } as AxiosError['response'];
 
-    const result = classifyAxiosError(error);
+    const result = toRequestError(error);
 
     expect(result.type).toBe(RequestErrorType.Unauthorized);
     expect(result.status).toBe(401);
@@ -89,7 +89,7 @@ describe('classifyAxiosError', () => {
     const error = buildAxiosError();
     error.response = { status: 404 } as AxiosError['response'];
 
-    const result = classifyAxiosError(error);
+    const result = toRequestError(error);
 
     expect(result.type).toBe(RequestErrorType.Http);
     expect(result.message).toBe('请求的资源不存在');
@@ -99,7 +99,7 @@ describe('classifyAxiosError', () => {
     const error = buildAxiosError();
     error.response = { status: 599 } as AxiosError['response'];
 
-    const result = classifyAxiosError(error);
+    const result = toRequestError(error);
 
     expect(result.type).toBe(RequestErrorType.Http);
     expect(result.message).toBe('服务器开小差了，请稍后重试');
@@ -109,7 +109,7 @@ describe('classifyAxiosError', () => {
     const error = buildAxiosError();
     error.response = { status: 418 } as AxiosError['response'];
 
-    const result = classifyAxiosError(error);
+    const result = toRequestError(error);
 
     expect(result.type).toBe(RequestErrorType.Http);
     expect(result.message).toBe('请求失败，请稍后重试');
@@ -118,7 +118,7 @@ describe('classifyAxiosError', () => {
   it('无 response 的 AxiosError 归一为 Network 并携带 config', () => {
     const error = buildAxiosError();
 
-    const result = classifyAxiosError(error);
+    const result = toRequestError(error);
 
     expect(result.type).toBe(RequestErrorType.Network);
     expect(result.message).toBe('网络连接失败，请检查网络后重试');
@@ -129,7 +129,7 @@ describe('classifyAxiosError', () => {
   it('非 axios 的错误归一为 Unknown 并保留原始错误', () => {
     const original = new Error('interceptor boom');
 
-    const result = classifyAxiosError(original);
+    const result = toRequestError(original);
 
     expect(result.type).toBe(RequestErrorType.Unknown);
     expect(result.message).toBe('请求出现异常，请稍后重试');

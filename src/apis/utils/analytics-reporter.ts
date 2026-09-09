@@ -1,5 +1,11 @@
 import { Environment } from '@/constants/environment';
 import { getEnvironment } from '@/utils/environment';
+import { createSwappable } from '@/utils/swappable';
+
+export enum RequestStatus {
+  Success = 'success',
+  Error = 'error',
+}
 
 export interface AnalyticsData {
   requestId: string;
@@ -15,27 +21,30 @@ export interface AnalyticsData {
 
 export type AnalyticsSender = (analyticsData: AnalyticsData) => void;
 
-export enum RequestStatus {
-  Success = 'success',
-  Error = 'error',
-}
+/** 上报前的脱敏钩子，拿到的是完整载荷，返回处理后的载荷 */
+export type AnalyticsSanitizer = (analyticsData: AnalyticsData) => AnalyticsData;
 
 const noopSender: AnalyticsSender = () => {};
 
-let activeAnalyticsSender: AnalyticsSender = noopSender;
+/*
+ * 默认不脱敏，但把钩子摆在这里而不是只在注释里写「接入前须脱敏」：
+ * 上报载荷含完整 params / data / responseData，业务侧接入真实 sender 前必须在此摘掉敏感字段。
+ */
+const passthroughSanitizer: AnalyticsSanitizer = (analyticsData) => analyticsData;
 
 /* eslint-disable no-console -- 开发环境的埋点观察通道，控制台输出即本函数的全部职责 */
 const logToConsole = (analyticsData: AnalyticsData) => {
+  // 解构序对齐 AnalyticsData 的声明顺序；下面的打印顺序另按可读性排，不受此约束
   const {
+    requestId,
     method,
     url,
-    requestId,
-    startTimeMs,
-    endTimeMs,
-    status,
     requestParams,
     responseData,
+    status,
     errorMessage,
+    startTimeMs,
+    endTimeMs,
   } = analyticsData;
   const duration = endTimeMs - startTimeMs;
 
@@ -56,20 +65,23 @@ const logToConsole = (analyticsData: AnalyticsData) => {
 };
 /* eslint-enable no-console */
 
-export const setAnalyticsSender = (sender: AnalyticsSender) => {
-  activeAnalyticsSender = sender;
-};
+const analyticsSenderSlot = createSwappable(noopSender);
+const analyticsSanitizerSlot = createSwappable(passthroughSanitizer);
 
-export const resetAnalyticsSender = () => {
-  activeAnalyticsSender = noopSender;
-};
+export const setAnalyticsSender = analyticsSenderSlot.set;
 
-/** 上报数据含完整请求参数与响应体，接入真实实现前须脱敏 */
+export const resetAnalyticsSender = analyticsSenderSlot.reset;
+
+export const setAnalyticsSanitizer = analyticsSanitizerSlot.set;
+
+export const resetAnalyticsSanitizer = analyticsSanitizerSlot.reset;
+
+/** 开发环境只打控制台（不脱敏，便于排查）；生产走脱敏后再交给注入的 sender */
 export const reportAnalytics = (analyticsData: AnalyticsData) => {
   if (getEnvironment() === Environment.Development) {
     logToConsole(analyticsData);
     return;
   }
 
-  activeAnalyticsSender(analyticsData);
+  analyticsSenderSlot.get()(analyticsSanitizerSlot.get()(analyticsData));
 };

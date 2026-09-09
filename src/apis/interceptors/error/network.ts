@@ -1,21 +1,18 @@
-import type { ResInterceptor } from '../../types/interceptor';
-import { classifyAxiosError, RequestError, RequestErrorType } from '../../utils/error';
+import type { ResInterceptor } from '../../types/interceptors';
+import { RequestError, RequestErrorType, toRequestError } from '../../utils/error';
 import { notifyError } from '../../utils/error-notifier';
 import { canRetry } from '../../utils/retry';
 
 export const networkErrorInterceptor: ResInterceptor = {
   onRejected: (error: unknown) => {
-    const requestError = classifyAxiosError(error);
-    const { type, config, status, code, message: defaultMessage } = requestError;
+    const requestError = toRequestError(error);
+    const { type, config, status, code, message: rawMessage } = requestError;
+    const { networkError, __retriesLeft: retriesLeft = 0, method, retry } = config ?? {};
 
-    const { isSilent = false, customMessage } = config?.networkError ?? {};
-    const errorMessage = customMessage ?? defaultMessage;
-    const retriesLeft = config?.__retriesLeft ?? 0;
+    const { isSilent = false, customMessage } = networkError ?? {};
+    const errorMessage = customMessage ?? rawMessage;
     // 必须与 sendWithRetry 用同一个 canRetry 判定
-    const willRetry =
-      retriesLeft > 0 &&
-      config?.method != null &&
-      canRetry(requestError, config.method, config.retry);
+    const willRetry = retriesLeft > 0 && method != null && canRetry(requestError, method, retry);
 
     // 取消的请求不提示；即将重试的也不提示，等最终失败只提示一次
     if (!isSilent && !willRetry && type !== RequestErrorType.Canceled) {

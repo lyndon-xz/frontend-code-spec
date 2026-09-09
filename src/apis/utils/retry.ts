@@ -17,11 +17,21 @@ export const canRetry = (error: unknown, method: string, retry?: RetryOptions): 
 
 const DEFAULT_RETRY_DELAY_MS = 300;
 
+// 无封顶时 count 稍大就把请求挂住几分钟：300ms 退避到第 8 次已是 38s，累计近 80s
+const DEFAULT_MAX_RETRY_DELAY_MS = 5000;
+
 /** 计算第 attempt 次重试（从 1 起）的等待时间 */
 export const getRetryDelay = (attempt: number, retry?: RetryOptions): number => {
-  const delayMs = retry?.delayMs ?? DEFAULT_RETRY_DELAY_MS;
-  const isBackoff = retry?.isBackoff ?? true;
-  return isBackoff ? delayMs * 2 ** (attempt - 1) : delayMs;
+  const {
+    delayMs = DEFAULT_RETRY_DELAY_MS,
+    isBackoff = true,
+    maxDelayMs = DEFAULT_MAX_RETRY_DELAY_MS,
+  } = retry ?? {};
+
+  if (!isBackoff) {
+    return Math.min(delayMs, maxDelayMs);
+  }
+  return Math.min(delayMs * 2 ** (attempt - 1), maxDelayMs);
 };
 
 /** 退避等待，请求取消时立即中断 */

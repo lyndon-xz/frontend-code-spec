@@ -107,3 +107,23 @@ describe('DedupeHandle.release', () => {
     expect(() => handle.release()).not.toThrow();
   });
 });
+
+describe('registerDedupe 嵌套参数的可序列化判定', () => {
+  it('嵌套的不可序列化值让该请求不参与去重，避免签名撞车', () => {
+    const url = buildRequest().url;
+    const first = registerDedupe({ ...buildRequest(), url, data: { file: new Blob(['a']) } });
+    const second = registerDedupe({ ...buildRequest(), url, data: { file: new Blob(['b']) } });
+
+    // 两者内容不同却都序列化成 {"file":{}}，一旦进登记表就会互相取消
+    expect(first.signal.aborted).toBe(false);
+    expect(second.signal.aborted).toBe(false);
+  });
+
+  it('嵌套纯对象仍参与去重', () => {
+    const url = buildRequest().url;
+    const first = registerDedupe({ ...buildRequest(), url, params: { page: { index: 1 } } });
+    registerDedupe({ ...buildRequest(), url, params: { page: { index: 1 } } });
+
+    expect(first.signal.aborted).toBe(true);
+  });
+});

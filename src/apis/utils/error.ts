@@ -1,12 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
-interface RequestErrorMeta {
-  status?: number;
-  code?: number;
-  config?: AxiosRequestConfig;
-  cause?: unknown;
-}
-
 export enum RequestErrorType {
   Network = 'network',
   Timeout = 'timeout',
@@ -18,25 +11,15 @@ export enum RequestErrorType {
   Unknown = 'unknown',
 }
 
-const HTTP_STATUS_MESSAGE: Record<number, string> = {
-  400: '请求参数有误',
-  401: '登录已失效，请重新登录',
-  403: '没有访问权限',
-  404: '请求的资源不存在',
-  500: '服务器开小差了，请稍后重试',
-  502: '网关异常，请稍后重试',
-  503: '服务暂不可用，请稍后重试',
-  504: '网关超时，请稍后重试',
-};
-
 /** 退避等待期间的取消也复用此文案 */
 export const CANCELED_MESSAGE = '请求已取消';
 
-const DEFAULT_NETWORK_MESSAGE = '网络连接失败，请检查网络后重试';
-const DEFAULT_TIMEOUT_MESSAGE = '请求超时，请稍后重试';
-const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
-const DEFAULT_REQUEST_MESSAGE = '请求失败，请稍后重试';
-const DEFAULT_UNKNOWN_MESSAGE = '请求出现异常，请稍后重试';
+interface RequestErrorMeta {
+  status?: number;
+  code?: number;
+  config?: AxiosRequestConfig;
+  cause?: unknown;
+}
 
 export class RequestError extends Error {
   public readonly type: RequestErrorType;
@@ -55,8 +38,25 @@ export class RequestError extends Error {
   }
 }
 
-/** 归一成带类型与提示文案的 RequestError */
-export const classifyAxiosError = (error: unknown): RequestError => {
+// 500 不列在此：它的文案与 5xx 兜底完全相同，列进来就成了同一句话的第二份声明
+const MESSAGE_BY_HTTP_STATUS: Record<number, string> = {
+  400: '请求参数有误',
+  401: '登录已失效，请重新登录',
+  403: '没有访问权限',
+  404: '请求的资源不存在',
+  502: '网关异常，请稍后重试',
+  503: '服务暂不可用，请稍后重试',
+  504: '网关超时，请稍后重试',
+};
+
+const DEFAULT_NETWORK_MESSAGE = '网络连接失败，请检查网络后重试';
+const DEFAULT_TIMEOUT_MESSAGE = '请求超时，请稍后重试';
+const DEFAULT_SERVER_MESSAGE = '服务器开小差了，请稍后重试';
+const DEFAULT_REQUEST_MESSAGE = '请求失败，请稍后重试';
+const DEFAULT_UNKNOWN_MESSAGE = '请求出现异常，请稍后重试';
+
+/** 把任意抛出物归一成带类型与提示文案的 RequestError */
+export const toRequestError = (error: unknown): RequestError => {
   if (error instanceof RequestError) {
     return error;
   }
@@ -77,7 +77,7 @@ export const classifyAxiosError = (error: unknown): RequestError => {
       const { status } = response;
       const isServerError = status >= 500;
       const message =
-        HTTP_STATUS_MESSAGE[status] ??
+        MESSAGE_BY_HTTP_STATUS[status] ??
         (isServerError ? DEFAULT_SERVER_MESSAGE : DEFAULT_REQUEST_MESSAGE);
       const type = status === 401 ? RequestErrorType.Unauthorized : RequestErrorType.Http;
       return new RequestError(type, message, { status, config });
@@ -90,6 +90,10 @@ export const classifyAxiosError = (error: unknown): RequestError => {
   // 非 axios 错误归到 Unknown，不把代码 bug 伪装成网络问题
   return new RequestError(RequestErrorType.Unknown, DEFAULT_UNKNOWN_MESSAGE, { cause: error });
 };
+
+/** 取消不是失败，调用方需要与「请求失败」分开处置 */
+export const isCanceledError = (error: unknown): boolean =>
+  error instanceof RequestError && error.type === RequestErrorType.Canceled;
 
 /** 网络不可达、超时、5xx 算瞬时故障可重试；4xx 与业务错误不重试 */
 export const isRetryableError = (error: unknown): boolean => {

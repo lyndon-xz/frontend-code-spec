@@ -1,19 +1,17 @@
 import type { AxiosResponse } from 'axios';
 
-import { SUCCESS_CODE } from '../../constants/code';
-import type { ResInterceptor } from '../../types/interceptor';
-import type { BusinessResponse } from '../../types/response';
+import { SUCCESS_CODE } from '../../constants/codes';
+import type { ResInterceptor } from '../../types/interceptors';
+import type { BusinessResponse } from '../../types/responses';
+import { hasNumberField } from '../../utils/envelope';
 import { RequestError, RequestErrorType } from '../../utils/error';
 import { notifyError } from '../../utils/error-notifier';
 
 const DEFAULT_BUSINESS_MESSAGE = '操作失败，请稍后重试';
 
 // 非信封响应（文件流、三方接口）直接放行
-const isBusinessResponse = (body: unknown): body is BusinessResponse => {
-  return (
-    typeof body === 'object' && body !== null && 'code' in body && typeof body.code === 'number'
-  );
-};
+const isBusinessResponse = (body: unknown): body is BusinessResponse =>
+  hasNumberField(body, 'code');
 
 export const businessErrorInterceptor: ResInterceptor = {
   onFulfilled: (response: AxiosResponse) => {
@@ -30,12 +28,12 @@ export const businessErrorInterceptor: ResInterceptor = {
     }
 
     const { isSilent = false, customMessage } = config?.businessError ?? {};
-    // 服务端 message 为空时兜底
-    const serverMessage =
+    // 契约把 message 标为可选，且实测网关也可能下发空串，故 typeof 与长度两层都要判
+    const resolvedMessage =
       typeof responseMessage === 'string' && responseMessage.length > 0
         ? responseMessage
         : DEFAULT_BUSINESS_MESSAGE;
-    const errorMessage = customMessage ?? serverMessage;
+    const errorMessage = customMessage ?? resolvedMessage;
     if (!isSilent) {
       notifyError(errorMessage);
     }

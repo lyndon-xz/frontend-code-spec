@@ -11,6 +11,7 @@ import { ssoInterceptor } from './interceptors/sso';
 import type { EnhancedRequestConfig, InstanceConfig } from './types/config';
 import { generateBaseUrl } from './utils/base-url';
 import { registerDedupe } from './utils/dedupe';
+import { isCanceledError } from './utils/error';
 import { canRetry, delay, getRetryDelay } from './utils/retry';
 import { generateRequestId } from './utils/trace';
 
@@ -20,7 +21,7 @@ export type RequestInstanceOptions = Pick<
   'timeout' | 'withCredentials' | 'headers'
 >;
 
-const DEFAULT_TIMEOUT = 3000;
+const DEFAULT_TIMEOUT_MS = 3000;
 const DEFAULT_HEADERS = { 'Content-Type': 'application/json' };
 
 const serviceInstances = new Map<string, AxiosInstance>();
@@ -39,10 +40,10 @@ const warnOnConfigDrift = (serviceCode: string, signature: string) => {
   );
 };
 
-const getServiceInstance = (config: InstanceConfig): AxiosInstance => {
+const resolveServiceInstance = (config: InstanceConfig): AxiosInstance => {
   const {
     serviceCode,
-    timeout = DEFAULT_TIMEOUT,
+    timeout = DEFAULT_TIMEOUT_MS,
     withCredentials = true,
     headers,
     reqInterceptors,
@@ -66,20 +67,25 @@ const getServiceInstance = (config: InstanceConfig): AxiosInstance => {
     return existing;
   }
 
+  // 显式键顺序与上面的解构、签名对象保持一致，便于三处对照读；...restConfig 必须在前，否则会覆盖显式键
   const instance = axios.create({
     ...restConfig,
-    headers: mergedHeaders,
     timeout,
     withCredentials,
+    headers: mergedHeaders,
     baseURL: generateBaseUrl(serviceCode),
   });
 
   reqInterceptors.forEach((interceptor) => {
-    instance.interceptors.request.use(interceptor.onFulfilled, interceptor.onRejected);
+    const { onFulfilled, onRejected } = interceptor;
+
+    instance.interceptors.request.use(onFulfilled, onRejected);
   });
 
   resInterceptors.forEach((interceptor) => {
-    instance.interceptors.response.use(interceptor.onFulfilled, interceptor.onRejected);
+    const { onFulfilled, onRejected } = interceptor;
+
+    instance.interceptors.response.use(onFulfilled, onRejected);
   });
 
   serviceInstances.set(serviceCode, instance);
@@ -98,7 +104,7 @@ interface RetryContext {
 const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
   const { instance, config, method, signal, maxRetries } = context;
   // 循环外生成，保证重试共用同一个 requestId
-  const requestId = generateRequestId({ ...config, method });
+  const requestId = generateRequestId(method, config.url);
 
   for (let attempt = 0; ; attempt += 1) {
     const requestConfig = {
@@ -111,19 +117,25 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
 
     try {
       const response = await instance.request<T>(requestConfig);
+
       return response.data;
     } catch (error) {
-      if (attempt >= maxRetries || !canRetry(error, method, config.retry)) {
+      const { retry } = config;
+
+      if (attempt >= maxRetries || !canRetry(error, method, retry)) {
         throw error;
       }
-      await delay(getRetryDelay(attempt + 1, config.retry), signal);
+      await delay(getRetryDelay(attempt + 1, retry), signal);
     }
   }
 };
 
 // 响应拦截器顺序不可调：归一 → 登录态 → 业务码拆包 → 上报
-const buildInstance = (serviceCode: string, options: RequestInstanceOptions = {}): AxiosInstance =>
-  getServiceInstance({
+const resolveInstance = (
+  serviceCode: string,
+  options: RequestInstanceOptions = {},
+): AxiosInstance =>
+  resolveServiceInstance({
     serviceCode,
     ...options,
     reqInterceptors: [analyticsReqInterceptor, authReqInterceptor],
@@ -141,11 +153,18 @@ export const createRequest = (
   method: Method,
   options?: RequestInstanceOptions,
 ) => {
-  const instance = buildInstance(serviceCode, options);
+  const instance = resolveInstance(serviceCode, options);
 
   return async <T = unknown>(config: EnhancedRequestConfig): Promise<T | null> => {
-    const { url, params, data, retry, isDeduped, signal: userSignal, isErrorSwallowed } = config;
-    const maxRetries = retry?.count ?? 0;
+    const {
+      url,
+      params,
+      data,
+      retry,
+      isDeduped,
+      signal: userSignal,
+      isErrorSwallowed = true,
+    } = config;
     // 调用方自带 signal 时不接管取消控制
     const dedupe =
       isDeduped && userSignal == null
@@ -154,9 +173,15 @@ export const createRequest = (
     const signal = userSignal ?? dedupe?.signal;
 
     try {
+      const maxRetries = retry?.count ?? 0;
+
       return await sendWithRetry<T>({ instance, config, method, signal, maxRetries });
     } catch (error) {
-      if (isErrorSwallowed !== false) {
+      /*
+       * 取消不算失败，一律上抛：被同签名新请求取消时若也返回 null，调用方就分不清
+       * 「这次没成功」和「这次已被更新的请求接替」，把它按失败渲染成空态是错的。
+       */
+      if (isErrorSwallowed && !isCanceledError(error)) {
         return null;
       }
       throw error;

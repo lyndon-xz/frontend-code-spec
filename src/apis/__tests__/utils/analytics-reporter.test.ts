@@ -4,7 +4,9 @@ import {
   type AnalyticsData,
   reportAnalytics,
   RequestStatus,
+  resetAnalyticsSanitizer,
   resetAnalyticsSender,
+  setAnalyticsSanitizer,
   setAnalyticsSender,
 } from '@/apis/utils/analytics-reporter';
 import { Environment } from '@/constants/environment';
@@ -85,5 +87,37 @@ describe('reportAnalytics', () => {
 
     expect(sender).toHaveBeenCalledWith(analyticsData);
     expect(console.group).not.toHaveBeenCalled();
+  });
+});
+
+describe('reportAnalytics 脱敏钩子', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetEnvironment.mockReturnValue(Environment.Production);
+  });
+
+  afterEach(() => {
+    resetAnalyticsSender();
+    resetAnalyticsSanitizer();
+  });
+
+  it('生产环境把载荷交给脱敏钩子处理后才上报', () => {
+    const sender = vi.fn();
+    setAnalyticsSender(sender);
+    setAnalyticsSanitizer((analyticsData) => ({ ...analyticsData, requestParams: '[已脱敏]' }));
+
+    reportAnalytics(buildAnalyticsData({ requestParams: { idNumber: '110101' } }));
+
+    expect(sender).toHaveBeenCalledWith(expect.objectContaining({ requestParams: '[已脱敏]' }));
+  });
+
+  it('未注入脱敏钩子时载荷原样上报', () => {
+    const sender = vi.fn();
+    setAnalyticsSender(sender);
+    const analyticsData = buildAnalyticsData();
+
+    reportAnalytics(analyticsData);
+
+    expect(sender).toHaveBeenCalledWith(analyticsData);
   });
 });
