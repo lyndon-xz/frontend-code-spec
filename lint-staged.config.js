@@ -21,7 +21,7 @@ export default {
   '{src,eslint}/**/*': buildFilenameCommands,
   'package.json': ['sort-package-json'],
   '*.{ts,tsx,js,mjs}': ['eslint --fix'],
-  '*.scss': ['stylelint --fix', 'prettier --write'],
+  '*.{scss,css}': ['stylelint --fix', 'prettier --write'],
   '*.md': buildMarkdownCommands,
   '*.{json,yml,yaml}': ['prettier --write'],
 };
