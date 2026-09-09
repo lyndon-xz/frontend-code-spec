@@ -9,6 +9,9 @@ const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const buildNamePattern = (bannedNames) =>
   new RegExp(`^(${bannedNames.map(escapeRegExp).join('|')})$`);
 
+const FUNCTION_NODE_SELECTOR =
+  ':matches(FunctionDeclaration, ArrowFunctionExpression, FunctionExpression)';
+
 export default {
   meta: {
     type: 'suggestion',
@@ -43,7 +46,6 @@ export default {
     const bannedNames = context.options[0]?.bannedNames ?? DEFAULT_BANNED_NAMES;
     const namePattern = buildNamePattern(bannedNames);
     const namesText = bannedNames.join('、');
-    const FN = ':matches(FunctionDeclaration, ArrowFunctionExpression, FunctionExpression)';
 
     const reportIfBanned = (node) => {
       if (!namePattern.test(node.name)) {
@@ -54,15 +56,15 @@ export default {
 
     return {
       // 普通参数：fn(data)
-      [`${FN} > Identifier.params`](node) {
+      [`${FUNCTION_NODE_SELECTOR} > Identifier.params`](node) {
         reportIfBanned(node);
       },
       // 默认值参数：fn(data = {})
-      [`${FN} > AssignmentPattern.params > Identifier.left`](node) {
+      [`${FUNCTION_NODE_SELECTOR} > AssignmentPattern.params > Identifier.left`](node) {
         reportIfBanned(node);
       },
       // rest 参数：fn(...data)
-      [`${FN} > RestElement.params > Identifier.argument`](node) {
+      [`${FUNCTION_NODE_SELECTOR} > RestElement.params > Identifier.argument`](node) {
         reportIfBanned(node);
       },
     };

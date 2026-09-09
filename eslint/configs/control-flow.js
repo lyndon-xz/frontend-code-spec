@@ -8,6 +8,11 @@ export default [
        * 而缩进看起来仍像在分支内。all 而非 multi-line——统一形态才不用逐处判断该不该带。
        */
       'curly': ['error', 'all'],
+
+      'no-nested-ternary': 'error',
+      'no-empty': ['error', { allowEmptyCatch: false }],
+      'no-else-return': ['error', { allowElseIf: false }],
+      'max-depth': ['error', 3],
     },
   },
 ];

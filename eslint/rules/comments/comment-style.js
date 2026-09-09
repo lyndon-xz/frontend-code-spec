@@ -1,4 +1,4 @@
-function isExportNode(node) {
+function isWithinExportDeclaration(node) {
   let current = node;
   while (current) {
     if (current.type === 'ExportNamedDeclaration' || current.type === 'ExportDefaultDeclaration') {
@@ -23,26 +23,28 @@ function isExportNode(node) {
   return false;
 }
 
-// 只按行首形态判断，避免把含 () / => 的中文散文误判为被注释掉的代码
+// 行首是语句关键字：import x from 'y'、if (a) 之类
+const CODE_KEYWORD_LINE_START =
+  /^(import|export|const|let|var|function|async|await|class|interface|type|enum|namespace|return|if|else|for|while|do|switch|case|break|continue|throw|new|delete|yield|console|window|document)\b/;
+
+// 行首是标识符（含成员访问）紧接调用或赋值：foo()、a.b = 1；=[^=] 排除 == 比较
+const CALL_OR_ASSIGN_LINE_START = /^[A-Za-z_$][\w$.]*\s*(\(|=[^=])/;
+
+// 行尾是语句或块的收尾符号：; { }
+const CODE_LINE_END = /[;{}]\s*$/;
+
+// 只按行首、行尾形态判断，避免把含 () / => 的中文散文误判为被注释掉的代码
 function looksLikeCommentedCode(text) {
-  if (
-    /^(import|export|const|let|var|function|async|await|class|interface|type|enum|namespace|return|if|else|for|while|do|switch|case|break|continue|throw|new|delete|yield|console|window|document)\b/.test(
-      text,
-    )
-  ) {
-    return true;
-  }
-  if (/^[A-Za-z_$][\w$.]*\s*(\(|=[^=])/.test(text)) {
-    return true;
-  }
-  if (/[;{}]\s*$/.test(text)) {
-    return true;
-  }
-  return false;
+  return (
+    CODE_KEYWORD_LINE_START.test(text) ||
+    CALL_OR_ASSIGN_LINE_START.test(text) ||
+    CODE_LINE_END.test(text)
+  );
 }
 
-function stripBlock(value) {
-  return value
+// 剥掉每行的 `*` 前缀后压成一行：调用处要拿它拼单行注释，或作为合并块注释的一行
+function flattenBlockCommentText(blockCommentValue) {
+  return blockCommentValue
     .split('\n')
     .map((line) => line.trim().replace(/^\*+\s*/, ''))
     .filter(Boolean)
@@ -89,12 +91,12 @@ function buildMoveAboveFix(sourceCode, comment, tokenBefore) {
 }
 
 // 成组的判据：逐条行相邻，且共享同一后继代码 token
-function collectCommentStack(scanContext) {
+function collectAdjacentCommentGroup(scanContext) {
   const { sourceCode, comments, startIdx, tokenAfter } = scanContext;
-  const stack = [comments[startIdx]];
+  const group = [comments[startIdx]];
   for (let j = startIdx + 1; j < comments.length; j++) {
     const next = comments[j];
-    const prev = stack[stack.length - 1];
+    const prev = group[group.length - 1];
     if (isSkippableComment(next)) {
       break;
     }
@@ -104,13 +106,27 @@ function collectCommentStack(scanContext) {
     if (sourceCode.getTokenAfter(next, { includeComments: false }) !== tokenAfter) {
       break;
     }
-    stack.push(next);
+    group.push(next);
   }
-  return stack;
+  return group;
 }
 
-function extractCommentLines(stack) {
-  return stack.map((item) => (item.type === 'Block' ? stripBlock(item.value) : item.value.trim()));
+/*
+ * 与下一个声明之间空了一行的注释不是那个声明的文档注释：文件顶部讲整个模块在做什么
+ * 的说明就是这种形态，它后面往往还隔着别的注释与 import。不断开归属的话，模块说明会
+ * 被要求写成紧随其后那个 export 的 JSDoc，语义就错位了。断开后按非导出位置判形态。
+ *
+ * 比的是这组注释末条与声明的行距，不是当前这条：多段堆叠的注释之间没有空行，
+ * 拿第一条去比会把「中间还有别的注释」当成「隔了空行」。
+ */
+function isAttachedTo(tokenAfter, lastInGroup) {
+  return tokenAfter === null || tokenAfter.loc.start.line <= lastInGroup.loc.end.line + 1;
+}
+
+function extractCommentLines(group) {
+  return group.map((comment) =>
+    comment.type === 'Block' ? flattenBlockCommentText(comment.value) : comment.value.trim(),
+  );
 }
 
 // 含 `*/` 时不能包进块注释：会提前闭合而产生语法错误，转义则改动了注释文字，故放弃自动修复
@@ -118,9 +134,9 @@ function canWrapInBlockComment(text) {
   return !text.includes('*/');
 }
 
-function buildMergedComment(stack, opener) {
-  const indent = ' '.repeat(stack[0].loc.start.column);
-  const lines = extractCommentLines(stack);
+function buildMergedComment(group, opener) {
+  const indent = ' '.repeat(group[0].loc.start.column);
+  const lines = extractCommentLines(group);
   return `${opener}\n${lines.map((line) => `${indent} * ${line}`).join('\n')}\n${indent} */`;
 }
 
@@ -146,10 +162,10 @@ export default {
   create(context) {
     const { sourceCode } = context;
 
-    function reportMerge(stack, isExport) {
-      const first = stack[0];
-      const last = stack[stack.length - 1];
-      const canFix = extractCommentLines(stack).every(canWrapInBlockComment);
+    function reportMerge(group, isExport) {
+      const first = group[0];
+      const last = group[group.length - 1];
+      const canFix = extractCommentLines(group).every(canWrapInBlockComment);
       context.report({
         loc: { start: first.loc.start, end: last.loc.end },
         messageId: isExport ? 'exportMergeJsdoc' : 'internalMergeBlock',
@@ -157,17 +173,43 @@ export default {
           ? (fixer) =>
               fixer.replaceTextRange(
                 [first.range[0], last.range[1]],
-                buildMergedComment(stack, isExport ? '/**' : '/*'),
+                buildMergedComment(group, isExport ? '/**' : '/*'),
               )
           : null,
       });
+    }
+
+    /*
+     * 返回是否已处理：与前后 token 同行的注释在这一档定论，编排层据此结束。
+     * 内联参数注释是同行形态里唯一放行的，放行同样算已处理，不再往下判风格。
+     */
+    function checkNotAbove(comment, tokenBefore, tokenAfter) {
+      const isSameLineBefore = tokenBefore && tokenBefore.loc.end.line === comment.loc.start.line;
+      const isSameLineAfter = tokenAfter && tokenAfter.loc.start.line === comment.loc.end.line;
+      if (!isSameLineBefore && !isSameLineAfter) {
+        return false;
+      }
+
+      // 内联参数块注释放行：foo(/* name */ 'bar')
+      if (comment.type === 'Block' && isSameLineBefore && isSameLineAfter) {
+        return true;
+      }
+
+      context.report({
+        loc: comment.loc,
+        messageId: 'notAbove',
+        // 同行后继 token 的形态无法就地搬移，只报不修
+        fix: isSameLineBefore ? buildMoveAboveFix(sourceCode, comment, tokenBefore) : () => null,
+      });
+      return true;
     }
 
     function checkExportSingle(comment) {
       if (isJsdocBlock(comment)) {
         return;
       }
-      const content = comment.type === 'Block' ? stripBlock(comment.value) : comment.value.trim();
+      const content =
+        comment.type === 'Block' ? flattenBlockCommentText(comment.value) : comment.value.trim();
       context.report({
         loc: comment.loc,
         messageId: 'exportNeedsJsdoc',
@@ -182,12 +224,13 @@ export default {
         return;
       }
 
-      const isMultiLine = comment.loc.start.line !== comment.loc.end.line;
-      if (!isMultiLine) {
+      const isSingleLine = comment.loc.start.line === comment.loc.end.line;
+      if (isSingleLine) {
         context.report({
           loc: comment.loc,
           messageId: 'internalSingleLine',
-          fix: (fixer) => fixer.replaceText(comment, `// ${stripBlock(comment.value)}`),
+          fix: (fixer) =>
+            fixer.replaceText(comment, `// ${flattenBlockCommentText(comment.value)}`),
         });
         return;
       }
@@ -210,47 +253,29 @@ export default {
             return;
           }
 
-          const isBlock = comment.type === 'Block';
           const tokenBefore = sourceCode.getTokenBefore(comment, { includeComments: false });
           const tokenAfter = sourceCode.getTokenAfter(comment, { includeComments: false });
 
-          const sameLineBefore = tokenBefore && tokenBefore.loc.end.line === comment.loc.start.line;
-          const sameLineAfter = tokenAfter && tokenAfter.loc.start.line === comment.loc.end.line;
-          if (sameLineBefore || sameLineAfter) {
-            // 内联参数块注释放行：foo(/* name */ 'bar')
-            if (isBlock && sameLineBefore && sameLineAfter) {
-              return;
-            }
-            context.report({
-              loc: comment.loc,
-              messageId: 'notAbove',
-              fix: sameLineBefore
-                ? buildMoveAboveFix(sourceCode, comment, tokenBefore)
-                : () => null,
-            });
+          if (checkNotAbove(comment, tokenBefore, tokenAfter)) {
             return;
           }
 
-          const nodeAfter = sourceCode.getNodeByRangeIndex(
-            tokenAfter ? tokenAfter.range[0] : comment.range[1],
-          );
-          const stack = collectCommentStack({ sourceCode, comments, startIdx: idx, tokenAfter });
-          /*
-           * 与下一个声明之间空了一行的注释不是那个声明的文档注释：文件顶部讲整个模块在做什么
-           * 的说明就是这种形态，它后面往往还隔着别的注释与 import。不断开归属的话，模块说明会
-           * 被要求写成紧随其后那个 export 的 JSDoc，语义就错位了。断开后按非导出位置判形态。
-           *
-           * 比的是注释栈末条与声明的行距，不是当前这条：多段堆叠的注释之间没有空行，
-           * 拿第一条去比会把「中间还有别的注释」当成「隔了空行」。
-           */
-          const lastInStack = stack[stack.length - 1];
-          const detachedFromNode =
-            tokenAfter !== null && tokenAfter.loc.start.line > lastInStack.loc.end.line + 1;
-          const isExport = !detachedFromNode && isExportNode(nodeAfter);
-          stack.forEach((item) => visited.add(item));
+          const group = collectAdjacentCommentGroup({
+            sourceCode,
+            comments,
+            startIdx: idx,
+            tokenAfter,
+          });
+          group.forEach((item) => visited.add(item));
 
-          if (stack.length > 1) {
-            reportMerge(stack, isExport);
+          const isExport =
+            isAttachedTo(tokenAfter, group[group.length - 1]) &&
+            isWithinExportDeclaration(
+              sourceCode.getNodeByRangeIndex(tokenAfter ? tokenAfter.range[0] : comment.range[1]),
+            );
+
+          if (group.length > 1) {
+            reportMerge(group, isExport);
             return;
           }
           if (isExport) {

@@ -11,26 +11,22 @@ export default {
     },
   },
   create(context) {
+    /*
+     * :matches() 把 useRef 与 React.useRef 两种 callee 形态并进同一处理器：
+     * 两者判定与报错完全一致，分开写只会让同一段逻辑存在两份。
+     */
     return {
-      // const input = useRef(null)
-      'VariableDeclarator[init.callee.name="useRef"] > Identifier.id[name!=/Ref$/]'(node) {
-        context.report({ node, messageId: 'refSuffix' });
-      },
-      // const input = React.useRef(null)
-      'VariableDeclarator[init.callee.property.name="useRef"] > Identifier.id[name!=/Ref$/]'(node) {
-        context.report({ node, messageId: 'refSuffix' });
-      },
-      // class C { input = useRef(null) }
-      'PropertyDefinition[value.callee.name="useRef"] > Identifier.key[name!=/Ref$/]'(node) {
-        // 计算键（[key] = useRef()）没有可判定的静态名字，跳过
-        if (!node.parent.computed) {
-          context.report({ node, messageId: 'refSuffix' });
-        }
-      },
-      // class C { input = React.useRef(null) }
-      'PropertyDefinition[value.callee.property.name="useRef"] > Identifier.key[name!=/Ref$/]'(
+      // const input = useRef(null) / React.useRef(null)
+      'VariableDeclarator:matches([init.callee.name="useRef"], [init.callee.property.name="useRef"]) > Identifier.id[name!=/Ref$/]'(
         node,
       ) {
+        context.report({ node, messageId: 'refSuffix' });
+      },
+      // class C { input = useRef(null) / React.useRef(null) }
+      'PropertyDefinition:matches([value.callee.name="useRef"], [value.callee.property.name="useRef"]) > Identifier.key[name!=/Ref$/]'(
+        node,
+      ) {
+        // 计算键（[key] = useRef()）没有可判定的静态名字，跳过
         if (!node.parent.computed) {
           context.report({ node, messageId: 'refSuffix' });
         }

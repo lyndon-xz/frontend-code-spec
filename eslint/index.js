@@ -7,9 +7,10 @@ import globals from 'globals';
 
 import commentsConfig from './configs/comments.js';
 import controlFlowConfig from './configs/control-flow.js';
+import declarationConfig from './configs/declaration.js';
 import destructuringConfig from './configs/destructuring.js';
 import importsConfig from './configs/imports.js';
-import javascriptConfig from './configs/javascript.js';
+import loggingConfig from './configs/logging.js';
 import namingConfig from './configs/naming.js';
 import reactConfig from './configs/react.js';
 import structureConfig from './configs/structure.js';
@@ -33,25 +34,29 @@ import noTsDefaultExport from './rules/structure/no-ts-default-export.js';
 import requireTsxDefaultExport from './rules/structure/require-tsx-default-export.js';
 import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
 
+/*
+ * 键序与上方 import 顺序一致：那一侧由 import/order 强制字典序，是唯一稳定的排序依据。
+ * 新增规则的插入位置因此有唯一答案，核对「18 条是否都注册了」也能两侧对照读。
+ */
 const customRules = {
   'comment-style': commentStyle,
   'no-promise-chain': noPromiseChain,
-  'no-param-destructuring': noParamDestructuring,
   'hoist-module-scope-destructuring': hoistModuleScopeDestructuring,
-  'require-unit-suffix': requireUnitSuffix,
-  'require-enum-initializer': requireEnumInitializer,
-  'no-handle-prefix': noHandlePrefix,
+  'no-param-destructuring': noParamDestructuring,
   'no-generic-param-name': noGenericParamName,
-  'ref-suffix-naming': refSuffixNaming,
-  'no-internal-on-prefix': noInternalOnPrefix,
+  'no-handle-prefix': noHandlePrefix,
   'no-implementation-suffix-filename': noImplementationSuffixFilename,
+  'no-internal-on-prefix': noInternalOnPrefix,
+  'ref-suffix-naming': refSuffixNaming,
+  'require-unit-suffix': requireUnitSuffix,
   'status-field-naming': statusFieldNaming,
   'no-unnecessary-arrow-wrapper': noUnnecessaryArrowWrapper,
   'props-interface-naming': propsInterfaceNaming,
   'import-path-boundary': importPathBoundary,
   'no-barrel': noBarrel,
-  'require-tsx-default-export': requireTsxDefaultExport,
   'no-ts-default-export': noTsDefaultExport,
+  'require-tsx-default-export': requireTsxDefaultExport,
+  'require-enum-initializer': requireEnumInitializer,
 };
 
 export default [
@@ -103,10 +108,11 @@ export default [
     },
   },
 
-  ...javascriptConfig,
+  ...declarationConfig,
+  ...controlFlowConfig,
+  ...loggingConfig,
   ...importsConfig,
   ...commentsConfig,
-  ...controlFlowConfig,
   ...destructuringConfig,
   ...typescriptConfig,
   ...namingConfig,

@@ -51,7 +51,7 @@ ruleTester.run('comment-style', rule, {
       errors: [{ messageId: 'exportMergeJsdoc' }],
     },
     {
-      // 覆盖 stripBlock 分支
+      // 覆盖 flattenBlockCommentText 分支
       code: '/* 甲 */\n/* 乙 */\nexport const x = 1;',
       output: '/**\n * 甲\n * 乙\n */\nexport const x = 1;',
       errors: [{ messageId: 'exportMergeJsdoc' }],
@@ -72,7 +72,7 @@ ruleTester.run('comment-style', rule, {
       errors: [{ messageId: 'internalMergeBlock' }],
     },
     {
-      // 覆盖 stripBlock 分支
+      // 覆盖 flattenBlockCommentText 分支
       code: '/* 甲 */\n/* 乙 */\nconst a = 1;',
       output: '/*\n * 甲\n * 乙\n */\nconst a = 1;',
       errors: [{ messageId: 'internalMergeBlock' }],

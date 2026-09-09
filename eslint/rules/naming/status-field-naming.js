@@ -4,7 +4,7 @@
  */
 
 // error / loading 后紧跟这些通用属性词时放行：命名的是对象自身属性（errorMessage），不是领域状态流
-const GENERIC_ATTR = new Set([
+const GENERIC_STATE_ATTRIBUTE_WORDS = new Set([
   'message',
   'messages',
   'text',
@@ -26,10 +26,10 @@ const GENERIC_ATTR = new Set([
   'placeholder',
 ]);
 
-const LOADING_PREFIX = /^loading[A-Z]/;
-const ERROR_PREFIX = /^error[A-Z]/;
+const LOADING_PREFIX_PATTERN = /^loading[A-Z]/;
+const ERROR_PREFIX_PATTERN = /^error[A-Z]/;
 
-const STATE_NAME = /State$/;
+const STATE_NAME_SUFFIX_PATTERN = /State$/;
 
 // 含 React.useState(...) 形态
 function isUseStateCall(init) {
@@ -48,7 +48,7 @@ function isInStateType(node) {
   let current = node.parent;
   while (current) {
     if (current.type === 'TSInterfaceDeclaration' || current.type === 'TSTypeAliasDeclaration') {
-      return STATE_NAME.test(current.id.name);
+      return STATE_NAME_SUFFIX_PATTERN.test(current.id.name);
     }
     current = current.parent;
   }
@@ -63,7 +63,7 @@ function isInStateObject(property) {
   }
 
   if (current.type === 'VariableDeclarator') {
-    return current.id.type === 'Identifier' && STATE_NAME.test(current.id.name);
+    return current.id.type === 'Identifier' && STATE_NAME_SUFFIX_PATTERN.test(current.id.name);
   }
   return isUseStateCall(current);
 }
@@ -71,18 +71,18 @@ function isInStateObject(property) {
 function checkName(context, node) {
   const { name } = node;
 
-  if (LOADING_PREFIX.test(name)) {
+  if (LOADING_PREFIX_PATTERN.test(name)) {
     const suffix = name.slice('loading'.length);
-    if (GENERIC_ATTR.has(suffix.toLowerCase())) {
+    if (GENERIC_STATE_ATTRIBUTE_WORDS.has(suffix.toLowerCase())) {
       return;
     }
     context.report({ node, messageId: 'loadingPrefix', data: { name, suffix } });
     return;
   }
 
-  if (ERROR_PREFIX.test(name)) {
+  if (ERROR_PREFIX_PATTERN.test(name)) {
     const suffix = name.slice('error'.length);
-    if (GENERIC_ATTR.has(suffix.toLowerCase())) {
+    if (GENERIC_STATE_ATTRIBUTE_WORDS.has(suffix.toLowerCase())) {
       return;
     }
     const suggested = `${suffix.charAt(0).toLowerCase()}${suffix.slice(1)}Error`;
@@ -97,7 +97,6 @@ export default {
       description:
         '状态上下文（useState / State 类型 / 状态对象）中的数据、异步状态字段强制后缀式命名（isLoadingXxx / xxxError），禁止前缀式',
     },
-    fixable: null,
     schema: [],
     messages: {
       loadingPrefix:

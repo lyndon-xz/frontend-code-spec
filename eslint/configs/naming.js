@@ -1,3 +1,5 @@
+import { SRC_FILE_GLOBS } from '../utils/source-layout.js';
+
 export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -34,6 +36,10 @@ export default [
         },
         {
           selector: 'enum',
+          format: ['PascalCase'],
+        },
+        {
+          selector: 'enumMember',
           format: ['PascalCase'],
         },
         {
@@ -94,7 +100,7 @@ export default [
   },
   {
     // 依赖 React API 或业务文件命名约定，只对 src 源码成立
-    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    files: SRC_FILE_GLOBS,
     rules: {
       'custom/ref-suffix-naming': 'error',
       'custom/no-implementation-suffix-filename': 'error',

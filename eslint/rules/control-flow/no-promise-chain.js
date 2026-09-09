@@ -1,3 +1,9 @@
+const chainMethodToMessageId = {
+  then: 'noThenChain',
+  catch: 'noCatchChain',
+  finally: 'noFinallyChain',
+};
+
 export default {
   meta: {
     type: 'problem',
@@ -12,12 +18,6 @@ export default {
     },
   },
   create(context) {
-    const chainMethodToMessageId = {
-      then: 'noThenChain',
-      catch: 'noCatchChain',
-      finally: 'noFinallyChain',
-    };
-
     // 含计算成员形态 obj['then']
     function resolveChainMethod(property, computed) {
       const name = computed

@@ -4,6 +4,9 @@ export default [
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
     },
+  },
+  {
+    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {
       'custom/comment-style': 'error',
     },
