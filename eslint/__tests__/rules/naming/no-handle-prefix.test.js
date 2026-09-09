@@ -21,6 +21,9 @@ ruleTester.run('no-handle-prefix', rule, {
     'const { handleClick } = props;',
     // 测试 / mock 文件豁免：桩函数常沿用被 mock 的原名
     { code: 'const handleSubmit = () => {};', filename: 'src/apis/foo.test.ts' },
+    // 名词属性：非白名单 hook 的调用结果不算函数值（句柄、账号 id）
+    'const handleId = getHandle();',
+    'const handleCount = useState(0);',
   ],
   invalid: [
     {
@@ -47,6 +50,19 @@ ruleTester.run('no-handle-prefix', rule, {
     {
       code: 'const obj = { handleClick: () => {} };',
       errors: [{ messageId: 'noHandleFn' }],
+    },
+    {
+      // useCallback 包裹是 React 里最常见的声明形态，不能因为 init 是 CallExpression 就放行
+      code: 'const handleClick = useCallback(() => {}, []);',
+      errors: [{ messageId: 'noHandleVar' }],
+    },
+    {
+      code: 'const handleClick = React.useCallback(() => {}, []);',
+      errors: [{ messageId: 'noHandleVar' }],
+    },
+    {
+      code: 'const handleRows = useMemo(() => () => {}, []);',
+      errors: [{ messageId: 'noHandleVar' }],
     },
   ],
 });

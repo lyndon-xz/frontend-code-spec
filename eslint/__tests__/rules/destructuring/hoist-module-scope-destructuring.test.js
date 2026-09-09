@@ -16,6 +16,12 @@ ruleTester.run('hoist-module-scope-destructuring', rule, {
     'import { list } from "./list"; function C() { const [first] = list; return first; }',
     // 环境全局无定义节点，不算本模块的常量
     'function C() { const { pathname } = location; return pathname; }',
+    /*
+     * 可重新赋值的模块级绑定不能提：函数体内读的是调用时最新值，提到顶层读的是模块求值那一刻的初值。
+     * provider 注入槽（setXxxProvider 那套）正是这个形态。
+     */
+    'let active = defaults; export const setActive = (next) => { active = next; }; function C() { const { a } = active; return a; }',
+    'var active = defaults; function C() { const { a } = active; return a; }',
   ],
   invalid: [
     {

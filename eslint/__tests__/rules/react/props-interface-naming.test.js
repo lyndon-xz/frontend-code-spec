@@ -96,5 +96,12 @@ ruleTester.run('props-interface-naming', rule, {
       output: null,
       errors: [{ messageId: 'propsNaming' }],
     },
+    {
+      // 已导出的接口可能被别处 import，本文件内改名会让导入方编译失败，只告警不 fix
+      code: 'export interface Props {}\nfunction Foo(props: Props) { return null; }',
+      filename: 'Foo.tsx',
+      output: null,
+      errors: [{ messageId: 'propsNaming' }],
+    },
   ],
 });

@@ -21,10 +21,26 @@ const DEFAULT_DIMENSIONS = [
     roots: ['time', 'timestamp', 'deadline', 'expires'],
     suffixes: ['Ms', 'Seconds', 'Iso', 'Utc'],
   },
+  /*
+   * 长度 / 数据量 / 质量各自成条：合成一个「尺寸」量纲会让建议给错单位（weight 收到 weightPx），
+   * 也会放行量纲与单位对不上的命名（widthGrams）——matchDimension 只要末尾命中任一后缀就判已带单位。
+   * 裸 `size` 与 `length` 不进默认值：它们跨长度（fontSize）、数据量（contentLength）与计数（maxLength）
+   * 三种含义，默认收进来必然给错建议，需要时由项目用 dimensions 选项自行声明。
+   */
   {
-    name: '尺寸',
-    roots: ['size', 'width', 'height', 'length', 'distance', 'weight'],
-    suffixes: ['Px', 'Rem', 'Percent', 'Bytes', 'Kb', 'Mb', 'Grams', 'Kg'],
+    name: '长度',
+    roots: ['width', 'height', 'distance'],
+    suffixes: ['Px', 'Rem', 'Percent', 'Meters', 'Km'],
+  },
+  {
+    name: '数据量',
+    roots: ['filesize', 'datasize', 'payloadsize'],
+    suffixes: ['Bytes', 'Kb', 'Mb'],
+  },
+  {
+    name: '质量',
+    roots: ['weight'],
+    suffixes: ['Grams', 'Kg'],
   },
 ];
 
@@ -68,9 +84,8 @@ export default {
     type: 'problem',
     docs: {
       description:
-        '类型成员中的数值量纲字段（金额 / 时长 / 尺寸）必须带单位后缀，如 priceInCents 写作 priceCents、timeout 写作 timeoutMs',
+        '类型成员中的数值量纲字段（金额 / 时长 / 时间点 / 长度 / 数据量 / 质量）必须带单位后缀，如 fee 写作 feeCents、timeout 写作 timeoutMs',
     },
-    fixable: null,
     schema: [
       {
         type: 'object',
@@ -80,13 +95,15 @@ export default {
             items: {
               type: 'object',
               properties: {
-                name: { type: 'string' },
-                roots: { type: 'array', items: { type: 'string' } },
-                suffixes: { type: 'array', items: { type: 'string' } },
+                name: { type: 'string', minLength: 1 },
+                // 空数组会让该量纲静默失效；suffixes 为空还会让建议渲染成 `timeoutundefined`
+                roots: { type: 'array', items: { type: 'string', minLength: 1 }, minItems: 1 },
+                suffixes: { type: 'array', items: { type: 'string', minLength: 1 }, minItems: 1 },
               },
               required: ['name', 'roots', 'suffixes'],
               additionalProperties: false,
             },
+            minItems: 1,
             default: DEFAULT_OPTIONS.dimensions,
           },
           ignoredFields: {

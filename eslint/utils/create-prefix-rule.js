@@ -1,9 +1,10 @@
 import { isExemptFile } from './is-exempt-file.js';
-import { isFunctionNode } from './is-function-node.js';
+import { isFunctionValue } from './is-function-value.js';
 
 /** handle / on 两条规则判定逻辑一致，只差前缀与是否覆盖对象属性，故收敛为工厂 */
 export function createPrefixRule(spec) {
-  const { prefix, meta, functionMessageId, variableMessageId, checkObjectProperties } = spec;
+  // 解构顺序与两个调用处传参的字面量顺序一致，便于对照读
+  const { prefix, checkObjectProperties, functionMessageId, variableMessageId, meta } = spec;
   const namePattern = new RegExp(`^${prefix}[A-Z]`);
 
   const isPrefixedIdentifier = (node) => node.type === 'Identifier' && namePattern.test(node.name);
@@ -27,7 +28,7 @@ export function createPrefixRule(spec) {
           }
         },
         VariableDeclarator(node) {
-          if (isPrefixedIdentifier(node.id) && isFunctionNode(node.init)) {
+          if (isPrefixedIdentifier(node.id) && isFunctionValue(node.init)) {
             report(node.id, variableMessageId);
           }
         },
@@ -37,7 +38,7 @@ export function createPrefixRule(spec) {
           }
         },
         PropertyDefinition(node) {
-          if (!node.computed && isPrefixedIdentifier(node.key) && isFunctionNode(node.value)) {
+          if (!node.computed && isPrefixedIdentifier(node.key) && isFunctionValue(node.value)) {
             report(node.key, functionMessageId);
           }
         },
@@ -54,7 +55,7 @@ export function createPrefixRule(spec) {
           if (node.computed || node.shorthand) {
             return;
           }
-          if (isPrefixedIdentifier(node.key) && isFunctionNode(node.value)) {
+          if (isPrefixedIdentifier(node.key) && isFunctionValue(node.value)) {
             report(node.key, functionMessageId);
           }
         },

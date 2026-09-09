@@ -1,5 +1,29 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
-import { isFunctionNode } from '../../utils/is-function-node.js';
+import { isFunctionValue } from '../../utils/is-function-value.js';
+
+/*
+ * 改名要一次改到位：声明本身与本文件内所有引用都收进来。
+ * 作用域信息缺失时至少改写声明本身，避免返回空 fix 让告警看起来可修实际不动。
+ */
+function collectRenameTargets(sourceCode, interfaceNode) {
+  const idNodes = [];
+  for (const variable of sourceCode.getDeclaredVariables(interfaceNode)) {
+    for (const def of variable.defs) {
+      // 没有标识符节点的定义要滤掉，避免把 undefined 交给 fixer
+      if (def.name) {
+        idNodes.push(def.name);
+      }
+    }
+    for (const ref of variable.references) {
+      idNodes.push(ref.identifier);
+    }
+  }
+
+  if (idNodes.length === 0) {
+    return [interfaceNode.id];
+  }
+  return idNodes;
+}
 
 /**
  * autofix 只改写当前文件内的引用；跨文件引用需另行处理。
@@ -28,7 +52,7 @@ export default {
     const interfaces = [];
     const components = [];
 
-    function typeRefName(annotation) {
+    function propsTypeRefName(annotation) {
       if (annotation?.type !== 'TSTypeReference') {
         return null;
       }
@@ -38,7 +62,7 @@ export default {
 
     function propsNameFromParam(fnNode) {
       const firstParam = fnNode.params[0];
-      return typeRefName(firstParam?.typeAnnotation?.typeAnnotation);
+      return propsTypeRefName(firstParam?.typeAnnotation?.typeAnnotation);
     }
 
     function propsNameFromFcAnnotation(idNode) {
@@ -48,7 +72,7 @@ export default {
       }
       // typeArguments / typeParameters 两种字段名都要兜底
       const typeArgs = annotation.typeArguments ?? annotation.typeParameters;
-      return typeRefName(typeArgs?.params?.[0]);
+      return propsTypeRefName(typeArgs?.params?.[0]);
     }
 
     return {
@@ -61,7 +85,7 @@ export default {
         if (
           node.id.type === 'Identifier' &&
           /^[A-Z]/.test(node.id.name) &&
-          isFunctionNode(node.init)
+          isFunctionValue(node.init)
         ) {
           const propsTypeName = propsNameFromParam(node.init) ?? propsNameFromFcAnnotation(node.id);
           if (propsTypeName) {
@@ -92,7 +116,7 @@ export default {
         }
 
         // 用于避免重命名后与现有 interface 声明重名
-        const existingNames = new Set(interfaces.map((item) => item.name));
+        const existingNames = new Set(interfaces.map((declaration) => declaration.name));
 
         for (const component of components) {
           const expectedPropsName = `${component.name}Props`;
@@ -101,7 +125,7 @@ export default {
           }
 
           const matchingInterface = interfaces.find(
-            (item) => item.name === component.propsTypeName,
+            (declaration) => declaration.name === component.propsTypeName,
           );
           if (!matchingInterface) {
             continue;
@@ -111,35 +135,20 @@ export default {
           const isShared = componentCountByProps.get(component.propsTypeName) > 1;
           const isNameTaken = existingNames.has(expectedPropsName);
           // 期望名形如 IXxx 会命中 naming-convention 的接口禁令，改名反而产出非法代码，故只告警不 fix
-          const violatesInterfaceIPrefix = /^I[A-Z]/.test(expectedPropsName);
-          const canFix = !isShared && !isNameTaken && !violatesInterfaceIPrefix;
+          const hasInterfaceIPrefix = /^I[A-Z]/.test(expectedPropsName);
+          // 导出的接口可能被别处 import，本文件内改名会让导入方编译失败，故只报不修
+          const isExported = matchingInterface.node.parent?.type === 'ExportNamedDeclaration';
+          const canFix = !isShared && !isNameTaken && !hasInterfaceIPrefix && !isExported;
 
           context.report({
             node: matchingInterface.node.id,
             messageId: 'propsNaming',
             data: { expected: expectedPropsName, actual: component.propsTypeName },
             fix: canFix
-              ? (fixer) => {
-                  const variables = sourceCode.getDeclaredVariables(matchingInterface.node);
-                  const idNodes = [];
-                  for (const variable of variables) {
-                    for (const def of variable.defs) {
-                      // 没有标识符节点的定义要滤掉，避免把 undefined 交给 fixer
-                      if (def.name) {
-                        idNodes.push(def.name);
-                      }
-                    }
-                    for (const ref of variable.references) {
-                      idNodes.push(ref.identifier);
-                    }
-                  }
-                  // 兜底：作用域信息缺失时，至少改写声明本身
-                  if (idNodes.length === 0) {
-                    idNodes.push(matchingInterface.node.id);
-                  }
-
-                  return idNodes.map((idNode) => fixer.replaceText(idNode, expectedPropsName));
-                }
+              ? (fixer) =>
+                  collectRenameTargets(sourceCode, matchingInterface.node).map((idNode) =>
+                    fixer.replaceText(idNode, expectedPropsName),
+                  )
               : null,
           });
         }

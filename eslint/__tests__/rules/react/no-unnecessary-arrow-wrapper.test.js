@@ -26,15 +26,16 @@ ruleTester.run('no-unnecessary-arrow-wrapper', rule, {
       errors: [{ messageId: 'unwrapNoArg' }],
     },
     {
+      // 只报不修：发射方可能比箭头多传实参，去掉包裹后会静默落进被调函数的可选形参
       code: '<button onClick={(e) => fn(e)} />;',
       filename: 'C.tsx',
-      output: '<button onClick={fn} />;',
+      output: null,
       errors: [{ messageId: 'unwrapPassthrough' }],
     },
     {
       code: '<button onClick={(a, b) => fn(a, b)} />;',
       filename: 'C.tsx',
-      output: '<button onClick={fn} />;',
+      output: null,
       errors: [{ messageId: 'unwrapPassthrough' }],
     },
     {
@@ -46,7 +47,7 @@ ruleTester.run('no-unnecessary-arrow-wrapper', rule, {
     {
       code: '<button onClick={(e) => { fn(e); }} />;',
       filename: 'C.tsx',
-      output: '<button onClick={fn} />;',
+      output: null,
       errors: [{ messageId: 'unwrapPassthrough' }],
     },
   ],

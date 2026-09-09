@@ -7,6 +7,18 @@ function isInModuleScope(scope) {
   return scope.type === 'module' || scope.type === 'global';
 }
 
+/*
+ * 只认 const：可重新赋值的模块级绑定（provider 注入槽这类 let）提到顶层会改变语义——
+ * 函数体内读的是调用时的最新值，提到顶层读的是模块求值那一刻的初值。
+ */
+function isImmutableBinding(def) {
+  // import 绑定不可重新赋值，与 const 同档
+  if (def.type === 'ImportBinding') {
+    return true;
+  }
+  return def.parent?.type === 'VariableDeclaration' && def.parent.kind === 'const';
+}
+
 function isModuleLevelBinding(scope, name) {
   let current = scope;
 
@@ -15,7 +27,9 @@ function isModuleLevelBinding(scope, name) {
 
     if (found) {
       // 无定义节点的绑定来自环境（globals），不是本模块的常量
-      return isInModuleScope(current) && found.defs.length > 0;
+      return (
+        isInModuleScope(current) && found.defs.length > 0 && found.defs.every(isImmutableBinding)
+      );
     }
     current = current.upper;
   }
@@ -28,7 +42,6 @@ export default {
     docs: {
       description: '模块级绑定的解构提到模块顶层，不写在函数体内',
     },
-    fixable: null,
     schema: [],
     messages: {
       hoistDestructuring:
