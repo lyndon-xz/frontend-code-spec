@@ -20,7 +20,7 @@ const buildMarkdownCommands = (filenames) => [
 export default {
   '{src,eslint}/**/*': buildFilenameCommands,
   'package.json': ['sort-package-json'],
-  '*.{ts,tsx,js,mjs}': ['eslint --fix'],
+  '*.{ts,tsx,js,mjs}': ['prettier --write', 'eslint --fix'],
   '*.{scss,css}': ['stylelint --fix', 'prettier --write'],
   '*.md': buildMarkdownCommands,
   '*.{json,yml,yaml}': ['prettier --write'],

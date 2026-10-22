@@ -1,9 +1,10 @@
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsparser from '@typescript-eslint/parser';
-import importPlugin from 'eslint-plugin-import';
-import react from 'eslint-plugin-react';
+import path from 'path';
+
+import eslintReact from '@eslint-react/eslint-plugin';
+import importX from 'eslint-plugin-import-x';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 import commentsConfig from './configs/comments.js';
 import controlFlowConfig from './configs/control-flow.js';
@@ -35,7 +36,7 @@ import requireTsxDefaultExport from './rules/structure/require-tsx-default-expor
 import requireEnumInitializer from './rules/typescript/require-enum-initializer.js';
 
 /*
- * 键序与上方 import 顺序一致：那一侧由 import/order 强制字典序，是唯一稳定的排序依据。
+ * 键序与上方 import 顺序一致：那一侧由 import-x/order 强制字典序，是唯一稳定的排序依据。
  * 新增规则的插入位置因此有唯一答案，核对「18 条是否都注册了」也能两侧对照读。
  */
 const customRules = {
@@ -68,9 +69,11 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
-      parser: tsparser,
+      parser: tseslint.parser,
       parserOptions: {
-        project: './tsconfig.json',
+        projectService: true,
+        // 本文件位于 eslint/，项目根是上一级
+        tsconfigRootDir: path.resolve(import.meta.dirname, '..'),
         sourceType: 'module',
         ecmaVersion: 'latest',
         ecmaFeatures: {
@@ -83,15 +86,10 @@ export default [
         ...globals.es2021,
       },
     },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
     plugins: {
-      '@typescript-eslint': tseslint,
-      'import': importPlugin,
-      react,
+      '@typescript-eslint': tseslint.plugin,
+      'import-x': importX,
+      '@eslint-react': eslintReact,
       'react-hooks': reactHooks,
     },
   },

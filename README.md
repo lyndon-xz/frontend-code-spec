@@ -2,7 +2,7 @@
 
 > **前端代码规范的源头仓库**：把代码该怎么写沉淀成能执行的 ESLint 规则与能照抄的范式样板，让业务仓库对齐标准，而不是靠口头约定和 Code Review 反复纠正。
 
-[![CI](https://github.com/lyndon-xz/frontend-code-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/lyndon-xz/frontend-code-spec/actions/workflows/ci.yml) ![Node](https://img.shields.io/badge/node-%3E%3D22.12.0-339933?logo=node.js&logoColor=white) ![pnpm](https://img.shields.io/badge/pnpm-10.12.4-F69220?logo=pnpm&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white) ![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?logo=eslint&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black) ![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white) ![Coverage](https://img.shields.io/badge/coverage%20threshold-95%25-brightgreen) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![CI](https://github.com/lyndon-xz/frontend-code-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/lyndon-xz/frontend-code-spec/actions/workflows/ci.yml) ![Node](https://img.shields.io/badge/node-%3E%3D22.13.0-339933?logo=node.js&logoColor=white) ![pnpm](https://img.shields.io/badge/pnpm-10.12.4-F69220?logo=pnpm&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white) ![ESLint](https://img.shields.io/badge/ESLint-10-4B32C3?logo=eslint&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black) ![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white) ![Coverage](https://img.shields.io/badge/coverage%20threshold-95%25-brightgreen) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 ## 📖 这个仓库解决什么问题
 
@@ -28,7 +28,7 @@
 
 | 项目 | 版本                                       |
 | ---- | ------------------------------------------ |
-| Node | `>=22.12.0`（`.nvmrc` 锁定 `22.22.2`）     |
+| Node | `>=22.13.0`（`.nvmrc` 锁定 `22.22.2`）     |
 | pnpm | `>=10.12.4`（`packageManager` 已声明版本） |
 
 `.npmrc` 开了 `engine-strict=true`，版本不符会直接装不上，不做静默降级。
@@ -45,20 +45,20 @@ pnpm verify
 
 ## ⌨️ 命令
 
-| 命令                 | 作用                                                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------------------ |
-| `pnpm verify`        | 全量质量校验：类型、各类 lint、格式、测试与覆盖率门禁一次跑完；pre-push 与 CI 跑的就是这条命令         |
-| `pnpm type-check`    | `tsc --noEmit` 类型检查                                                                                |
-| `pnpm lint`          | ESLint 检查全仓                                                                                        |
-| `pnpm lint:fix`      | ESLint 自动修复                                                                                        |
-| `pnpm lint:filename` | ls-lint 校验文件与目录命名                                                                             |
-| `pnpm lint:style`    | Stylelint 检查 SCSS 与 CSS                                                                             |
-| `pnpm lint:md`       | zhlint 检查 Markdown 中文排版                                                                          |
-| `pnpm lint:pkg`      | 校验 `package.json` 字段顺序                                                                           |
-| `pnpm format`        | Prettier 格式化全仓                                                                                    |
-| `pnpm format:check`  | Prettier 检查 json / yml / md / scss / css / html；js / ts 的格式由 ESLint 的 `prettier/prettier` 检查 |
-| `pnpm test`          | Vitest 监听模式                                                                                        |
-| `pnpm test:cov`      | 单次运行并出覆盖率报告，覆盖率不达阈值即失败                                                           |
+| 命令                 | 作用                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| `pnpm verify`        | 全量质量校验：类型、各类 lint、格式、测试与覆盖率门禁一次跑完；pre-push 与 CI 跑的就是这条命令 |
+| `pnpm type-check`    | `tsc --noEmit` 类型检查                                                                        |
+| `pnpm lint`          | ESLint 检查全仓                                                                                |
+| `pnpm lint:fix`      | ESLint 自动修复                                                                                |
+| `pnpm lint:filename` | ls-lint 校验文件与目录命名                                                                     |
+| `pnpm lint:style`    | Stylelint 检查 SCSS 与 CSS                                                                     |
+| `pnpm lint:md`       | zhlint 检查 Markdown 中文排版                                                                  |
+| `pnpm lint:pkg`      | 校验 `package.json` 字段顺序                                                                   |
+| `pnpm format`        | Prettier 格式化全仓                                                                            |
+| `pnpm format:check`  | Prettier 检查全仓格式（范围由 `.prettierignore` 与 `.gitignore` 收口）                         |
+| `pnpm test`          | Vitest 监听模式                                                                                |
+| `pnpm test:cov`      | 单次运行并出覆盖率报告，覆盖率不达阈值即失败                                                   |
 
 `lint:style` 与 `lint:md` 各有对应的 `:fix`；`package.json` 的字段顺序由 `pre-commit` 阶段的 `sort-package-json` 直接整理，无需手动执行。
 
@@ -91,7 +91,7 @@ pnpm verify
 
 ## 📐 规则集
 
-`eslint/configs/` 按关注点分成 10 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、`@typescript-eslint`、`import`、`react`、`react-hooks` 的内置规则与本仓自研规则：
+`eslint/configs/` 按关注点分成 10 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks 的内置规则与本仓自研规则：
 
 | 分组            | 关注点                                                                     |
 | --------------- | -------------------------------------------------------------------------- |

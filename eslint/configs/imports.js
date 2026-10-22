@@ -1,10 +1,11 @@
-import importPlugin from 'eslint-plugin-import';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
+import importX from 'eslint-plugin-import-x';
 
 const SHARED_IMPORT_RULES = {
-  'import/no-cycle': ['error', { ignoreExternal: true }],
+  'import-x/no-cycle': ['error', { ignoreExternal: true }],
   // --fix 遇到默认导入与命名导入混合时会产出非法语法，须手工改
-  'import/no-duplicates': ['error', { 'prefer-inline': true }],
-  'import/order': [
+  'import-x/no-duplicates': ['error', { 'prefer-inline': true }],
+  'import-x/order': [
     'error',
     {
       'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
@@ -26,17 +27,11 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
     settings: {
-      // flat config 下须显式指 parser，否则 no-cycle 解析 TS 失败
-      'import/parsers': {
-        '@typescript-eslint/parser': ['.ts', '.tsx'],
-      },
-      'import/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-          project: './tsconfig.json',
-        },
-        node: true,
-      },
+      // import-x 默认只分析 .js 依赖，不列出 TS 扩展名时 no-cycle 会跳过 .ts/.tsx 之间的循环
+      'import-x/extensions': ['.ts', '.tsx', '.js'],
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({ alwaysTryTypes: true, project: './tsconfig.json' }),
+      ],
     },
     rules: {
       ...SHARED_IMPORT_RULES,
@@ -45,7 +40,7 @@ export default [
   {
     files: ['**/*.js'],
     plugins: {
-      import: importPlugin,
+      'import-x': importX,
     },
     rules: {
       ...SHARED_IMPORT_RULES,
