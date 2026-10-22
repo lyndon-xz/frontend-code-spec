@@ -14,7 +14,9 @@ describe('registerDedupe', () => {
     const handle = registerDedupe(buildRequest());
 
     expect(handle.signal.aborted).toBe(false);
-    expect(() => handle.release()).not.toThrow();
+    expect(() => {
+      handle.release();
+    }).not.toThrow();
   });
 
   it('同签名请求再次登记时取消上一次在飞行中的请求', () => {
@@ -104,7 +106,9 @@ describe('DedupeHandle.release', () => {
   it('不可序列化参数的请求释放时安全跳过', () => {
     const handle = registerDedupe(buildRequest({ data: new FormData() }));
 
-    expect(() => handle.release()).not.toThrow();
+    expect(() => {
+      handle.release();
+    }).not.toThrow();
   });
 });
 

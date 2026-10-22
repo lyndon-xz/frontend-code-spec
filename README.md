@@ -10,7 +10,7 @@
 
 这个仓库把规范拆成两半，各用它该用的形式落地：
 
-- **能机器判定的，写成规则**。`eslint/` 是一套 ESLint 配置——社区规则优先、社区缺的再自研，按 10 组主题配置组织，管注释形态、命名、解构位置、模块边界、类型安全。写错了在编辑器里就红，不必等到 Review。
+- **能机器判定的，写成规则**。`eslint/` 是一套 ESLint 配置——社区规则优先、社区缺的再自研，按 12 组主题配置组织，管注释形态、命名、解构位置、模块边界、类型安全。写错了在编辑器里就红，不必等到 Review。
 - **判不了的，给一份能抄的实现**。`src/` 是范式样板，主体是一套完整的请求层：实例复用、拦截器编排、重试与去重、错误归一与提示、埋点上报。它示范的是在这套规则约束下代码长什么样。
 
 仓库声明为 `private: true`，不发布 npm 包——它的定位是**源头**：业务仓库照它落地 lint 配置、对照它写代码。这套规则同时作用于仓库自身——根 `eslint.config.js` 直接引用 `eslint/index.js`，`src/` 与 `eslint/` 全量受约束，所以规则一改，立刻能在样板代码上验证是否讲得通。
@@ -66,7 +66,7 @@ pnpm verify
 
 ```text
 ├── eslint/                     自定义 ESLint 插件
-│   ├── configs/                10 组主题配置，按关注点挂载内置规则与自研规则
+│   ├── configs/                12 组主题配置，按关注点挂载内置规则与自研规则
 │   ├── rules/                  自研规则实现，按主题分目录
 │   ├── utils/                  规则共用判定：豁免文件、posix 路径、扩展名剥离、源码分层
 │   ├── __tests__/              规则单测与共用的 RuleTester 封装
@@ -91,20 +91,22 @@ pnpm verify
 
 ## 📐 规则集
 
-`eslint/configs/` 按关注点分成 10 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks、promise、check-file、no-barrel-files 的规则与本仓自研规则：
+`eslint/configs/` 按关注点分成 12 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks、jsx-a11y-x、no-unsanitized、eslint-comments、promise、check-file、no-barrel-files 的规则与本仓自研规则。typescript-eslint 的 `strictTypeChecked` 与 `stylisticTypeChecked`、react-hooks 的 `recommended-latest`、@eslint-react 的 `recommended-type-checked`、jsx-a11y-x 的 `recommended` 整套启用，预设里的 warn 一律按 error 生效：
 
-| 分组            | 关注点                                                                     |
-| --------------- | -------------------------------------------------------------------------- |
-| `declaration`   | 声明与比较：`eqeqeq`、`prefer-const`、`no-var`、参数不重赋值、参数个数上限 |
-| `control-flow`  | 禁 Promise 链、分支体带大括号、嵌套三元、`else return`、最大深度           |
-| `logging`       | `console` 只放行 `warn` / `error`                                          |
-| `imports`       | 导入分组排序与组间空行、循环依赖、重复导入                                 |
-| `comments`      | 注释风格，并把未使用的 `eslint-disable` 提到 error                         |
-| `destructuring` | 解构位置：不在签名解构，模块级解构提到顶层                                 |
-| `typescript`    | 类型定义与导入风格、`strict-boolean-expressions`、Promise 误用、断言收紧   |
-| `naming`        | `naming-convention` 全量约定、文件名黑名单，加自研命名规则                 |
-| `react`         | JSX 与 Hooks 规则，加 Props 命名与箭头包裹约束                             |
-| `structure`     | 模块边界：相对路径与 `@/` 别名、禁 barrel、默认导出方向                    |
+| 分组            | 关注点                                                                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `declaration`   | 声明与比较：`eqeqeq`、`prefer-const`、`no-var`、参数不重赋值、参数个数上限                                                   |
+| `control-flow`  | 禁 Promise 链、分支体带大括号、嵌套三元、`else return`、最大深度                                                             |
+| `logging`       | `console` 只放行 `warn` / `error`                                                                                            |
+| `imports`       | 导入分组排序与组间空行、循环依赖、重复导入                                                                                   |
+| `comments`      | 注释风格；`eslint-disable` 必须点名规则、写 `-- 理由`、成对关闭，未使用即报                                                  |
+| `destructuring` | 解构位置：不在签名解构，模块级解构提到顶层                                                                                   |
+| `typescript`    | typescript-eslint 严格与风格预设，加类型导入风格、`strict-boolean-expressions`、断言收紧；测试文件放宽 `no-unsafe-*` 等 8 条 |
+| `naming`        | `naming-convention` 全量约定、文件名黑名单，加自研命名规则                                                                   |
+| `react`         | react-hooks 与 @eslint-react 推荐集（key、组件内定义组件、条件渲染泄漏等），加 Props 命名与箭头包裹约束                      |
+| `structure`     | 模块边界：相对路径与 `@/` 别名、禁 barrel、默认导出方向                                                                      |
+| `security`      | 禁 `eval` 与 `new Function`、`javascript:` URL、`dangerouslySetInnerHTML`，未净化内容不进 `innerHTML`                        |
+| `accessibility` | jsx-a11y-x 推荐集：替代文本、可聚焦性、键盘事件、ARIA 取值                                                                   |
 
 分组按**关注点**而非语言名划分。这一点是有意的：如果存在一个叫 `javascript` 的分组，那么任何一条内置规则放进去都不别扭，边界就失效了——下次新增规则时两个分组都讲得通，等于没有标准。按关注点分，每条规则的落点只有一个答案。
 

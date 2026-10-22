@@ -48,6 +48,7 @@ describe('ssoInterceptor.onFulfilled', () => {
   it('跳转地址为危险协议时抛出地址非法错误', () => {
     const response = buildResponse({
       returncode: UNAUTHORIZED_CODE,
+      // eslint-disable-next-line no-script-url -- 本用例要验证的正是危险协议会被拦下
       redirectUrl: 'javascript:alert(1)',
     });
 

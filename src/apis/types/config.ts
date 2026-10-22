@@ -37,8 +37,11 @@ declare module 'axios' {
   }
 }
 
+/** params、data 在 axios 里是 any，这里收窄为 unknown，请求层内部取用时不再带出 any */
 export interface EnhancedRequestConfig extends AxiosRequestConfig {
   url: string;
+  params?: unknown;
+  data?: unknown;
 }
 
 export interface InstanceConfig extends AxiosRequestConfig {

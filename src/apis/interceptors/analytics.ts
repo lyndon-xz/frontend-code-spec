@@ -5,8 +5,17 @@ import { RequestStatus, reportAnalytics } from '../utils/analytics-reporter';
 import { RequestError, RequestErrorType } from '../utils/error';
 import { generateRequestId } from '../utils/trace';
 
+// axios 把 params / data 声明为 any，在入口收窄为 unknown，上报载荷不再沾染 any
+interface TraceSource extends Pick<
+  AxiosRequestConfig,
+  '__requestId' | '__requestStartTimeMs' | 'method' | 'url'
+> {
+  params?: unknown;
+  data?: unknown;
+}
+
 // 缺少 requestId / startTimeMs 时返回 null，调用方据此跳过上报
-const extractTrace = (config?: AxiosRequestConfig) => {
+const extractTrace = (config?: TraceSource) => {
   const {
     __requestId: requestId,
     __requestStartTimeMs: startTimeMs,
@@ -42,8 +51,8 @@ export const analyticsReqInterceptor: ReqInterceptor = {
 };
 
 export const analyticsResInterceptor: ResInterceptor = {
-  onFulfilled: (response: AxiosResponse) => {
-    const { config, data } = response ?? {};
+  onFulfilled: (response: AxiosResponse<unknown>) => {
+    const { config, data } = response;
     const trace = extractTrace(config);
 
     if (trace) {

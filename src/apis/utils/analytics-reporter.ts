@@ -24,7 +24,7 @@ export type AnalyticsSender = (analyticsData: AnalyticsData) => void;
 /** 上报前的脱敏钩子，拿到的是完整载荷，返回处理后的载荷 */
 export type AnalyticsSanitizer = (analyticsData: AnalyticsData) => AnalyticsData;
 
-const noopSender: AnalyticsSender = () => {};
+const noopSender: AnalyticsSender = () => undefined;
 
 /*
  * 默认不脱敏，但把钩子摆在这里而不是只在注释里写「接入前须脱敏」：
@@ -63,7 +63,7 @@ const logToConsole = (analyticsData: AnalyticsData) => {
 
   console.groupEnd();
 };
-/* eslint-enable no-console */
+/* eslint-enable no-console -- 埋点观察通道到此为止 */
 
 const analyticsSenderSlot = createSwappable(noopSender);
 const analyticsSanitizerSlot = createSwappable(passthroughSanitizer);

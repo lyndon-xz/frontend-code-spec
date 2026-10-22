@@ -1,4 +1,6 @@
 export default {
+  // 豁免注释必须写理由：/* stylelint-disable-next-line x -- 理由 */
+  reportDescriptionlessDisables: true,
   // recess-order 排在末位：它只提供 properties-order，放最后确保这份顺序不被前面的 config 覆盖
   extends: [
     'stylelint-config-standard-scss',

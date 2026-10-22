@@ -6,6 +6,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import accessibilityConfig from './configs/accessibility.js';
 import commentsConfig from './configs/comments.js';
 import controlFlowConfig from './configs/control-flow.js';
 import declarationConfig from './configs/declaration.js';
@@ -14,6 +15,7 @@ import importsConfig from './configs/imports.js';
 import loggingConfig from './configs/logging.js';
 import namingConfig from './configs/naming.js';
 import reactConfig from './configs/react.js';
+import securityConfig from './configs/security.js';
 import structureConfig from './configs/structure.js';
 import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
@@ -106,4 +108,6 @@ export default [
   ...namingConfig,
   ...reactConfig,
   ...structureConfig,
+  ...securityConfig,
+  ...accessibilityConfig,
 ];

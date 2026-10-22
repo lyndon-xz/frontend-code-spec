@@ -28,7 +28,7 @@ describe('generateBaseUrl', () => {
   });
 
   it('环境无对应 host 时回退到生产 host', () => {
-    mockGetEnvironment.mockReturnValue('staging' as Environment);
+    mockGetEnvironment.mockReturnValue('staging' as unknown as Environment);
 
     expect(generateBaseUrl('abc')).toBe('https://api.example.com/api/abc');
   });

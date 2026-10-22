@@ -14,7 +14,7 @@ const isBusinessResponse = (body: unknown): body is BusinessResponse =>
   hasNumberField(body, 'code');
 
 export const businessErrorInterceptor: ResInterceptor = {
-  onFulfilled: (response: AxiosResponse) => {
+  onFulfilled: (response: AxiosResponse<unknown>) => {
     const { data: body, config } = response;
     if (!isBusinessResponse(body)) {
       return response;
@@ -27,7 +27,7 @@ export const businessErrorInterceptor: ResInterceptor = {
       return response;
     }
 
-    const { isSilent = false, customMessage } = config?.businessError ?? {};
+    const { isSilent = false, customMessage } = config.businessError ?? {};
     // 契约把 message 标为可选，且实测网关也可能下发空串，故 typeof 与长度两层都要判
     const resolvedMessage =
       typeof responseMessage === 'string' && responseMessage.length > 0

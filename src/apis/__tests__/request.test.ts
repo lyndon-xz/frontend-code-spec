@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type Method } from 'axios';
+import axios, { AxiosHeaders, type AxiosInstance, type Method } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -297,6 +297,20 @@ describe('createRequest', () => {
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       warnSpy.mockRestore();
+    });
+
+    it('headers 传 AxiosHeaders 实例时与默认头合并且不丢键', () => {
+      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
+
+      createGetRequest(nextServiceCode(), {
+        headers: new AxiosHeaders({ 'X-Trace-Id': 'trace-1', 'Content-Type': 'text/plain' }),
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headers: { 'Content-Type': 'text/plain', 'X-Trace-Id': 'trace-1' },
+        }),
+      );
     });
 
     it('开发环境实例配置相同时不告警', () => {

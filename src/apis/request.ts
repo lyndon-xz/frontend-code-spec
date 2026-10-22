@@ -51,6 +51,7 @@ const resolveServiceInstance = (config: InstanceConfig): AxiosInstance => {
     ...restConfig
   } = config;
 
+  // eslint-disable-next-line @typescript-eslint/no-misused-spread -- AxiosHeaders 把每个头存成自有可枚举属性，展开不丢键，见 request.test.ts 的 AxiosHeaders 用例
   const mergedHeaders = { ...DEFAULT_HEADERS, ...headers };
 
   const signature = JSON.stringify({
