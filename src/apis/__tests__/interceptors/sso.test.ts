@@ -71,15 +71,18 @@ describe('ssoInterceptor.onFulfilled', () => {
       redirectUrl: 'https://sso.example.com/login',
     });
 
+    let thrown: unknown;
+
     try {
       ssoInterceptor.onFulfilled!(response);
-      expect.unreachable('应当抛出未登录错误');
     } catch (error) {
-      expect(error).toBeInstanceOf(RequestError);
-      const requestError = error as InstanceType<typeof RequestError>;
-      expect(requestError.type).toBe(RequestErrorType.Unauthorized);
-      expect(requestError.message).toBe('用户未登录，正在跳转...');
+      thrown = error;
     }
+
+    expect(thrown).toBeInstanceOf(RequestError);
+    const requestError = thrown as InstanceType<typeof RequestError>;
+    expect(requestError.type).toBe(RequestErrorType.Unauthorized);
+    expect(requestError.message).toBe('用户未登录，正在跳转...');
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });

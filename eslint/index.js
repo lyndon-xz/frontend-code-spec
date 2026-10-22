@@ -19,6 +19,7 @@ import restrictedSyntaxConfig from './configs/restricted-syntax.js';
 import ruleAuthoringConfig from './configs/rule-authoring.js';
 import securityConfig from './configs/security.js';
 import structureConfig from './configs/structure.js';
+import testingConfig from './configs/testing.js';
 import typescriptConfig from './configs/typescript.js';
 import commentStyle from './rules/comments/comment-style.js';
 import hoistModuleScopeDestructuring from './rules/destructuring/hoist-module-scope-destructuring.js';
@@ -114,4 +115,5 @@ export default [
   ...accessibilityConfig,
   ...restrictedSyntaxConfig,
   ...ruleAuthoringConfig,
+  ...testingConfig,
 ];

@@ -10,7 +10,7 @@
 
 这个仓库把规范拆成两半，各用它该用的形式落地：
 
-- **能机器判定的，写成规则**。`eslint/` 是一套 ESLint 配置——社区规则优先、社区缺的再自研，按 14 组主题配置组织，管注释形态、命名、解构位置、模块边界、类型安全。写错了在编辑器里就红，不必等到 Review。
+- **能机器判定的，写成规则**。`eslint/` 是一套 ESLint 配置——社区规则优先、社区缺的再自研，按 15 组主题配置组织，管注释形态、命名、解构位置、模块边界、类型安全。写错了在编辑器里就红，不必等到 Review。
 - **判不了的，给一份能抄的实现**。`src/` 是范式样板，主体是一套完整的请求层：实例复用、拦截器编排、重试与去重、错误归一与提示、埋点上报。它示范的是在这套规则约束下代码长什么样。
 
 仓库声明为 `private: true`，不发布 npm 包——它的定位是**源头**：业务仓库照它落地 lint 配置、对照它写代码。这套规则同时作用于仓库自身——根 `eslint.config.js` 直接引用 `eslint/index.js`，`src/` 与 `eslint/` 全量受约束，所以规则一改，立刻能在样板代码上验证是否讲得通。
@@ -55,6 +55,7 @@ pnpm verify
 | `pnpm lint:style`    | Stylelint 检查 SCSS 与 CSS                                                                     |
 | `pnpm lint:md`       | zhlint 检查 Markdown 中文排版                                                                  |
 | `pnpm lint:pkg`      | 校验 `package.json` 字段顺序                                                                   |
+| `pnpm lint:unused`   | knip 检查未使用的文件、导出与依赖                                                              |
 | `pnpm format`        | Prettier 格式化全仓                                                                            |
 | `pnpm format:check`  | Prettier 检查全仓格式（范围由 `.prettierignore` 与 `.gitignore` 收口）                         |
 | `pnpm test`          | Vitest 监听模式                                                                                |
@@ -66,7 +67,7 @@ pnpm verify
 
 ```text
 ├── eslint/                     自定义 ESLint 插件
-│   ├── configs/                14 组主题配置，按关注点挂载内置规则与自研规则
+│   ├── configs/                15 组主题配置，按关注点挂载内置规则与自研规则
 │   ├── docs/rules/             每条自研规则的说明：管什么、为什么、正反例、选项
 │   ├── rules/                  自研规则实现，按主题分目录
 │   ├── utils/                  规则共用判定：豁免文件、posix 路径、源码分层、规则文档地址、预设升级
@@ -92,7 +93,7 @@ pnpm verify
 
 ## 📐 规则集
 
-`eslint/configs/` 按关注点分成 14 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks、jsx-a11y-x、no-unsanitized、eslint-comments、unicorn、sonarjs、regexp、promise、check-file、no-barrel-files 的规则与本仓自研规则。typescript-eslint 的 `strictTypeChecked` 与 `stylisticTypeChecked`、react-hooks 的 `recommended-latest`、@eslint-react 的 `recommended-type-checked`、jsx-a11y-x 与 regexp 的 `recommended` 整套启用，预设里的 warn 一律按 error 生效：
+`eslint/configs/` 按关注点分成 15 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks、jsx-a11y-x、no-unsanitized、eslint-comments、unicorn、sonarjs、regexp、promise、check-file、no-barrel-files、@vitest/eslint-plugin 的规则与本仓自研规则。typescript-eslint 的 `strictTypeChecked` 与 `stylisticTypeChecked`、react-hooks 的 `recommended-latest`、@eslint-react 的 `recommended-type-checked`、jsx-a11y-x 与 regexp 的 `recommended` 整套启用，预设里的 warn 一律按 error 生效：
 
 | 分组                | 关注点                                                                                                                       |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -110,6 +111,7 @@ pnpm verify
 | `accessibility`     | jsx-a11y-x 推荐集：替代文本、可聚焦性、键盘事件、ARIA 取值                                                                   |
 | `restricted-syntax` | 受限语法：catch 不能为空或只打日志、src 不写死内网地址、`persist` 必须列白名单、不用 try 包 JSX                              |
 | `rule-authoring`    | 写自研规则：regexp 推荐集，只对 `eslint/` 生效                                                                               |
+| `testing`           | 测试：vitest 用法，禁聚焦与跳过、标题不重复、断言必达、用例统一用 `it`                                                       |
 
 分组按**关注点**而非语言名划分。这一点是有意的：如果存在一个叫 `javascript` 的分组，那么任何一条内置规则放进去都不别扭，边界就失效了——下次新增规则时两个分组都讲得通，等于没有标准。按关注点分，每条规则的落点只有一个答案。
 

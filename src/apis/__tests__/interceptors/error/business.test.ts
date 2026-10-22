@@ -53,13 +53,17 @@ describe('businessErrorInterceptor.onFulfilled', () => {
     expect(() => businessErrorInterceptor.onFulfilled!(response)).toThrow(RequestError);
     expect(mockNotifyError).toHaveBeenCalledWith('库存不足');
 
+    let thrown: unknown;
+
     try {
       businessErrorInterceptor.onFulfilled!(response);
     } catch (error) {
-      expect(error).toBeInstanceOf(RequestError);
-      expect((error as RequestError).type).toBe(RequestErrorType.Business);
-      expect((error as RequestError).code).toBe(500);
+      thrown = error;
     }
+
+    expect(thrown).toBeInstanceOf(RequestError);
+    expect((thrown as RequestError).type).toBe(RequestErrorType.Business);
+    expect((thrown as RequestError).code).toBe(500);
   });
 
   it('服务端 message 为空时用兜底文案，不弹空提示', () => {
