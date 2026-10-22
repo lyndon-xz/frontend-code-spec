@@ -4,7 +4,6 @@ import { defineConfig } from 'vitest/config';
 
 const alias = {
   '@': path.resolve(__dirname, './src'),
-  '~': path.resolve(__dirname, './'),
 };
 
 /**
@@ -14,7 +13,7 @@ const alias = {
 export default defineConfig({
   test: {
     coverage: {
-      include: ['eslint/**/*.js', 'src/**/*.ts'],
+      include: ['eslint/**/*.js', 'src/**/*.{ts,tsx}'],
       exclude: ['eslint/__tests__/**', 'src/**/__tests__/**'],
       thresholds: {
         statements: 95,

@@ -11,4 +11,11 @@ export default [
       'max-params': ['error', 3],
     },
   },
+  {
+    // ts/tsx 由 typescript 组的 @typescript-eslint/no-shadow 负责，核心版不认类型与值同名
+    files: ['**/*.js'],
+    rules: {
+      'no-shadow': 'error',
+    },
+  },
 ];

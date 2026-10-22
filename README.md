@@ -45,20 +45,20 @@ pnpm verify
 
 ## ⌨️ 命令
 
-| 命令                 | 作用                                              |
-| -------------------- | ------------------------------------------------- |
-| `pnpm verify`        | 全量质量校验：类型、各类 lint、格式、测试一次跑完 |
-| `pnpm type-check`    | `tsc --noEmit` 类型检查                           |
-| `pnpm lint`          | ESLint 检查全仓                                   |
-| `pnpm lint:fix`      | ESLint 自动修复                                   |
-| `pnpm lint:filename` | ls-lint 校验文件与目录命名                        |
-| `pnpm lint:style`    | Stylelint 检查 SCSS 与 CSS                        |
-| `pnpm lint:md`       | zhlint 检查 Markdown 中文排版                     |
-| `pnpm lint:pkg`      | 校验 `package.json` 字段顺序                      |
-| `pnpm format`        | Prettier 格式化全仓                               |
-| `pnpm format:check`  | Prettier 检查 json / yml / md / scss / css / html |
-| `pnpm test`          | Vitest 监听模式                                   |
-| `pnpm test:cov`      | 单次运行并出覆盖率报告，覆盖率不达阈值即失败      |
+| 命令                 | 作用                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------ |
+| `pnpm verify`        | 全量质量校验：类型、各类 lint、格式、测试与覆盖率门禁一次跑完；pre-push 与 CI 跑的就是这条命令         |
+| `pnpm type-check`    | `tsc --noEmit` 类型检查                                                                                |
+| `pnpm lint`          | ESLint 检查全仓                                                                                        |
+| `pnpm lint:fix`      | ESLint 自动修复                                                                                        |
+| `pnpm lint:filename` | ls-lint 校验文件与目录命名                                                                             |
+| `pnpm lint:style`    | Stylelint 检查 SCSS 与 CSS                                                                             |
+| `pnpm lint:md`       | zhlint 检查 Markdown 中文排版                                                                          |
+| `pnpm lint:pkg`      | 校验 `package.json` 字段顺序                                                                           |
+| `pnpm format`        | Prettier 格式化全仓                                                                                    |
+| `pnpm format:check`  | Prettier 检查 json / yml / md / scss / css / html；js / ts 的格式由 ESLint 的 `prettier/prettier` 检查 |
+| `pnpm test`          | Vitest 监听模式                                                                                        |
+| `pnpm test:cov`      | 单次运行并出覆盖率报告，覆盖率不达阈值即失败                                                           |
 
 `lint:style` 与 `lint:md` 各有对应的 `:fix`；`package.json` 的字段顺序由 `pre-commit` 阶段的 `sort-package-json` 直接整理，无需手动执行。
 
@@ -77,14 +77,16 @@ pnpm verify
 │   ├── constants/              环境枚举与构建期注入键
 │   └── utils/                  环境判定与可替换实现槽，均可由业务侧注入
 ├── .husky/                     pre-commit / pre-push / commit-msg 钩子
-├── .github/workflows/ci.yml    CI 流水线，逐项复刻本地校验
+├── .github/workflows/ci.yml    CI 流水线，安装依赖后跑 pnpm verify
 ├── eslint.config.js            仓库自身的 ESLint 配置，引用 eslint/index.js
 ├── .ls-lint.yml                文件名规范：kebab-case，放行 __tests__ 与 useXxx
-├── .stylelintrc.js             SCSS/CSS 规范：CSS Modules camelCase、嵌套 3 层、z-index 收口
+├── .stylelintrc.js             SCSS/CSS 规范：CSS Modules camelCase、选择器最多 3 层、z-index 收口
 ├── prettier.config.js          格式化：100 列、单引号、尾逗号
 ├── commitlint.config.js        commit message 规范
 ├── lint-staged.config.js       暂存区增量校验，改写为相对路径后再交给各 linter
-└── vitest.config.ts            双 project 测试与覆盖率阈值
+├── vitest.config.ts            双 project 测试与覆盖率阈值
+├── AGENTS.md                   agent 工具读取本仓库约定的入口
+└── CLAUDE.md                   Claude Code 的入口，只导入 AGENTS.md
 ```
 
 ## 📐 规则集
@@ -118,12 +120,12 @@ pnpm verify
 | `no-generic-param-name`             | 禁参数用泛化命名，改用具体领域词汇                                                                                       | js / ts / tsx |
 | `no-internal-on-prefix`             | `on` 前缀只留给 Props 回调声明，内部函数不用                                                                             | js / ts / tsx |
 | `ref-suffix-naming`                 | `useRef` 声明的变量必须以 `Ref` 结尾                                                                                     | `src/`        |
-| `require-unit-suffix`               | 数值量纲字段带单位后缀，如 `priceCents`、`timeoutMs`；金额 / 时长 / 时间点 / 长度 / 数据量 / 质量各配自己的单位          | `src/`        |
+| `require-unit-suffix`               | 数值量纲字段带单位后缀，如 `feeCents`、`timeoutMs`；金额 / 时长 / 时间点 / 长度 / 数据量 / 质量各配自己的单位            | `src/`        |
 | `status-field-naming`               | 状态上下文的数据与异步状态字段用后缀式命名：`isLoadingXxx` / `xxxError`                                                  | `src/`        |
 | `no-implementation-suffix-filename` | 文件名禁实现类后缀（`-modal` / `-type` 等）与形态整名（`utils` / `constants` / `types`）；集合目录 `src/constants/` 合法 | `src/`        |
 | `props-interface-naming`            | Props 接口必须命名为「组件名 + Props」；已导出的接口只报不修，改名会断掉导入方                                           | tsx           |
 | `no-unnecessary-arrow-wrapper`      | 禁多余的箭头包裹，`onClick={() => fn()}` 应改为 `onClick={fn}`；只报不修，去掉包裹会改变实收实参个数                     | tsx           |
-| `import-path-boundary`              | 模块内部走相对路径，跨模块走 `@/` 别名                                                                                   | `src/`        |
+| `import-path-boundary`              | 模块内部走相对路径，跨模块走 `@/` 别名；`containerDirs`（默认 `pages`）下每个子目录各算一个模块                          | `src/`        |
 | `no-barrel`                         | 禁 barrel 入口：公共库 index 禁存在；任意文件禁 `export *` 与 `export { x } from`                                        | `src/`        |
 | `require-tsx-default-export`        | TSX 必须有 `export default`                                                                                              | `src/`        |
 | `no-ts-default-export`              | TS（非 TSX）禁用 `export default`                                                                                        | `src/`        |
@@ -179,7 +181,7 @@ Vitest 分成两个 project，环境各按所需选取：
 | `eslint-rules`  | node  | `eslint/__tests__/`，纯静态分析，省掉 jsdom 开销 |
 | `request-layer` | jsdom | `src/**/__tests__/`，请求层依赖 `window`         |
 
-规则测试统一用 `eslint/__tests__/support/rule-tester.js` 封装的 `RuleTester`，统一挂 TS parser，TS 与 JSX 用例一并覆盖。覆盖率统计 `eslint/**/*.js` 与 `src/**/*.ts`，四项阈值均为 95%。
+规则测试统一用 `eslint/__tests__/support/rule-tester.js` 封装的 `RuleTester`，统一挂 TS parser，TS 与 JSX 用例一并覆盖。覆盖率统计 `eslint/**/*.js` 与 `src/**/*.{ts,tsx}`，`__tests__` 不计入，四项阈值均为 95%，以 `pnpm test:cov` 的门禁为准。
 
 ```bash
 pnpm test        # 监听模式
@@ -195,7 +197,7 @@ pnpm test:cov    # 单次运行 + 覆盖率
 **两道钩子**：
 
 - `pre-commit`：lint-staged 按文件类型增量修复，ESLint、Stylelint、zhlint、Prettier、ls-lint、sort-package-json 各就各位。
-- `pre-push`：逐项执行 `type-check`、`lint`、`format:check`、`lint:filename`、`lint:md`、`lint:style`、`lint:pkg`、`test:cov`，与 CI 完全对齐，本地先拦一遍。
+- `pre-push`：跑一次 `pnpm verify`，与 CI 是同一份检查清单，本地先拦一遍。
 
 ## 📄 License
 

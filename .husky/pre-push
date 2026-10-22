@@ -39,15 +39,12 @@ echo "=========================================================="
 echo " 🛡️ [PRE-PUSH SECURITY]: 运行本地完整质量防线"
 echo "=========================================================="
 
-# 与 CI 的校验步骤保持一致，逐项执行以便失败时直接定位到具体环节。
+# 检查清单只在 package.json 的 verify 里维护，CI 跑的是同一条命令。
 # stdin 已被上面的分支校验读到 EOF，这里显式接 /dev/null 避免子命令误读。
-for script in type-check lint format:check lint:filename lint:md lint:style lint:pkg test:cov; do
-    echo "➡️ Running $script..."
-    pnpm run "$script" </dev/null || {
-        echo "❌ [Quality Gate Error]: $script 未通过，禁止带病提交！"
-        exit 1
-    }
-done
+pnpm verify </dev/null || {
+    echo "❌ [Quality Gate Error]: pnpm verify 未通过，禁止带病提交！"
+    exit 1
+}
 
 echo "✅ All defenses cleared! Enjoy your push!"
 exit 0

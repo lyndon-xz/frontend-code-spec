@@ -31,26 +31,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type check
-        run: pnpm run type-check
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Format check
-        run: pnpm run format:check
-
-      - name: Lint filename
-        run: pnpm run lint:filename
-
-      - name: Lint markdown
-        run: pnpm run lint:md
-
-      - name: Lint style
-        run: pnpm run lint:style
-
-      - name: Lint package.json
-        run: pnpm run lint:pkg
-
-      - name: Test with coverage
-        run: pnpm run test:cov
+      # 检查清单只在 package.json 的 verify 里维护，pre-push 跑的是同一条命令
+      - name: Verify
+        run: pnpm verify

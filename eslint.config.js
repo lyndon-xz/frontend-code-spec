@@ -4,7 +4,7 @@ import prettier from 'eslint-plugin-prettier';
 import customConfigs from './eslint/index.js';
 
 export default [
-  { ignores: ['coverage/**', 'dist/**', 'node_modules/**'] },
+  { ignores: ['coverage/**', 'dist/**', 'node_modules/**', '.agents/tasks/**', '.worktrees/**'] },
   js.configs.recommended,
 
   ...customConfigs,

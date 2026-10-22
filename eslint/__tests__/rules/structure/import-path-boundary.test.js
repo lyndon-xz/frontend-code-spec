@@ -24,6 +24,24 @@ ruleTester.run('import-path-boundary', rule, {
       code: "import x from '@/apis/bar';",
       filename: '/proj/src/apis/__tests__/foo.test.ts',
     },
+    // pages 下每个页面各是一个模块，跨页面走别名
+    { code: "import x from '@/pages/detail/b';", filename: '/proj/src/pages/search/a.ts' },
+    // 直接位于容器目录下的文件属于 pages 本身，引用某个页面算跨模块
+    { code: "import x from '@/pages/search/x';", filename: '/proj/src/pages/index.ts' },
+    // containerDirs 为空时整个 pages 是一个模块，跨页面相对引用不报
+    {
+      code: "import x from '../detail/b';",
+      filename: '/proj/src/pages/search/a.ts',
+      options: [{ containerDirs: [] }],
+    },
+    // 自定义容器目录后，features 下的子目录互为跨模块
+    {
+      code: "import x from '@/features/cart/c';",
+      filename: '/proj/src/features/order/a.ts',
+      options: [{ containerDirs: ['features'] }],
+    },
+    // 非容器目录仍以第一段为模块
+    { code: "import x from '../x';", filename: '/proj/src/utils/sub/a.ts' },
   ],
   invalid: [
     {
@@ -44,6 +62,46 @@ ruleTester.run('import-path-boundary', rule, {
       filename: '/proj/src/apis/sub/foo.ts',
       output: "import x from '@/utils/x';",
       errors: [{ messageId: 'useAlias' }],
+    },
+    {
+      code: "import x from '../detail/b';",
+      filename: '/proj/src/pages/search/a.ts',
+      output: "import x from '@/pages/detail/b';",
+      errors: [{ messageId: 'useAlias' }],
+    },
+    {
+      code: "import x from '@/pages/search/c';",
+      filename: '/proj/src/pages/search/a.ts',
+      output: "import x from './c';",
+      errors: [{ messageId: 'useRelative' }],
+    },
+    {
+      // 目录导入的末段按页面目录看待
+      code: "import x from '../detail';",
+      filename: '/proj/src/pages/search/a.ts',
+      output: "import x from '@/pages/detail';",
+      errors: [{ messageId: 'useAlias' }],
+    },
+    {
+      code: "import x from '../cart/c';",
+      filename: '/proj/src/features/order/a.ts',
+      options: [{ containerDirs: ['features'] }],
+      output: "import x from '@/features/cart/c';",
+      errors: [{ messageId: 'useAlias' }],
+    },
+    {
+      // 自定义容器目录后 pages 不再是容器，整个 pages 是一个模块
+      code: "import x from '@/pages/detail/b';",
+      filename: '/proj/src/pages/search/a.ts',
+      options: [{ containerDirs: ['features'] }],
+      output: "import x from '../detail/b';",
+      errors: [{ messageId: 'useRelative' }],
+    },
+    {
+      code: "import x from '@/utils/x';",
+      filename: '/proj/src/utils/sub/a.ts',
+      output: "import x from '../x';",
+      errors: [{ messageId: 'useRelative' }],
     },
   ],
 });

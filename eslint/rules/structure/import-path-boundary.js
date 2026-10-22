@@ -7,7 +7,19 @@ import { toPosixPath } from '../../utils/to-posix-path.js';
 // 选项默认值的唯一来源：schema 的 default 与 create 里的取值都引用此处
 const DEFAULT_OPTIONS = {
   srcDir: DEFAULT_SRC_DIR,
+  containerDirs: ['pages'],
 };
+/*
+ * 容器目录下的每个子目录各算一个模块（pages/search 与 pages/detail 互为跨模块），其余目录以第一段为模块。
+ * 入参是目录或导入目标路径：导入目标的末段可能是目录（@/pages/detail），所以按目录看待。
+ */
+function toModuleKey(pathRelativeToSrc, containerDirs) {
+  const segments = pathRelativeToSrc.split('/');
+  if (containerDirs.includes(segments[0]) && segments.length > 1) {
+    return `${segments[0]}/${segments[1]}`;
+  }
+  return segments[0];
+}
 
 /** 只改写 import 源字符串，与只调语句顺序的 import/order 正交 */
 export default {
@@ -27,6 +39,12 @@ export default {
             minLength: 1,
             default: DEFAULT_OPTIONS.srcDir,
           },
+          containerDirs: {
+            type: 'array',
+            items: { type: 'string', minLength: 1, pattern: '^[^/\\\\]+$' },
+            uniqueItems: true,
+            default: DEFAULT_OPTIONS.containerDirs,
+          },
         },
         additionalProperties: false,
       },
@@ -38,7 +56,7 @@ export default {
     },
   },
   create(context) {
-    const { srcDir } = { ...DEFAULT_OPTIONS, ...context.options[0] };
+    const { srcDir, containerDirs } = { ...DEFAULT_OPTIONS, ...context.options[0] };
 
     // 后续路径运算都在「相对 src 的 posix 空间」里进行
     const filename = toPosixPath(context.filename);
@@ -55,9 +73,9 @@ export default {
     }
 
     const relativeToSrc = filename.substring(srcIndex + srcSegment.length);
-    const currentModule = relativeToSrc.split('/')[0];
     // 顶层文件时为 '.'
     const currentDir = path.posix.dirname(relativeToSrc);
+    const currentModule = toModuleKey(currentDir, containerDirs);
 
     return {
       ImportDeclaration(node) {
@@ -70,7 +88,7 @@ export default {
 
         if (source.startsWith('@/')) {
           const importPath = source.substring(2);
-          const aliasTargetModule = importPath.split('/')[0];
+          const aliasTargetModule = toModuleKey(importPath, containerDirs);
 
           // 跨模块用别名即合规，仅同模块需改回相对路径
           if (aliasTargetModule !== currentModule) {
@@ -105,7 +123,7 @@ export default {
           return;
         }
 
-        const relativeTargetModule = targetRelativeToSrc.split('/')[0];
+        const relativeTargetModule = toModuleKey(targetRelativeToSrc, containerDirs);
         if (relativeTargetModule !== currentModule) {
           context.report({
             node: node.source,

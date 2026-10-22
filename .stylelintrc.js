@@ -30,9 +30,9 @@ export default {
      * 自定义属性的值 stylelint 判不出语义，一并跳过。
      */
     'value-keyword-case': ['lower', { ignoreProperties: ['font-family', 'font', '/^--/'] }],
-    // 限制最大嵌套层级为 3 层
+    // 选择器最多 3 层：深度从 0 计，顶层规则之下最多再嵌套 2 层
     'max-nesting-depth': [
-      3,
+      2,
       {
         ignoreAtRules: ['each', 'media', 'supports', 'include'],
       },

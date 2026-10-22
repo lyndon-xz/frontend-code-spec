@@ -1,40 +1,72 @@
 # 依赖
 node_modules/
-
-# 只用 pnpm，避免多包管理器混用
+.pnpm-store/
+# 只用 pnpm，屏蔽其它包管理器的 lockfile
 package-lock.json
+npm-shrinkwrap.json
 yarn.lock
+bun.lock
 bun.lockb
 
 # 构建产物
 dist/
 build/
+out/
+.output/
+.next/
+.nuxt/
+.svelte-kit/
+storybook-static/
+*.tsbuildinfo
+# Vite 与 Vitest 加载配置时在仓库根留下的临时打包文件
+vite.config.*.timestamp-*
+vitest.config.*.timestamp-*
 
-# 缓存
+# 工具缓存。Prettier 与 Vite 默认把缓存写在 node_modules/.cache、node_modules/.vite，
+# 已被 node_modules/ 覆盖；这里列的是默认写在仓库根的缓存
 .cache/
 .eslintcache
-*.tsbuildinfo
+.stylelintcache
+.turbo/
+.parcel-cache/
+.swc/
 
 # 测试
 coverage/
+.nyc_output/
 
-# 日志
+# 日志与包管理器 debug 日志
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# 环境变量与密钥
+# 环境变量与密钥，示例文件入库
 .env*
 !.env*.example
 
-# 编辑器
+# 编辑器：团队共享的 VS Code 设置与扩展推荐入库，其余个人配置不入库
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
-.vscode/
+*.swp
 
 # 操作系统
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# AI 工具
-.agent/
-.claude/
-.cursor/
-.kiro/
+# agent 过程产物：调查报告、任务记录与 git worktree。.agents/rules/ 是项目开发规则，入库
+.agents/tasks/
+.worktrees/
+
+# AI 工具目录：本仓库的 agent 规则只有 AGENTS.md 与 .agents/rules/ 一处来源，这些目录里没有团队共享的配置，
+# 只剩会话记录、个人设置、本机 MCP 配置（可能带 token）与个人 spec，按团队通用做法不入库。
+# 写成 /* 而不是目录形式，日后确需共享某个文件时可以用 ! 单独放行。
+.kiro/*
+.cursor/*
+.claude/*
+CLAUDE.local.md

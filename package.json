@@ -15,16 +15,16 @@
     "lint": "eslint .",
     "lint:filename": "ls-lint",
     "lint:fix": "eslint . --fix",
-    "lint:md": "zhlint \"{**,.*/**}/*.md\"",
-    "lint:md:fix": "zhlint \"{**,.*/**}/*.md\" --fix",
+    "lint:md": "zhlint \"{**,.agents/rules/**,.github/**,.gitlab/**}/*.md\"",
+    "lint:md:fix": "zhlint \"{**,.agents/rules/**,.github/**,.gitlab/**}/*.md\" --fix",
     "lint:pkg": "sort-package-json --check",
-    "lint:style": "stylelint \"**/*.{scss,css}\" --ignore-pattern \"coverage/**\" --allow-empty-input",
-    "lint:style:fix": "stylelint \"**/*.{scss,css}\" --ignore-pattern \"coverage/**\" --fix --allow-empty-input",
+    "lint:style": "stylelint \"**/*.{scss,css}\" --allow-empty-input",
+    "lint:style:fix": "stylelint \"**/*.{scss,css}\" --fix --allow-empty-input",
     "prepare": "husky",
     "test": "vitest",
     "test:cov": "vitest run --coverage",
     "type-check": "tsc --noEmit",
-    "verify": "pnpm type-check && pnpm lint && pnpm lint:filename && pnpm lint:style && pnpm lint:pkg && pnpm format:check && vitest run"
+    "verify": "pnpm type-check && pnpm lint && pnpm lint:filename && pnpm lint:style && pnpm lint:md && pnpm lint:pkg && pnpm format:check && pnpm test:cov"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",

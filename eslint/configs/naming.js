@@ -10,7 +10,7 @@ export default [
           selector: 'interface',
           format: ['PascalCase'],
           custom: {
-            regex: '^I[A-Z]',
+            regex: '^I[A-Z]|Interface$',
             match: false,
           },
         },
@@ -81,6 +81,24 @@ export default [
         {
           selector: 'function',
           format: ['camelCase', 'PascalCase'],
+          custom: {
+            regex: 'Async$',
+            match: false,
+          },
+        },
+        {
+          // 只补 Async 后缀约束，不给函数常量引入大小写要求
+          selector: 'variable',
+          types: ['function'],
+          format: null,
+          custom: {
+            regex: 'Async$',
+            match: false,
+          },
+        },
+        {
+          selector: ['classMethod', 'objectLiteralMethod', 'typeMethod'],
+          format: null,
           custom: {
             regex: 'Async$',
             match: false,
