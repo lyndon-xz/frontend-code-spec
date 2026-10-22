@@ -69,7 +69,7 @@ export default [
         { allowNumber: true, allowBoolean: true },
       ],
 
-      'custom/require-enum-initializer': 'error',
+      '@typescript-eslint/prefer-enum-initializers': 'error',
     },
   },
   {

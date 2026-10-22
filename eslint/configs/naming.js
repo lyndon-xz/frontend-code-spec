@@ -1,3 +1,6 @@
+import checkFile from 'eslint-plugin-check-file';
+
+import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
 import { SRC_FILE_GLOBS } from '../utils/source-layout.js';
 
 export default [
@@ -121,9 +124,34 @@ export default [
     files: SRC_FILE_GLOBS,
     rules: {
       'custom/ref-suffix-naming': 'error',
-      'custom/no-implementation-suffix-filename': 'error',
       'custom/status-field-naming': 'error',
       'custom/require-unit-suffix': 'error',
+    },
+  },
+  {
+    /*
+     * 文件名只体现功能领域，类型由代码自身暴露。骨架文件名 index / store / config 不在其列；
+     * -list 也不算实现后缀，业务集合视图（review-list）用它表意。
+     */
+    files: SRC_FILE_GLOBS,
+    ignores: EXEMPT_GLOBS,
+    plugins: {
+      'check-file': checkFile,
+    },
+    rules: {
+      'check-file/filename-blocklist': [
+        'error',
+        {
+          '**/{columns,form-config,utils,helpers,helper,common,misc,io,defaults,types,constants}.{ts,tsx}':
+            '<业务领域名>.ts',
+          '**/*-{radio,button,modal,dialog,drawer,popup,tooltip,type,enum,config,constant,interface,util,utils}.{ts,tsx}':
+            '<业务领域名>.ts',
+        },
+        {
+          errorMessage:
+            '文件名 `{{ target }}` 是实现类后缀或形态整名，请改用业务领域命名（如 flight-detail 而非 flight-modal），类型由代码自身暴露',
+        },
+      ],
     },
   },
 ];

@@ -4,23 +4,18 @@ import plugin from '../index.js';
 
 const EXPECTED_RULE_NAMES = [
   'comment-style',
-  'no-promise-chain',
   'no-param-destructuring',
   'hoist-module-scope-destructuring',
   'require-unit-suffix',
-  'require-enum-initializer',
   'no-handle-prefix',
   'no-generic-param-name',
   'ref-suffix-naming',
   'no-internal-on-prefix',
-  'no-implementation-suffix-filename',
   'status-field-naming',
   'no-unnecessary-arrow-wrapper',
   'props-interface-naming',
   'import-path-boundary',
-  'no-barrel',
   'require-tsx-default-export',
-  'no-ts-default-export',
 ];
 
 describe('eslint 插件装配', () => {

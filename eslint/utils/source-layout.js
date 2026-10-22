@@ -1,4 +1,4 @@
-/** no-barrel 与 import-path-boundary 共用此默认值，避免两条规则口径不一致 */
+/** import-path-boundary 的 srcDir 默认值与各 config 的 src glob 共用此值，避免口径不一致 */
 export const DEFAULT_SRC_DIR = 'src';
 
 /**

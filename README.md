@@ -10,14 +10,14 @@
 
 这个仓库把规范拆成两半，各用它该用的形式落地：
 
-- **能机器判定的，写成规则**。`eslint/` 是一套自研 ESLint 插件——18 条规则加 10 组主题配置，管注释形态、命名、解构位置、模块边界、类型安全。写错了在编辑器里就红，不必等到 Review。
+- **能机器判定的，写成规则**。`eslint/` 是一套 ESLint 配置——社区规则优先、社区缺的再自研，按 10 组主题配置组织，管注释形态、命名、解构位置、模块边界、类型安全。写错了在编辑器里就红，不必等到 Review。
 - **判不了的，给一份能抄的实现**。`src/` 是范式样板，主体是一套完整的请求层：实例复用、拦截器编排、重试与去重、错误归一与提示、埋点上报。它示范的是在这套规则约束下代码长什么样。
 
 仓库声明为 `private: true`，不发布 npm 包——它的定位是**源头**：业务仓库照它落地 lint 配置、对照它写代码。这套规则同时作用于仓库自身——根 `eslint.config.js` 直接引用 `eslint/index.js`，`src/` 与 `eslint/` 全量受约束，所以规则一改，立刻能在样板代码上验证是否讲得通。
 
 ## ✨ 特性
 
-- 🧩 **18 条自研规则**，每条都配 `RuleTester` 单测，规则语义有用例兜底而非靠描述。
+- 🧩 **13 条自研规则**，只补社区规则缺的形态，每条都配 `RuleTester` 单测，规则语义有用例兜底而非靠描述。
 - 🧵 **全链路 lint**：ESLint 管代码、Prettier 管格式、Stylelint 管样式、ls-lint 管文件名、zhlint 管中文排版、sort-package-json 管清单字段顺序，各管一段互不重叠。
 - 🛡️ **提交、推送双闸门**：`pre-commit` 走 lint-staged 增量修复，`pre-push` 跑与 CI 同款的全量校验，外加分支名与 commit message 校验。
 - 🌐 **请求层范式样板**：实例按 `serviceCode` 复用、拦截器顺序固定、重试与去重、凭证只发往本服务、错误静默与抛出策略，全部有单测覆盖。
@@ -67,7 +67,7 @@ pnpm verify
 ```text
 ├── eslint/                     自定义 ESLint 插件
 │   ├── configs/                10 组主题配置，按关注点挂载内置规则与自研规则
-│   ├── rules/                  18 条自研规则实现，按主题分目录
+│   ├── rules/                  自研规则实现，按主题分目录
 │   ├── utils/                  规则共用判定：豁免文件、posix 路径、扩展名剥离、源码分层
 │   ├── __tests__/              规则单测与共用的 RuleTester 封装
 │   └── index.js                插件与全部分组配置的聚合入口
@@ -91,7 +91,7 @@ pnpm verify
 
 ## 📐 规则集
 
-`eslint/configs/` 按关注点分成 10 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks 的内置规则与本仓自研规则：
+`eslint/configs/` 按关注点分成 10 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks、promise、check-file、no-barrel-files 的规则与本仓自研规则：
 
 | 分组            | 关注点                                                                     |
 | --------------- | -------------------------------------------------------------------------- |
@@ -102,34 +102,31 @@ pnpm verify
 | `comments`      | 注释风格，并把未使用的 `eslint-disable` 提到 error                         |
 | `destructuring` | 解构位置：不在签名解构，模块级解构提到顶层                                 |
 | `typescript`    | 类型定义与导入风格、`strict-boolean-expressions`、Promise 误用、断言收紧   |
-| `naming`        | `naming-convention` 全量约定，加 7 条自研命名规则                          |
+| `naming`        | `naming-convention` 全量约定、文件名黑名单，加自研命名规则                 |
 | `react`         | JSX 与 Hooks 规则，加 Props 命名与箭头包裹约束                             |
 | `structure`     | 模块边界：相对路径与 `@/` 别名、禁 barrel、默认导出方向                    |
 
 分组按**关注点**而非语言名划分。这一点是有意的：如果存在一个叫 `javascript` 的分组，那么任何一条内置规则放进去都不别扭，边界就失效了——下次新增规则时两个分组都讲得通，等于没有标准。按关注点分，每条规则的落点只有一个答案。
 
-18 条自研规则如下，配置里的前缀统一为 `custom/`：
+13 条自研规则如下，配置里的前缀统一为 `custom/`。社区已有等价规则的一律用社区版，表里只留社区版覆盖不到的规则，最后一列写明社区版缺的形态：
 
-| 规则                                | 作用                                                                                                                     | 生效范围      |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------- |
-| `comment-style`                     | 按导出语义定注释风格：`export` 上方用 `/** */`，其余单行用 `//`、多段用 `/* */`                                          | 全仓          |
-| `no-promise-chain`                  | 禁 `.then()` / `.catch()` / `.finally()` 链式调用                                                                        | js / ts / tsx |
-| `no-param-destructuring`            | 禁在函数签名解构，改在函数体内解构                                                                                       | js / ts / tsx |
-| `hoist-module-scope-destructuring`  | 模块级 `const` 绑定的解构提到模块顶层；可重新赋值的 `let` 不报，提上去会改变求值时机                                     | js / ts / tsx |
-| `no-handle-prefix`                  | 禁 `handle` 前缀，改用语义化动词（`saveData` 而非 `handleClick`），覆盖 `useCallback` 包裹的声明                         | js / ts / tsx |
-| `no-generic-param-name`             | 禁参数用泛化命名，改用具体领域词汇                                                                                       | js / ts / tsx |
-| `no-internal-on-prefix`             | `on` 前缀只留给 Props 回调声明，内部函数不用                                                                             | js / ts / tsx |
-| `ref-suffix-naming`                 | `useRef` 声明的变量必须以 `Ref` 结尾                                                                                     | `src/`        |
-| `require-unit-suffix`               | 数值量纲字段带单位后缀，如 `feeCents`、`timeoutMs`；金额 / 时长 / 时间点 / 长度 / 数据量 / 质量各配自己的单位            | `src/`        |
-| `status-field-naming`               | 状态上下文的数据与异步状态字段用后缀式命名：`isLoadingXxx` / `xxxError`                                                  | `src/`        |
-| `no-implementation-suffix-filename` | 文件名禁实现类后缀（`-modal` / `-type` 等）与形态整名（`utils` / `constants` / `types`）；集合目录 `src/constants/` 合法 | `src/`        |
-| `props-interface-naming`            | Props 接口必须命名为「组件名 + Props」；已导出的接口只报不修，改名会断掉导入方                                           | tsx           |
-| `no-unnecessary-arrow-wrapper`      | 禁多余的箭头包裹，`onClick={() => fn()}` 应改为 `onClick={fn}`；只报不修，去掉包裹会改变实收实参个数                     | tsx           |
-| `import-path-boundary`              | 模块内部走相对路径，跨模块走 `@/` 别名；`containerDirs`（默认 `pages`）下每个子目录各算一个模块                          | `src/`        |
-| `no-barrel`                         | 禁 barrel 入口：公共库 index 禁存在；任意文件禁 `export *` 与 `export { x } from`                                        | `src/`        |
-| `require-tsx-default-export`        | TSX 必须有 `export default`                                                                                              | `src/`        |
-| `no-ts-default-export`              | TS（非 TSX）禁用 `export default`                                                                                        | `src/`        |
-| `require-enum-initializer`          | 枚举成员必须显式赋值，禁自动递增                                                                                         | ts / tsx      |
+| 规则                               | 作用                                                                                                          | 生效范围      | 社区版缺什么                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `comment-style`                    | 按导出语义定注释风格：`export` 上方用 `/** */`，其余单行用 `//`、多段用 `/* */`                               | 全仓          | `@stylistic/line-comment-position`、`no-inline-comments`、`@stylistic/multiline-comment-style`、`jsdoc/convert-to-jsdoc-comments` 组合起来也不区分导出与非导出：非导出处的单行 `/* */` 不改 `//`、`/** */` 不降为 `/* */`、连续多段 `/* */` 不合并；`no-inline-comments` 还会把 `foo(/* name */ 'bar')` 这类参数注释报错 |
+| `no-param-destructuring`           | 禁在函数签名解构，改在函数体内解构                                                                            | js / ts / tsx | 核心、typescript-eslint、unicorn、sonarjs 都没有约束形参解构的规则，`prefer-destructuring` 一类方向相反                                                                                                                                                                                                                  |
+| `hoist-module-scope-destructuring` | 模块级 `const` 绑定的解构提到模块顶层；可重新赋值的 `let` 不报，提上去会改变求值时机                          | js / ts / tsx | 没有对应规则，`unicorn/prefer-smaller-scope` 方向相反                                                                                                                                                                                                                                                                    |
+| `no-handle-prefix`                 | 禁 `handle` 前缀，改用语义化动词（`saveData` 而非 `handleClick`），覆盖 `useCallback` 包裹的声明              | js / ts / tsx | `@typescript-eslint/naming-convention` 靠类型信息区分函数值，`.js` 跑不了；`useCallback` 包裹的声明在类型推不出时漏报，带引号的键 `"handleClick"` 会被误报                                                                                                                                                               |
+| `no-generic-param-name`            | 禁参数用泛化命名，改用具体领域词汇                                                                            | js / ts / tsx | `naming-convention` 只能挂 TS 解析器，`.js` 不覆盖；`id-denylist` 连带报外部契约字段（`response.data`、`context.report({ data })`）；`unicorn/name-replacements` 按单词匹配，`userData` 这类复合名也报                                                                                                                   |
+| `no-internal-on-prefix`            | `on` 前缀只留给 Props 回调声明，内部函数不用                                                                  | js / ts / tsx | `naming-convention` 要靠类型信息筛出函数值，`.js` 不覆盖                                                                                                                                                                                                                                                                 |
+| `ref-suffix-naming`                | `useRef` 声明的变量必须以 `Ref` 结尾                                                                          | `src/`        | `@eslint-react/naming-convention-ref-name` 放行裸 `ref`                                                                                                                                                                                                                                                                  |
+| `require-unit-suffix`              | 数值量纲字段带单位后缀，如 `feeCents`、`timeoutMs`；金额 / 时长 / 时间点 / 长度 / 数据量 / 质量各配自己的单位 | `src/`        | 没有按量纲要求单位后缀的规则                                                                                                                                                                                                                                                                                             |
+| `status-field-naming`              | 状态上下文的数据与异步状态字段用后缀式命名：`isLoadingXxx` / `xxxError`                                       | `src/`        | `naming-convention` 没有「状态上下文」判定，`errorHandler`、`loadingSpinner` 这类非状态命名也会报                                                                                                                                                                                                                        |
+| `props-interface-naming`           | Props 接口必须命名为「组件名 + Props」；已导出的接口只报不修，改名会断掉导入方                                | tsx           | 没有把 Props 接口名与组件名绑定的规则                                                                                                                                                                                                                                                                                    |
+| `no-unnecessary-arrow-wrapper`     | 禁多余的箭头包裹，`onClick={() => fn()}` 应改为 `onClick={fn}`；只报不修，去掉包裹会改变实收实参个数          | tsx           | 没有针对 JSX 事件属性多余箭头包裹的规则                                                                                                                                                                                                                                                                                  |
+| `import-path-boundary`             | 模块内部走相对路径，跨模块走 `@/` 别名；`containerDirs`（默认 `pages`）下每个子目录各算一个模块               | `src/`        | `import-x/no-relative-parent-imports`、`no-relative-import-paths`、`boundaries` 只管一个方向或只看依赖关系；`no-restricted-imports` 要按目录逐块手写正则，新目录不受约束，也没有 autofix                                                                                                                                 |
+| `require-tsx-default-export`       | TSX 必须有 `export default`                                                                                   | `src/`        | `import-x/prefer-default-export`（`target: 'any'`）在文件含类型导出（如 `export interface FooProps`）或 `export *` 时不报                                                                                                                                                                                                |
+
+以下社区规则替代了原自研规则：开启 `strict: true` 的 `promise/prefer-await-to-then` 替代 `no-promise-chain`，`@typescript-eslint/prefer-enum-initializers` 替代 `require-enum-initializer`，`check-file/filename-blocklist` 替代 `no-implementation-suffix-filename`，`no-barrel-files/no-barrel-files` 与 `check-file/no-index` 替代 `no-barrel`，`import-x/no-default-export` 替代 `no-ts-default-export`。
 
 命名与结构类规则依赖 `src` 的分层与 `@/` 别名，因此只对 `src/` 源码开启，生效范围由 `eslint/utils/source-layout.js` 的 `SRC_FILE_GLOBS` 统一给出——规则的路径推断与生效范围必须指同一个目录才成立，不在各 config 里裸写。测试文件等场景由 `eslint/utils/is-exempt-file.js` 的豁免清单统一放行，避免为造桩、断言的写法反复加 `eslint-disable`。
 
