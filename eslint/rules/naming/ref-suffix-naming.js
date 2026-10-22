@@ -1,13 +1,17 @@
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
+
 /** 裸 `ref` 同样违规：它没说清指向谁 */
 export default {
   meta: {
     type: 'suggestion',
     docs: {
       description: 'useRef 声明的变量必须以 Ref 结尾（如 inputRef）',
+      url: ruleDocsUrl('ref-suffix-naming'),
     },
     schema: [],
     messages: {
-      refSuffix: 'Ref 变量必须以 Ref 结尾（如 inputRef）',
+      refSuffix:
+        'useRef 返回的变量要以 Ref 结尾（如 inputRef）：不带后缀读起来像普通值，读者不知道取值要走 .current',
     },
   },
   create(context) {

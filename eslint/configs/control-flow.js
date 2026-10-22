@@ -1,10 +1,14 @@
 import promise from 'eslint-plugin-promise';
+import sonarjs from 'eslint-plugin-sonarjs';
+import unicorn from 'eslint-plugin-unicorn';
 
 export default [
   {
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     plugins: {
       promise,
+      sonarjs,
+      unicorn,
     },
     rules: {
       // strict 让 await 表达式内与构造函数里的链式调用也报；模块顶层的调用该规则不检查
@@ -16,9 +20,16 @@ export default [
       'curly': ['error', 'all'],
 
       'no-nested-ternary': 'error',
-      'no-empty': ['error', { allowEmptyCatch: false }],
+      // 空 catch 由 restricted-syntax 组用一条带改法的提示报，这里不再重复报
+      'no-empty': ['error', { allowEmptyCatch: true }],
       'no-else-return': ['error', { allowElseIf: false }],
       'max-depth': ['error', 3],
+      // 15 是 sonar 的默认阈值：超过时拆出有名字的函数，而不是继续加分支
+      'sonarjs/cognitive-complexity': ['error', 15],
+      'sonarjs/no-all-duplicated-branches': 'error',
+      'sonarjs/no-collapsible-if': 'error',
+      'unicorn/throw-new-error': 'error',
+      'unicorn/error-message': 'error',
     },
   },
 ];

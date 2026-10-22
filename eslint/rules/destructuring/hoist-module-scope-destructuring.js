@@ -1,3 +1,5 @@
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
+
 /*
  * 判据是「右侧标识符解析到模块作用域」而非「在组件里」：props、useXxxModel()、obj.nested 都不报。
  * 只看 ObjectPattern：数组解构取的是位置而非成员，提到顶层没有意义。
@@ -41,6 +43,7 @@ export default {
     type: 'suggestion',
     docs: {
       description: '模块级绑定的解构提到模块顶层，不写在函数体内',
+      url: ruleDocsUrl('hoist-module-scope-destructuring'),
     },
     schema: [],
     messages: {

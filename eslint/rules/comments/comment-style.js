@@ -1,3 +1,5 @@
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
+
 function isWithinExportDeclaration(node) {
   let current = node;
   while (current) {
@@ -25,10 +27,10 @@ function isWithinExportDeclaration(node) {
 
 // 行首是语句关键字：import x from 'y'、if (a) 之类
 const CODE_KEYWORD_LINE_START =
-  /^(import|export|const|let|var|function|async|await|class|interface|type|enum|namespace|return|if|else|for|while|do|switch|case|break|continue|throw|new|delete|yield|console|window|document)\b/;
+  /^(?:import|export|const|let|var|function|async|await|class|interface|type|enum|namespace|return|if|else|for|while|do|switch|case|break|continue|throw|new|delete|yield|console|window|document)\b/;
 
 // 行首是标识符（含成员访问）紧接调用或赋值：foo()、a.b = 1；=[^=] 排除 == 比较
-const CALL_OR_ASSIGN_LINE_START = /^[A-Za-z_$][\w$.]*\s*(\(|=[^=])/;
+const CALL_OR_ASSIGN_LINE_START = /^[A-Z_$][\w$.]*\s*(?:\(|=[^=])/i;
 
 // 行尾是语句或块的收尾符号：; { }
 const CODE_LINE_END = /[;{}]\s*$/;
@@ -147,6 +149,7 @@ export default {
     docs: {
       description:
         '根据导出语义强制注释风格：export 上方用 /** */，其余位置单行用 //、多行或多段堆叠用 /* */；注释须在目标代码上方独占一行',
+      url: ruleDocsUrl('comment-style'),
     },
     fixable: 'code',
     schema: [],

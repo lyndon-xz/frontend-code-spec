@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 /*
  * ls-lint 与 zhlint 只在收到相对路径时才真正校验，拿到绝对路径会直接放行，

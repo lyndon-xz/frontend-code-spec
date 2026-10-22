@@ -3,6 +3,14 @@ import checkFile from 'eslint-plugin-check-file';
 import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
 import { SRC_FILE_GLOBS } from '../utils/source-layout.js';
 
+const BOOLEAN_PREFIXES = ['is', 'should', 'has', 'can', 'did', 'will'];
+
+// custom 作用于剥掉前缀之后的名字：isNotReady 剩 NotReady 会命中，hasNotification 剩 Notification 不会
+const NOT_PREFIX = { regex: '^Not[A-Z]', match: false };
+
+// 集合名用复数表意，类型后缀只复述类型
+const COLLECTION_SUFFIX = { regex: '(Array|List)$', match: false };
+
 export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -28,14 +36,37 @@ export default [
           selector: 'variable',
           types: ['boolean'],
           format: ['PascalCase'],
-          prefix: ['is', 'should', 'has', 'can', 'did', 'will'],
+          prefix: BOOLEAN_PREFIXES,
+          custom: NOT_PREFIX,
         },
         {
           // variable 选择器不覆盖类型字段，字段才是跨模块传递的契约
           selector: 'typeProperty',
           types: ['boolean'],
           format: ['PascalCase'],
-          prefix: ['is', 'should', 'has', 'can', 'did', 'will'],
+          prefix: BOOLEAN_PREFIXES,
+          custom: NOT_PREFIX,
+        },
+        {
+          // 解构出的参数与解构出的变量同理，名字由调用方的对象决定
+          selector: 'parameter',
+          modifiers: ['destructured'],
+          types: ['boolean'],
+          format: null,
+        },
+        {
+          selector: 'parameter',
+          types: ['boolean'],
+          format: ['PascalCase'],
+          prefix: BOOLEAN_PREFIXES,
+          custom: NOT_PREFIX,
+        },
+        {
+          selector: 'classProperty',
+          types: ['boolean'],
+          format: ['PascalCase'],
+          prefix: BOOLEAN_PREFIXES,
+          custom: NOT_PREFIX,
         },
         {
           selector: 'enum',
@@ -67,10 +98,13 @@ export default [
           selector: 'variable',
           types: ['array'],
           format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
-          custom: {
-            regex: 'Array$',
-            match: false,
-          },
+          custom: COLLECTION_SUFFIX,
+        },
+        {
+          selector: 'typeProperty',
+          types: ['array'],
+          format: null,
+          custom: COLLECTION_SUFFIX,
         },
         {
           selector: 'class',

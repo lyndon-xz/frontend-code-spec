@@ -1,4 +1,5 @@
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   {
@@ -11,9 +12,12 @@ export default [
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     plugins: {
       '@eslint-community/eslint-comments': eslintComments,
+      sonarjs,
     },
     rules: {
       'custom/comment-style': 'error',
+      // 删掉的代码由 git 保留，注释里留着只会过期
+      'sonarjs/no-commented-code': 'error',
       // 豁免必须写 `-- 理由`、点名规则、成对关闭，让每处豁免都说得清为什么、管到哪
       '@eslint-community/eslint-comments/require-description': ['error', { ignore: [] }],
       '@eslint-community/eslint-comments/no-unlimited-disable': 'error',

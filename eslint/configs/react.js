@@ -1,17 +1,9 @@
 import eslintReact from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 
+import { toErrorLevel } from '../utils/to-error-level.js';
+
 const TS_FILES = ['**/*.ts', '**/*.tsx'];
-
-// 预设里的 warn 不会让 CI 失败，本仓只有一档：要么不开，要么必须改
-const toErrorLevel = (rules) =>
-  Object.fromEntries(
-    Object.entries(rules).map((entry) => {
-      const [name, level] = entry;
-
-      return [name, level === 'warn' ? 'error' : level];
-    }),
-  );
 
 /*
  * @eslint-react 的推荐集里有一批与 react-hooks 同名的规则，两边都开会对同一处报两次。

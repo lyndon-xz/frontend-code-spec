@@ -1,6 +1,13 @@
+import sonarjs from 'eslint-plugin-sonarjs';
+import unicorn from 'eslint-plugin-unicorn';
+
 export default [
   {
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
+    plugins: {
+      sonarjs,
+      unicorn,
+    },
     rules: {
       // 只放行 `x == null`：匹配 null 与 undefined，无隐式转换陷阱
       'eqeqeq': ['error', 'always', { null: 'ignore' }],
@@ -9,6 +16,10 @@ export default [
       // props: false 只拦重新赋值参数本身，改参数对象的属性不在此列
       'no-param-reassign': ['error', { props: false }],
       'max-params': ['error', 3],
+      'sonarjs/no-identical-functions': 'error',
+      'unicorn/no-thenable': 'error',
+      'unicorn/prefer-string-replace-all': 'error',
+      'unicorn/no-useless-spread': 'error',
     },
   },
   {

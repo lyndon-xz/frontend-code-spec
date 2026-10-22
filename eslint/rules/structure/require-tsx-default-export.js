@@ -1,4 +1,5 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
 
 const EXPORT_KINDS = new Set([
   'ExportDefaultDeclaration',
@@ -11,10 +12,12 @@ export default {
     type: 'problem',
     docs: {
       description: 'TSX 文件必须包含 export default 导出',
+      url: ruleDocsUrl('require-tsx-default-export'),
     },
     schema: [],
     messages: {
-      requireDefault: 'TSX 文件必须包含 export default 导出',
+      requireDefault:
+        'TSX 文件缺少 export default：组件文件只有一个主体，默认导出是它的唯一入口，引用处更简洁；请给主组件加 export default',
     },
   },
   create(context) {

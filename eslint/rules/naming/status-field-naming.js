@@ -1,3 +1,5 @@
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
+
 /*
  * 只在状态上下文（useState 声明、State 结尾的类型成员与状态对象字面量）内校验，
  * 这样 errorHandler / loadingSpinner 从构造上就不会被扫到，无需靠通用词白名单穷举放行。
@@ -96,12 +98,14 @@ export default {
     docs: {
       description:
         '状态上下文（useState / State 类型 / 状态对象）中的数据、异步状态字段强制后缀式命名（isLoadingXxx / xxxError），禁止前缀式',
+      url: ruleDocsUrl('status-field-naming'),
     },
     schema: [],
     messages: {
       loadingPrefix:
         '异步加载状态请用布尔前缀式 `isLoading{{suffix}}` 而非 `{{name}}`，并发多流程时前缀式会互相覆盖',
-      errorPrefix: '错误状态字段请用后缀式 `{{suggested}}` 而非前缀式 `{{name}}`',
+      errorPrefix:
+        '错误状态字段请用后缀式 `{{suggested}}` 而非前缀式 `{{name}}`：数据名在前，同一份数据的数据、加载、错误字段才能对上号',
     },
   },
   create(context) {

@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 import eslintReact from '@eslint-react/eslint-plugin';
 import importX from 'eslint-plugin-import-x';
@@ -15,6 +15,8 @@ import importsConfig from './configs/imports.js';
 import loggingConfig from './configs/logging.js';
 import namingConfig from './configs/naming.js';
 import reactConfig from './configs/react.js';
+import restrictedSyntaxConfig from './configs/restricted-syntax.js';
+import ruleAuthoringConfig from './configs/rule-authoring.js';
 import securityConfig from './configs/security.js';
 import structureConfig from './configs/structure.js';
 import typescriptConfig from './configs/typescript.js';
@@ -110,4 +112,6 @@ export default [
   ...structureConfig,
   ...securityConfig,
   ...accessibilityConfig,
+  ...restrictedSyntaxConfig,
+  ...ruleAuthoringConfig,
 ];

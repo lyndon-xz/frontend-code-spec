@@ -1,4 +1,5 @@
 import { isExemptFile } from '../../utils/is-exempt-file.js';
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
 
 // params / options 在请求与配置场景常见，不纳入默认黑名单
 const DEFAULT_BANNED_NAMES = ['data', 'callback'];
@@ -17,6 +18,7 @@ export default {
     type: 'suggestion',
     docs: {
       description: '禁止函数参数使用泛化命名，请使用具体的领域词汇',
+      url: ruleDocsUrl('no-generic-param-name'),
     },
     schema: [
       {
@@ -33,7 +35,8 @@ export default {
       },
     ],
     messages: {
-      noGenericParam: '参数禁止泛化命名（{{names}}），请使用具体的领域词汇',
+      noGenericParam:
+        '参数名（{{names}}）不说明传的是什么，读者得跳进实现或类型才能确认：请改用具体的领域词汇（如 hotel、onSelect）',
     },
   },
 

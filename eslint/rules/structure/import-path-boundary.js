@@ -1,6 +1,7 @@
-import path from 'path';
+import path from 'node:path';
 
 import { isExemptFile } from '../../utils/is-exempt-file.js';
+import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
 import { DEFAULT_SRC_DIR } from '../../utils/source-layout.js';
 import { toPosixPath } from '../../utils/to-posix-path.js';
 
@@ -27,6 +28,7 @@ export default {
     type: 'suggestion',
     docs: {
       description: '模块内部使用相对路径，跨模块引用使用 @/ 别名',
+      url: ruleDocsUrl('import-path-boundary'),
     },
     fixable: 'code',
     schema: [

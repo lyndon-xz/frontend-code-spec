@@ -1,6 +1,10 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import plugin from '../index.js';
+import { ruleDocsUrl } from '../utils/rule-docs-url.js';
 
 const EXPECTED_RULE_NAMES = [
   'comment-style',
@@ -38,6 +42,16 @@ describe('eslint 插件装配', () => {
     for (const rule of Object.values(pluginEntry.plugins.custom.rules)) {
       expect(rule).toHaveProperty('meta');
       expect(typeof rule.create).toBe('function');
+    }
+  });
+
+  it('每条注册的规则都有 docs.url，且指向的规则文档存在', () => {
+    const pluginEntry = plugin.find((item) => item.plugins?.custom);
+    for (const [name, rule] of Object.entries(pluginEntry.plugins.custom.rules)) {
+      expect(rule.meta.docs.url).toBe(ruleDocsUrl(name));
+      expect(fs.existsSync(path.resolve(import.meta.dirname, '../docs/rules', `${name}.md`))).toBe(
+        true,
+      );
     }
   });
 

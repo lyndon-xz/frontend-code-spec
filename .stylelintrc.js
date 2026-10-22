@@ -1,3 +1,11 @@
+/*
+ * 间距与圆角只用设计 token：放行 0、auto、inherit、不带回退值的 var(--x)，
+ * 以及只含无单位系数、运算符与 var(--x) 的 calc()（如 calc(-1 * var(--space-m))）。
+ * var(--x, 8px) 的回退值、calc 里的裸长度、百分比都是写死的设计值，不放行。
+ */
+const SPACING_VALUE =
+  '/^(?:(?:0|auto|inherit|var\\(--[\\w-]+\\)|calc\\((?:[\\s\\d.*/+-]*var\\(--[\\w-]+\\))+[\\s\\d.*/+-]*\\))(?:\\s+|$))+$/';
+
 export default {
   // 豁免注释必须写理由：/* stylelint-disable-next-line x -- 理由 */
   reportDescriptionlessDisables: true,
@@ -46,12 +54,34 @@ export default {
         ignorePseudoClasses: ['global', 'local', 'export'],
       },
     ],
-    // 防御恶意的 z-index 层叠：只允许极小正负值或变量，强制统一收口
     'declaration-property-value-allowed-list': {
+      // 防御恶意的 z-index 层叠：只允许极小正负值或变量，强制统一收口
       'z-index': ['/var\\(/', '-1', '0', '1', '2', '3', '4', '5'],
+      '/^(margin|padding)(-(top|right|bottom|left|block|inline)(-(start|end))?)?$/': [
+        SPACING_VALUE,
+      ],
+      '/^(row-|column-)?gap$/': [SPACING_VALUE],
+      // 50% 只用于把元素裁成圆形
+      '/^border(-(top|bottom|start|end)-(left|right|start|end))?-radius$/': [SPACING_VALUE, '50%'],
     },
+    // 颜色只从 token 文件取，业务样式写 var(--color-x)
+    'color-no-hex': true,
+    'color-named': 'never',
+    'function-disallowed-list': ['rgb', 'rgba', 'hsl', 'hsla'],
+    // 变量先于声明、声明先于嵌套规则，读一个块时先看到它依赖的变量
+    'order/order': ['custom-properties', 'declarations', 'rules'],
+    'no-duplicate-selectors': true,
   },
   overrides: [
+    {
+      // token 文件是颜色字面量唯一的落点
+      files: ['**/theme.scss', '**/tokens.scss', '**/*.tokens.scss'],
+      rules: {
+        'color-no-hex': null,
+        'color-named': null,
+        'function-disallowed-list': null,
+      },
+    },
     {
       // 全局样式表用 kebab-case：类名不经 JS 引用，且覆盖 antd 时必须照抄它的类名
       files: ['**/global.scss', '**/globals.scss', '**/theme.scss', '**/*.global.scss'],
