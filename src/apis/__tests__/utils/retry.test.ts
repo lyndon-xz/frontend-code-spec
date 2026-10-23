@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { RetryOptions } from '@/apis/types/request/config';
 import { RequestError, RequestErrorType } from '@/apis/utils/error';
 import { canRetry, delay, getRetryDelay } from '@/apis/utils/retry';
 
@@ -77,45 +78,24 @@ describe('delay', () => {
 });
 
 describe('getRetryDelay', () => {
-  it('默认指数退避：第一次重试使用基础间隔', () => {
-    expect(getRetryDelay(1, { count: 3 })).toBe(300);
-  });
-
-  it('默认指数退避：第 n 次为 base * 2^(n-1)', () => {
-    expect(getRetryDelay(2, { count: 3 })).toBe(600);
-    expect(getRetryDelay(3, { count: 3 })).toBe(1200);
-  });
-
-  it('自定义基础间隔参与指数退避计算', () => {
-    expect(getRetryDelay(3, { count: 3, delayMs: 100 })).toBe(400);
-  });
-
-  it('关闭退避时恒为基础间隔', () => {
-    expect(getRetryDelay(5, { count: 3, delayMs: 200, isBackoff: false })).toBe(200);
-  });
-
-  it('关闭退避且未指定间隔时使用默认间隔', () => {
-    expect(getRetryDelay(4, { count: 3, isBackoff: false })).toBe(300);
-  });
-
-  // retry 缺省时全部走默认值，调用方因此不需要先判空
-  it('未传 retry 时使用默认间隔与默认退避', () => {
+  it('第一次重试等待 300ms', () => {
     expect(getRetryDelay(1)).toBe(300);
+  });
+
+  it('第 n 次为 300 * 2^(n-1)', () => {
+    expect(getRetryDelay(2)).toBe(600);
     expect(getRetryDelay(3)).toBe(1200);
   });
-});
 
-describe('getRetryDelay 封顶', () => {
-  it('指数退避不超过默认封顶值', () => {
+  it('第 8 次停在 5000ms', () => {
     // 300 * 2^7 = 38400，无封顶时单次就要等 38 秒
-    expect(getRetryDelay(8, { count: 8 })).toBe(5000);
+    expect(getRetryDelay(8)).toBe(5000);
   });
 
-  it('封顶值可由调用方覆盖', () => {
-    expect(getRetryDelay(8, { count: 8, maxDelayMs: 1000 })).toBe(1000);
-  });
+  it('间隔、退避和封顶不是调用方选项', () => {
+    // @ts-expect-error 等待时间已固定，不能再传 delayMs、isBackoff、maxDelayMs
+    const options: RetryOptions = { count: 1, delayMs: 100, isBackoff: false, maxDelayMs: 1000 };
 
-  it('关闭退避时同样受封顶约束', () => {
-    expect(getRetryDelay(1, { count: 1, delayMs: 9000, isBackoff: false })).toBe(5000);
+    expect(options.count).toBe(1);
   });
 });

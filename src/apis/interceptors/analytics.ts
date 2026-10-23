@@ -3,27 +3,25 @@ import type { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } fr
 import type { ReqInterceptor, ResInterceptor } from '../types/interceptors';
 import { RequestStatus, reportAnalytics } from '../utils/analytics-reporter';
 import { RequestError, RequestErrorType } from '../utils/error';
-import { generateRequestId } from '../utils/trace';
+import { generateRequestId } from '../utils/request-id';
 
 // axios 把 params / data 声明为 any，在入口收窄为 unknown，上报载荷不再沾染 any
-interface TraceSource extends Pick<
-  AxiosRequestConfig,
-  '__requestId' | '__requestStartTimeMs' | 'method' | 'url'
-> {
+interface TraceSource extends Pick<AxiosRequestConfig, '__requestId' | 'method' | 'url'> {
   params?: unknown;
   data?: unknown;
 }
 
-// 缺少 requestId / startTimeMs 时返回 null，调用方据此跳过上报
+// 开始时间只在这一对拦截器之间用。挂在 config 上会和请求标识并列。键是当次 config，请求结束即可回收
+const startTimeMsByConfig = new WeakMap<TraceSource, number>();
+
+// 缺少 requestId 或开始时间时返回 null，调用方据此跳过上报
 const extractTrace = (config?: TraceSource) => {
-  const {
-    __requestId: requestId,
-    __requestStartTimeMs: startTimeMs,
-    method = '',
-    url = '',
-    params,
-    data,
-  } = config ?? {};
+  if (config == null) {
+    return null;
+  }
+
+  const { __requestId: requestId, method = '', url = '', params, data } = config;
+  const startTimeMs = startTimeMsByConfig.get(config);
 
   if (typeof requestId !== 'string' || startTimeMs === undefined) {
     return null;
@@ -44,7 +42,7 @@ export const analyticsReqInterceptor: ReqInterceptor = {
     // 沿用 request 层在循环外生成的 id，重试与首次尝试串在同一链路
     config.__requestId ??= generateRequestId(config.method ?? 'GET', config.url);
     // 每次尝试独立刷新，统计单次耗时
-    config.__requestStartTimeMs = Date.now();
+    startTimeMsByConfig.set(config, Date.now());
 
     return config;
   },

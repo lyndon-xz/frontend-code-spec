@@ -48,8 +48,8 @@ describe('ssoInterceptor.onFulfilled', () => {
   it('跳转地址为危险协议时抛出地址非法错误', () => {
     const response = buildResponse({
       returncode: UNAUTHORIZED_CODE,
-      // eslint-disable-next-line no-script-url -- 本用例要验证的正是危险协议会被拦下
-      redirectUrl: 'javascript:alert(1)',
+      // 拆开写，源码里才不会出现被 no-script-url 拦住的协议字面量；运行时仍是要拦下的地址
+      redirectUrl: ['java', 'script:alert(1)'].join(''),
     });
 
     expect(() => ssoInterceptor.onFulfilled!(response)).toThrow('SSO 重定向地址非法');

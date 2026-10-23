@@ -12,22 +12,24 @@ vi.mock('@/apis/utils/analytics-reporter', async (importOriginal) => {
 
 const mockReportAnalytics = vi.mocked(reportAnalytics);
 
-// 构造一段已经过埋点请求拦截器的 config（含 __requestId / __requestStartTimeMs）
-const buildTracedConfig = () =>
-  ({
+// 走一遍请求拦截器，开始时间记在拦截器内部，不出现在 config 上
+const buildTracedConfig = () => {
+  vi.spyOn(Date, 'now').mockReturnValue(1000);
+
+  return analyticsReqInterceptor.onFulfilled!({
     __requestId: 'GET_/x_1',
-    __requestStartTimeMs: 1000,
     url: '/x',
     method: 'get',
     params: { a: 1 },
-  }) as InternalAxiosRequestConfig;
+  } as InternalAxiosRequestConfig);
+};
 
 describe('analyticsReqInterceptor.onFulfilled', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('写入 __requestId 与 __requestStartTimeMs', () => {
+  it('写入 __requestId，开始时间不落在 config 上', () => {
     vi.spyOn(Date, 'now').mockReturnValue(12345);
     const config = { url: '/x', method: 'get' } as InternalAxiosRequestConfig;
 
@@ -35,7 +37,7 @@ describe('analyticsReqInterceptor.onFulfilled', () => {
 
     expect(typeof result.__requestId).toBe('string');
     expect(result.__requestId).toContain('GET');
-    expect(result.__requestStartTimeMs).toBe(12345);
+    expect(result).not.toHaveProperty('__requestStartTimeMs');
   });
 });
 
@@ -45,19 +47,22 @@ describe('analyticsResInterceptor.onFulfilled', () => {
   });
 
   it('存在 trace 时以成功状态上报并原样返回响应', () => {
+    const config = buildTracedConfig();
     vi.spyOn(Date, 'now').mockReturnValue(2000);
     const response = {
       data: { ok: true },
-      config: buildTracedConfig(),
+      config,
     } as AxiosResponse;
 
     const result = analyticsResInterceptor.onFulfilled!(response);
 
     expect(result).toBe(response);
+    expect(config).not.toHaveProperty('__requestStartTimeMs');
     expect(mockReportAnalytics).toHaveBeenCalledTimes(1);
     expect(mockReportAnalytics).toHaveBeenCalledWith(
       expect.objectContaining({
         requestId: 'GET_/x_1',
+        startTimeMs: 1000,
         status: RequestStatus.Success,
         responseData: { ok: true },
         endTimeMs: 2000,
@@ -65,8 +70,11 @@ describe('analyticsResInterceptor.onFulfilled', () => {
     );
   });
 
-  it('缺少 trace 字段时跳过上报', () => {
-    const response = { data: { ok: true }, config: { url: '/x' } } as AxiosResponse;
+  it('只有 requestId、没有经过请求拦截器时跳过上报', () => {
+    const response = {
+      data: { ok: true },
+      config: { __requestId: 'GET_/x_1', url: '/x' },
+    } as AxiosResponse;
 
     const result = analyticsResInterceptor.onFulfilled!(response);
 
@@ -88,10 +96,10 @@ describe('analyticsResInterceptor.onRejected', () => {
   });
 
   it('带 trace 的 RequestError 以失败状态上报后继续拒绝', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(3000);
     const error = new RequestError(RequestErrorType.Business, '业务失败', {
       config: buildTracedConfig(),
     });
+    vi.spyOn(Date, 'now').mockReturnValue(3000);
 
     await expect(analyticsResInterceptor.onRejected!(error)).rejects.toBe(error);
     expect(mockReportAnalytics).toHaveBeenCalledWith(

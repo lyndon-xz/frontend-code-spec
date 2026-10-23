@@ -1,15 +1,14 @@
 import path from 'node:path';
 
-import { isExemptFile } from '../../utils/is-exempt-file.js';
-import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
-import { DEFAULT_SRC_DIR } from '../../utils/source-layout.js';
-import { toPosixPath } from '../../utils/to-posix-path.js';
+import { DEFAULT_SRC_DIR } from '../../constants/source-globs.js';
+import { isExemptFile, toPosixPath } from '../../utils/is-exempt-file.js';
 
 // 选项默认值的唯一来源：schema 的 default 与 create 里的取值都引用此处
 const DEFAULT_OPTIONS = {
   srcDir: DEFAULT_SRC_DIR,
   containerDirs: ['pages'],
 };
+
 /*
  * 容器目录下的每个子目录各算一个模块（pages/search 与 pages/detail 互为跨模块），其余目录以第一段为模块。
  * 入参是目录或导入目标路径：导入目标的末段可能是目录（@/pages/detail），所以按目录看待。
@@ -27,8 +26,8 @@ export default {
   meta: {
     type: 'suggestion',
     docs: {
-      description: '模块内部使用相对路径，跨模块引用使用 @/ 别名',
-      url: ruleDocsUrl('import-path-boundary'),
+      description:
+        '同一模块用相对路径，跨模块用 @/。模块是 src 下第一级目录；pages 下每个子目录各算一个模块',
     },
     fixable: 'code',
     schema: [
@@ -52,9 +51,10 @@ export default {
       },
     ],
     messages: {
-      useRelative: '模块内部引用请使用相对路径，不要使用 @/ 别名（当前模块：{{module}}/）',
+      useRelative:
+        '同一模块内请用相对路径。模块是 src 下第一级目录；pages 下每个子目录各算一个模块（当前是 {{module}}/）',
       useAlias:
-        '跨模块引用请使用 @/ 别名（从 {{current}}/ 引用 {{target}}/），如：@/{{targetPath}}',
+        '跨模块请用 @/ 别名。模块是 src 下第一级目录；pages 下每个子目录各算一个模块（从 {{current}}/ 到 {{target}}/），如：@/{{targetPath}}',
     },
   },
   create(context) {

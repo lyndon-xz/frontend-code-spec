@@ -1,5 +1,5 @@
+import { SRC_FILE_GLOBS, TS_FILE_GLOBS } from '../constants/source-globs.js';
 import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
-import { SRC_FILE_GLOBS } from '../utils/source-layout.js';
 
 /*
  * no-restricted-syntax 后出现的配置会整条覆盖先出现的，所以各组选择器集中在这里，
@@ -58,13 +58,14 @@ const TS_SELECTORS = [...CATCH_SELECTORS, ...PERSIST_SELECTORS, ...TRY_JSX_SELEC
 
 export default [
   {
+    // 工具目录里的 .js 只拦空 catch。src 下的 .js 由最后一块覆盖，带上 persist 与内网地址
     files: ['**/*.js'],
     rules: {
       'no-restricted-syntax': ['error', ...CATCH_SELECTORS],
     },
   },
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['**/*.jsx', ...TS_FILE_GLOBS],
     rules: {
       'no-restricted-syntax': ['error', ...TS_SELECTORS],
     },

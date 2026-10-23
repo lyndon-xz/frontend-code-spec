@@ -34,5 +34,5 @@
     "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["dist", "node_modules", ".agents/tasks", ".worktrees"]
+  "exclude": ["dist", "node_modules"]
 }

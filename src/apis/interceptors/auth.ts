@@ -1,7 +1,5 @@
 import type { InternalAxiosRequestConfig } from 'axios';
 
-import { createSwappable } from '@/utils/swappable';
-
 import type { ReqInterceptor } from '../types/interceptors';
 
 export type AuthTokenProvider = () => string | null;
@@ -25,11 +23,15 @@ const defaultAuthTokenProvider: AuthTokenProvider = () => {
   }
 };
 
-const authTokenProviderSlot = createSwappable(defaultAuthTokenProvider);
+let readAuthToken: AuthTokenProvider = defaultAuthTokenProvider;
 
-export const setAuthTokenProvider = authTokenProviderSlot.set;
+export const setAuthTokenProvider = (provider: AuthTokenProvider) => {
+  readAuthToken = provider;
+};
 
-export const resetAuthTokenProvider = authTokenProviderSlot.reset;
+export const resetAuthTokenProvider = () => {
+  readAuthToken = defaultAuthTokenProvider;
+};
 
 /*
  * axios 在 url 为绝对地址时会跳过 baseURL，因此仅凭「实例是本服务的」并不能保证请求打到本服务。
@@ -51,7 +53,7 @@ const isSameOriginAsBaseUrl = (config: InternalAxiosRequestConfig): boolean => {
 
 export const authReqInterceptor: ReqInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
-    const token = authTokenProviderSlot.get()();
+    const token = readAuthToken();
     if (token != null && token !== '' && isSameOriginAsBaseUrl(config)) {
       config.headers.set('Authorization', `Bearer ${token}`);
     }

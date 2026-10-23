@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isFunctionValue } from '../../utils/is-function-value.js';
+import { isFunctionValue } from '../../utils/create-prefix-rule.js';
 
 describe('isFunctionValue', () => {
   it('箭头函数节点判定为函数', () => {

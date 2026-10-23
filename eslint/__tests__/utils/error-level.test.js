@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toErrorLevel } from '../../utils/to-error-level.js';
+import { toErrorLevel } from '../../utils/error-level.js';
 
 describe('toErrorLevel', () => {
   it('字符串与数字形态的 warn 升为 error', () => {

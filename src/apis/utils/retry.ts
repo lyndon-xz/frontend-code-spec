@@ -1,6 +1,6 @@
 import type { GenericAbortSignal } from 'axios';
 
-import type { RetryOptions } from '../types/config';
+import type { RetryOptions } from '../types/request/config';
 
 import { CANCELED_MESSAGE, RequestError, RequestErrorType, isRetryableError } from './error';
 
@@ -15,23 +15,14 @@ export const canRetry = (error: unknown, method: string, retry?: RetryOptions): 
   return retry?.isIdempotent ?? IDEMPOTENT_METHODS.has(method.toUpperCase());
 };
 
-const DEFAULT_RETRY_DELAY_MS = 300;
+const RETRY_DELAY_MS = 300;
 
-// 无封顶时 count 稍大就把请求挂住几分钟：300ms 退避到第 8 次已是 38s，累计近 80s
-const DEFAULT_MAX_RETRY_DELAY_MS = 5000;
+// 无封顶时第 8 次已是 38s，单次等待停在 5000ms
+const MAX_RETRY_DELAY_MS = 5000;
 
-/** 计算第 attempt 次重试（从 1 起）的等待时间 */
-export const getRetryDelay = (attempt: number, retry?: RetryOptions): number => {
-  const {
-    delayMs = DEFAULT_RETRY_DELAY_MS,
-    isBackoff = true,
-    maxDelayMs = DEFAULT_MAX_RETRY_DELAY_MS,
-  } = retry ?? {};
-
-  if (!isBackoff) {
-    return Math.min(delayMs, maxDelayMs);
-  }
-  return Math.min(delayMs * 2 ** (attempt - 1), maxDelayMs);
+/** 第 attempt 次重试（从 1 起）的等待时间：300ms 起指数退避，单次不超过 5000ms */
+export const getRetryDelay = (attempt: number): number => {
+  return Math.min(RETRY_DELAY_MS * 2 ** (attempt - 1), MAX_RETRY_DELAY_MS);
 };
 
 /** 退避等待，请求取消时立即中断 */

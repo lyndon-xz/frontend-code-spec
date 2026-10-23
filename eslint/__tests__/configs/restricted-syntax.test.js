@@ -12,6 +12,13 @@ const linter = new Linter({ configType: 'flat' });
 const config = [
   js.configs.recommended,
   {
+    files: ['**/*.js', '**/*.jsx'],
+    languageOptions: {
+      sourceType: 'module',
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tseslint.parser,
@@ -85,8 +92,12 @@ describe('restricted-syntax：persist 白名单', () => {
     expect(restrictedMessages(whitelist, 'src/store/c.ts')).toEqual([]);
   });
 
-  it('只对 ts / tsx 生效', () => {
-    expect(restrictedMessages(persistCall("{ name: 'hotel' }"), 'eslint/d.js')).toEqual([]);
+  it('src 下的 js 与 jsx 也报，工具目录里的 js 不报', () => {
+    const code = persistCall("{ name: 'hotel' }");
+
+    expect(restrictedMessages(code, 'src/store/a.js')).toHaveLength(1);
+    expect(restrictedMessages(code, 'src/store/a.jsx')).toHaveLength(1);
+    expect(restrictedMessages(code, 'eslint/d.js')).toEqual([]);
   });
 });
 
@@ -100,6 +111,8 @@ describe('restricted-syntax：try 包 JSX', () => {
       'Error Boundary',
     );
     expect(restrictedMessages(fragment, 'src/components/b/index.tsx')).toHaveLength(1);
+    expect(restrictedMessages(element, 'src/components/a/index.jsx')).toHaveLength(1);
+    expect(restrictedMessages(element, 'src/components/a/index.js')).toHaveLength(1);
   });
 
   it('try 块返回普通值时不报', () => {

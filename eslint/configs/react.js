@@ -1,9 +1,12 @@
 import eslintReact from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 
-import { toErrorLevel } from '../utils/to-error-level.js';
-
-const TS_FILES = ['**/*.ts', '**/*.tsx'];
+import {
+  COMPONENT_FILE_GLOBS,
+  SCRIPT_FILE_GLOBS,
+  TS_FILE_GLOBS,
+} from '../constants/source-globs.js';
+import { toErrorLevel } from '../utils/error-level.js';
 
 /*
  * @eslint-react 的推荐集里有一批与 react-hooks 同名的规则，两边都开会对同一处报两次。
@@ -19,18 +22,29 @@ const eslintReactPreset = eslintReact.configs['recommended-type-checked'];
 
 export default [
   {
-    files: TS_FILES,
+    files: SCRIPT_FILE_GLOBS,
+    settings: eslintReactPreset.settings,
+    rules: toErrorLevel(reactHooks.configs.flat['recommended-latest'].rules),
+  },
+  {
+    // recommended-type-checked 要类型信息，JS / JSX 跑不了
+    files: TS_FILE_GLOBS,
     settings: eslintReactPreset.settings,
     rules: {
-      ...toErrorLevel(reactHooks.configs.flat['recommended-latest'].rules),
       ...toErrorLevel(eslintReactPreset.rules),
       ...hooksDuplicates,
     },
   },
   {
-    files: ['**/*.tsx'],
+    files: COMPONENT_FILE_GLOBS,
     rules: {
       'custom/no-unnecessary-arrow-wrapper': 'error',
+    },
+  },
+  {
+    // props 接口只存在于 TSX
+    files: ['**/*.tsx'],
+    rules: {
       'custom/props-interface-naming': 'error',
     },
   },

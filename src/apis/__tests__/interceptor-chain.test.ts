@@ -7,6 +7,7 @@ import axios, {
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createGetRequest } from '@/apis/request';
+import { REQUEST_CAPABILITIES } from '@/apis/types/request/options';
 import {
   type AnalyticsSender,
   RequestStatus,
@@ -90,7 +91,7 @@ describe('拦截器链端到端', () => {
         buildResponse(config, { code: 0, message: 'ok', timestampMs: 1, data: { id: 7 } }),
       );
 
-    const run = createGetRequest(nextServiceCode());
+    const run = createGetRequest(nextServiceCode(), { capabilities: REQUEST_CAPABILITIES });
     const result = await run<{ id: number }>({ url: '/flight/detail' });
 
     expect(result).toEqual({ id: 7 });
@@ -104,12 +105,12 @@ describe('拦截器链端到端', () => {
     respond = (config) =>
       Promise.reject(new AxiosError('Network Error', AxiosError.ERR_NETWORK, config));
 
-    const run = createGetRequest(nextServiceCode());
+    const run = createGetRequest(nextServiceCode(), { capabilities: REQUEST_CAPABILITIES });
     const result = await run({ url: '/flight/list', retry: { count: 2 } });
 
     expect(result).toBeNull();
 
-    // 前两次错误带 __retriesLeft > 0 被网络拦截器静默，config 丢了就会连收三条提示
+    // 前两次错误的 retry.retriesLeft > 0 被网络拦截器静默，config 丢了就会连收三条提示
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledWith('网络连接失败，请检查网络后重试');
 
@@ -133,7 +134,7 @@ describe('拦截器链端到端', () => {
         buildResponse(config, { code: 4001, message: '余票不足', timestampMs: 1, data: null }),
       );
 
-    const run = createGetRequest(nextServiceCode());
+    const run = createGetRequest(nextServiceCode(), { capabilities: REQUEST_CAPABILITIES });
     const pending = run({ url: '/flight/book', retry: { count: 2 }, isErrorSwallowed: false });
 
     await expect(pending).rejects.toMatchObject({
@@ -148,7 +149,7 @@ describe('拦截器链端到端', () => {
     respond = (config) =>
       Promise.reject(new AxiosError('Network Error', AxiosError.ERR_NETWORK, config));
 
-    const run = createGetRequest(nextServiceCode());
+    const run = createGetRequest(nextServiceCode(), { capabilities: REQUEST_CAPABILITIES });
     await run({ url: '/flight/list', networkError: { isSilent: true } });
 
     expect(notify).not.toHaveBeenCalled();

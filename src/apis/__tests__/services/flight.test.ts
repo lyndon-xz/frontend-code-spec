@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createGetRequest, createPostRequest } from '@/apis/request';
 import {
   bookFlight,
   fetchFlightDetail,
@@ -7,6 +8,7 @@ import {
   SILENT_ERROR_HANDLING,
   THROWN_ERROR_HANDLING,
 } from '@/apis/services/flight';
+import { REQUEST_CAPABILITIES } from '@/apis/types/request/options';
 
 // get / post 在模块加载期即被创建，用 hoisted 让工厂能引用到间谍
 const { mockGet, mockPost } = vi.hoisted(() => ({ mockGet: vi.fn(), mockPost: vi.fn() }));
@@ -18,9 +20,19 @@ vi.mock('@/apis/request', () => ({
 
 describe('flight service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockGet.mockClear();
+    mockPost.mockClear();
     mockGet.mockResolvedValue(null);
     mockPost.mockResolvedValue(null);
+  });
+
+  it('创建请求时列入全部能力', () => {
+    expect(createGetRequest).toHaveBeenCalledWith('33251', {
+      capabilities: REQUEST_CAPABILITIES,
+    });
+    expect(createPostRequest).toHaveBeenCalledWith('33251', {
+      capabilities: REQUEST_CAPABILITIES,
+    });
   });
 
   it('fetchFlights 开启去重与重试并透传返回值', async () => {

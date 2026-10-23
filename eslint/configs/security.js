@@ -1,8 +1,10 @@
 import noUnsanitized from 'eslint-plugin-no-unsanitized';
 
+import { COMPONENT_FILE_GLOBS, SCRIPT_FILE_GLOBS } from '../constants/source-globs.js';
+
 export default [
   {
-    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
+    files: SCRIPT_FILE_GLOBS,
     plugins: {
       'no-unsanitized': noUnsanitized,
     },
@@ -17,7 +19,7 @@ export default [
     },
   },
   {
-    files: ['**/*.tsx'],
+    files: COMPONENT_FILE_GLOBS,
     rules: {
       // 要渲染富文本时先在服务端或用净化库清洗，再走受控组件
       '@eslint-react/dom-no-dangerously-set-innerhtml': 'error',

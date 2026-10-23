@@ -1,8 +1,8 @@
 import checkFile from 'eslint-plugin-check-file';
 import noBarrelFiles from 'eslint-plugin-no-barrel-files';
 
+import { DEFAULT_SRC_DIR, SRC_FILE_GLOBS } from '../constants/source-globs.js';
 import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
-import { DEFAULT_SRC_DIR, SRC_FILE_GLOBS } from '../utils/source-layout.js';
 
 export default [
   {
@@ -15,12 +15,11 @@ export default [
       'custom/import-path-boundary': 'error',
       // 转发导出不限于 index：任意文件写 export * 或 export { x } from 都报
       'no-barrel-files/no-barrel-files': 'error',
-      'custom/require-tsx-default-export': 'error',
     },
   },
   {
     // 公共库目录的 index 不看内容，文件存在本身就是 barrel 入口；判据是直接父目录，与离 src 多远无关
-    files: [`${DEFAULT_SRC_DIR}/**/{constants,utils,types,hooks}/index.{ts,tsx}`],
+    files: [`${DEFAULT_SRC_DIR}/**/{constants,utils,types,hooks}/index.{js,jsx,ts,tsx}`],
     plugins: {
       'check-file': checkFile,
     },
@@ -32,7 +31,7 @@ export default [
     },
   },
   {
-    // tsx 的默认导出由 require-tsx-default-export 反向要求
+    // .ts 只用具名导出。.tsx 不在这里要求默认导出：列配置这类文件含 JSX，主体不是组件
     files: [`${DEFAULT_SRC_DIR}/**/*.ts`],
     ignores: EXEMPT_GLOBS,
     rules: {

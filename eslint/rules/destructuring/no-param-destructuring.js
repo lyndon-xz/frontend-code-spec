@@ -1,11 +1,8 @@
-import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
-
 export default {
   meta: {
     type: 'problem',
     docs: {
       description: '禁止在函数签名中解构，请在函数体内解构',
-      url: ruleDocsUrl('no-param-destructuring'),
     },
     schema: [],
     messages: {

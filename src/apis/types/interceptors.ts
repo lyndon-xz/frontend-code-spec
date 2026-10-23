@@ -6,7 +6,7 @@ export interface ReqInterceptor {
   onRejected?: (error: unknown) => Promise<unknown>;
 }
 
-/** onRejected 约束同上 */
+/** onRejected 必须继续 reject 或抛出，否则错误在此被吞 */
 export interface ResInterceptor {
   onFulfilled?: (response: AxiosResponse) => AxiosResponse;
   onRejected?: (error: unknown) => Promise<unknown>;

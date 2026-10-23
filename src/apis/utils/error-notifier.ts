@@ -1,20 +1,22 @@
 import { message } from 'antd';
 
-import { createSwappable } from '@/utils/swappable';
-
-/** 提示实现可替换，避免拦截器直接依赖 UI 库 */
+/** 提示实现可替换，拦截器只调用 notifyError */
 export type ErrorNotifier = (errorMessage: string) => void;
 
 const defaultNotifier: ErrorNotifier = (errorMessage) => {
   message.error(errorMessage);
 };
 
-const notifierSlot = createSwappable(defaultNotifier);
+let notify: ErrorNotifier = defaultNotifier;
 
-export const setErrorNotifier = notifierSlot.set;
+export const setErrorNotifier = (notifier: ErrorNotifier) => {
+  notify = notifier;
+};
 
-export const resetErrorNotifier = notifierSlot.reset;
+export const resetErrorNotifier = () => {
+  notify = defaultNotifier;
+};
 
 export const notifyError = (errorMessage: string) => {
-  notifierSlot.get()(errorMessage);
+  notify(errorMessage);
 };

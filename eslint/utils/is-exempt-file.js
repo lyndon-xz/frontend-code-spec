@@ -1,4 +1,6 @@
-import { toPosixPath } from './to-posix-path.js';
+export function toPosixPath(filename) {
+  return filename.replaceAll('\\', '/');
+}
 
 // 豁免判定的唯一来源：规则走 isExemptFile，第三方规则用 EXEMPT_GLOBS
 

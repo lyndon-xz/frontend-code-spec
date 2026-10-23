@@ -1,8 +1,8 @@
 {
   "name": "@lyndon/frontend-code-spec",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "为业务仓库制定 lint 规则与代码写法的源头仓库：自定义 ESLint 规则集 + 全链路 lint 工具链 + 请求层范式样板，不发布为 npm 包",
+  "description": "为业务仓库制定 lint 规则与代码写法的源头仓库：自定义 ESLint 规则集 + 全链路 lint 工具链 + 工具判不了的写法约定 + 请求层范式样板，不发布为 npm 包",
   "license": "MIT",
   "author": {
     "name": "Lyndon",
@@ -20,12 +20,11 @@
     "lint:pkg": "sort-package-json --check",
     "lint:style": "stylelint \"**/*.{scss,css}\" --allow-empty-input",
     "lint:style:fix": "stylelint \"**/*.{scss,css}\" --fix --allow-empty-input",
-    "lint:unused": "knip",
     "prepare": "husky",
     "test": "vitest",
     "test:cov": "vitest run --coverage",
     "type-check": "tsc --noEmit",
-    "verify": "pnpm type-check && pnpm lint && pnpm lint:filename && pnpm lint:style && pnpm lint:md && pnpm lint:pkg && pnpm lint:unused && pnpm format:check && pnpm test:cov"
+    "verify": "pnpm type-check && pnpm lint && pnpm lint:filename && pnpm lint:style && pnpm lint:md && pnpm lint:pkg && pnpm format:check && pnpm test:cov"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
@@ -60,7 +59,6 @@
     "globals": "^17.8.0",
     "husky": "^9.1.7",
     "jsdom": "^30.0.1",
-    "knip": "6.42.1",
     "lint-staged": "^17.3.0",
     "prettier": "^3.9.6",
     "react": "^19.2.4",

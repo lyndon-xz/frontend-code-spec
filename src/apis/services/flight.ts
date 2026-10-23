@@ -1,5 +1,6 @@
 import { createGetRequest, createPostRequest } from '../request';
-import type { EnhancedRequestConfig } from '../types/config';
+import type { EnhancedRequestConfig } from '../types/request/config';
+import { REQUEST_CAPABILITIES } from '../types/request/options';
 
 /**
  * 排序取值的唯一来源：数组给运行时遍历（渲染排序选项、校验 URL 参数），类型由它派生。
@@ -84,8 +85,8 @@ const FLIGHT_LIST_URL = '/flight/list';
 const FLIGHT_DETAIL_URL = '/flight/detail';
 const FLIGHT_BOOK_URL = '/flight/book';
 
-const get = createGetRequest(FLIGHT_SERVICE_CODE);
-const post = createPostRequest(FLIGHT_SERVICE_CODE);
+const get = createGetRequest(FLIGHT_SERVICE_CODE, { capabilities: REQUEST_CAPABILITIES });
+const post = createPostRequest(FLIGHT_SERVICE_CODE, { capabilities: REQUEST_CAPABILITIES });
 
 /** 错误处置策略由调用方按场景选，默认走「提示 + 吞错返回 null」 */
 export type ErrorHandling = Pick<

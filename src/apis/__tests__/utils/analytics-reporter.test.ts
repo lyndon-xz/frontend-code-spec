@@ -34,9 +34,7 @@ describe('reportAnalytics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetAnalyticsSender();
-    vi.spyOn(console, 'group').mockImplementation(() => {});
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -48,9 +46,10 @@ describe('reportAnalytics', () => {
 
     reportAnalytics(buildAnalyticsData());
 
-    expect(console.group).toHaveBeenCalledWith('[埋点上报] GET /x');
-    expect(console.log).toHaveBeenCalledWith('返回数据:', { ok: true });
-    expect(console.groupEnd).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledWith(
+      '[埋点上报] GET /x',
+      expect.objectContaining({ 返回数据: { ok: true } }),
+    );
   });
 
   it('开发环境失败请求输出错误信息而非返回数据', () => {
@@ -64,8 +63,14 @@ describe('reportAnalytics', () => {
       }),
     );
 
-    expect(console.log).toHaveBeenCalledWith('错误信息:', '业务失败');
-    expect(console.log).not.toHaveBeenCalledWith('返回数据:', expect.anything());
+    expect(console.warn).toHaveBeenCalledWith(
+      '[埋点上报] GET /x',
+      expect.objectContaining({ 错误信息: '业务失败' }),
+    );
+    expect(console.warn).not.toHaveBeenCalledWith(
+      '[埋点上报] GET /x',
+      expect.objectContaining({ 返回数据: expect.anything() }),
+    );
   });
 
   it('生产环境不打印控制台日志', () => {
@@ -73,8 +78,7 @@ describe('reportAnalytics', () => {
 
     reportAnalytics(buildAnalyticsData());
 
-    expect(console.group).not.toHaveBeenCalled();
-    expect(console.log).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalled();
   });
 
   it('生产环境走可注入的上报实现', () => {
@@ -86,7 +90,7 @@ describe('reportAnalytics', () => {
     reportAnalytics(analyticsData);
 
     expect(sender).toHaveBeenCalledWith(analyticsData);
-    expect(console.group).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalled();
   });
 });
 

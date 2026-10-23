@@ -1,5 +1,3 @@
-import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
-
 /*
  * 只校验类型成员：它们是跨端传递的契约，单位歧义在这里代价最大；
  * 局部变量与函数参数生命周期短、上下文就在眼前，校验只会铺噪音。
@@ -87,7 +85,6 @@ export default {
     docs: {
       description:
         '类型成员中的数值量纲字段（金额 / 时长 / 时间点 / 长度 / 数据量 / 质量）必须带单位后缀，如 fee 写作 feeCents、timeout 写作 timeoutMs',
-      url: ruleDocsUrl('require-unit-suffix'),
     },
     schema: [
       {

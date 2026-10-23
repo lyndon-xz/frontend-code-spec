@@ -1,6 +1,6 @@
 import regexp from 'eslint-plugin-regexp';
 
-import { toErrorLevel } from '../utils/to-error-level.js';
+import { toErrorLevel } from '../utils/error-level.js';
 
 const regexpPreset = regexp.configs['flat/recommended'];
 

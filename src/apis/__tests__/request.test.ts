@@ -1,6 +1,7 @@
 import axios, { AxiosHeaders, type AxiosInstance, type Method } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { authReqInterceptor } from '@/apis/interceptors/auth';
 import {
   createDeleteRequest,
   createGetRequest,
@@ -8,7 +9,8 @@ import {
   createPutRequest,
   createRequest,
 } from '@/apis/request';
-import type { EnhancedRequestConfig } from '@/apis/types/config';
+import type { EnhancedRequestConfig } from '@/apis/types/request/config';
+import { REQUEST_CAPABILITIES, type CreateRequestOptions } from '@/apis/types/request/options';
 import { registerDedupe } from '@/apis/utils/dedupe';
 import { RequestError, RequestErrorType } from '@/apis/utils/error';
 import { delay } from '@/apis/utils/retry';
@@ -71,12 +73,19 @@ const nextServiceCode = () => {
   return `svc-${codeSeq}`;
 };
 
+const withCapabilities = (
+  options: Omit<CreateRequestOptions, 'capabilities'> = {},
+): CreateRequestOptions => ({
+  capabilities: REQUEST_CAPABILITIES,
+  ...options,
+});
+
 // 便捷创建：返回请求函数与其底层 fake 实例，实例的 request 由用例自行编排
 const setupRequest = (options: { method?: Method } = {}) => {
   const { method = 'GET' } = options;
   const instance = buildFakeInstance();
   mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
-  const run = createRequest(nextServiceCode(), method);
+  const run = createRequest(nextServiceCode(), method, withCapabilities());
   return { instance, run };
 };
 
@@ -108,14 +117,23 @@ describe('createRequest', () => {
     await expect(run({ url: '/x', isErrorSwallowed: false })).rejects.toBe(error);
   });
 
-  it('注入剩余重试次数 __retriesLeft', async () => {
+  it('count 保持调用方传入的次数，剩余次数写在 retriesLeft', async () => {
     const { instance, run } = setupRequest();
-    instance.request.mockResolvedValue({ data: null });
+    const retry = { count: 2 };
+    instance.request
+      .mockRejectedValueOnce(new RequestError(RequestErrorType.Network, '网络错误'))
+      .mockResolvedValueOnce({ data: { ok: true } });
 
-    await run({ url: '/x', retry: { count: 2 } });
+    await expect(run({ url: '/x', retry })).resolves.toEqual({ ok: true });
 
-    expect(instance.request).toHaveBeenCalledWith(
-      expect.objectContaining({ __retriesLeft: 2, method: 'GET' }),
+    expect(retry).toEqual({ count: 2 });
+    expect(instance.request).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ retry: { count: 2, retriesLeft: 2 }, method: 'GET' }),
+    );
+    expect(instance.request).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ retry: { count: 2, retriesLeft: 1 }, method: 'GET' }),
     );
   });
 
@@ -137,6 +155,17 @@ describe('createRequest', () => {
 
       await expect(run({ url: '/x', retry: { count: 1 } })).resolves.toBeNull();
       expect(instance.request).toHaveBeenCalledTimes(2);
+    });
+
+    it('显式声明不幂等时幂等方法也不重试', async () => {
+      const { instance, run } = setupRequest();
+      instance.request.mockRejectedValue(new RequestError(RequestErrorType.Timeout, '超时'));
+
+      await expect(
+        run({ url: '/x', retry: { count: 3, isIdempotent: false } }),
+      ).resolves.toBeNull();
+      expect(instance.request).toHaveBeenCalledTimes(1);
+      expect(mockDelay).not.toHaveBeenCalled();
     });
 
     it('非幂等方法即使配了 retry 也不重试', async () => {
@@ -185,7 +214,7 @@ describe('createRequest', () => {
       const instance = buildFakeInstance();
       mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
       const serviceCode = nextServiceCode();
-      const run = createGetRequest(serviceCode);
+      const run = createGetRequest(serviceCode, withCapabilities());
       instance.request.mockResolvedValue({ data: null });
 
       await run({ url: '/x', isDeduped: true, params: { page: 1 } });
@@ -250,61 +279,26 @@ describe('createRequest', () => {
     });
   });
 
-  describe('实例缓存与配置漂移告警', () => {
+  describe('实例缓存', () => {
     it('同一 serviceCode 复用同一实例，仅创建一次', () => {
       const serviceCode = nextServiceCode();
       mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
 
-      createGetRequest(serviceCode);
-      createPostRequest(serviceCode);
+      createGetRequest(serviceCode, withCapabilities());
+      createPostRequest(serviceCode, withCapabilities());
 
       expect(mockCreate).toHaveBeenCalledTimes(1);
-    });
-
-    it('非开发环境命中缓存时静默跳过漂移告警', () => {
-      mockGetEnvironment.mockReturnValue(Environment.Production);
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const serviceCode = nextServiceCode();
-      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
-
-      createGetRequest(serviceCode);
-      createPostRequest(serviceCode);
-
-      expect(warnSpy).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
-    });
-
-    it('开发环境再次创建且实例配置不同时告警', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const serviceCode = nextServiceCode();
-      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
-
-      createGetRequest(serviceCode, { timeout: 3000 });
-      createPostRequest(serviceCode, { timeout: 8000 });
-
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(`serviceCode "${serviceCode}"`));
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      warnSpy.mockRestore();
-    });
-
-    it('开发环境 headers 不同时同样触发漂移告警', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const serviceCode = nextServiceCode();
-      mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
-
-      createGetRequest(serviceCode, { headers: { 'Content-Type': 'application/json' } });
-      createPostRequest(serviceCode, { headers: { 'Content-Type': 'text/plain' } });
-
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      warnSpy.mockRestore();
     });
 
     it('headers 传 AxiosHeaders 实例时与默认头合并且不丢键', () => {
       mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
 
-      createGetRequest(nextServiceCode(), {
-        headers: new AxiosHeaders({ 'X-Trace-Id': 'trace-1', 'Content-Type': 'text/plain' }),
-      });
+      createGetRequest(
+        nextServiceCode(),
+        withCapabilities({
+          headers: new AxiosHeaders({ 'X-Trace-Id': 'trace-1', 'Content-Type': 'text/plain' }),
+        }),
+      );
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -313,17 +307,65 @@ describe('createRequest', () => {
       );
     });
 
-    it('开发环境实例配置相同时不告警', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('能力名单顺序不同仍复用同一实例', () => {
       const serviceCode = nextServiceCode();
       mockCreate.mockReturnValueOnce(buildFakeInstance() as unknown as AxiosInstance);
 
-      createGetRequest(serviceCode, { timeout: 5000 });
-      createPostRequest(serviceCode, { timeout: 5000 });
+      createGetRequest(serviceCode, { capabilities: ['sso', 'auth'] });
+      createPostRequest(serviceCode, { capabilities: ['auth', 'sso'] });
 
-      expect(warnSpy).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
+      expect(mockCreate).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('缺少 capabilities 时类型不允许创建', () => {
+    const createWithoutCapabilities = () => {
+      // @ts-expect-error capabilities 是必填项，缺省不能当成全开
+      createGetRequest(nextServiceCode());
+    };
+
+    expect(createWithoutCapabilities).toThrow();
+  });
+
+  it('只开 auth 时不挂其余拦截器，重试、去重与吞错都不生效', async () => {
+    const instance = buildFakeInstance();
+    mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
+    const run = createGetRequest(nextServiceCode(), { capabilities: ['auth'] });
+    const error = new RequestError(RequestErrorType.Network, '网络错误');
+    instance.request.mockRejectedValue(error);
+
+    await expect(
+      run({ url: '/x', retry: { count: 2 }, isDeduped: true, isErrorSwallowed: true }),
+    ).rejects.toBe(error);
+
+    expect(instance.interceptors.request.use).toHaveBeenCalledTimes(1);
+    expect(instance.interceptors.request.use).toHaveBeenCalledWith(
+      authReqInterceptor.onFulfilled,
+      authReqInterceptor.onRejected,
+    );
+    expect(instance.interceptors.response.use).not.toHaveBeenCalled();
+    expect(instance.request).toHaveBeenCalledTimes(1);
+    expect(instance.request.mock.calls[0]?.[0]).not.toHaveProperty('__requestId');
+    expect(mockRegisterDedupe).not.toHaveBeenCalled();
+    expect(mockDelay).not.toHaveBeenCalled();
+  });
+
+  it('同一 serviceCode 的两套能力各创建一个实例', () => {
+    const serviceCode = nextServiceCode();
+    const authOnly = buildFakeInstance();
+    const full = buildFakeInstance();
+    mockCreate
+      .mockReturnValueOnce(authOnly as unknown as AxiosInstance)
+      .mockReturnValueOnce(full as unknown as AxiosInstance);
+
+    createGetRequest(serviceCode, { capabilities: ['auth'] });
+    createGetRequest(serviceCode, withCapabilities());
+
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(authOnly.interceptors.request.use).toHaveBeenCalledTimes(1);
+    expect(authOnly.interceptors.response.use).not.toHaveBeenCalled();
+    expect(full.interceptors.request.use).toHaveBeenCalledTimes(2);
+    expect(full.interceptors.response.use).toHaveBeenCalledTimes(4);
   });
 });
 
@@ -334,11 +376,14 @@ describe('按 HTTP 方法创建请求', () => {
   });
 
   const runWithMethod = async (
-    factory: (serviceCode: string) => (config: EnhancedRequestConfig) => Promise<unknown>,
+    factory: (
+      serviceCode: string,
+      options: CreateRequestOptions,
+    ) => (config: EnhancedRequestConfig) => Promise<unknown>,
   ) => {
     const instance = buildFakeInstance();
     mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
-    const run = factory(nextServiceCode());
+    const run = factory(nextServiceCode(), withCapabilities());
     instance.request.mockResolvedValue({ data: null });
     await run({ url: '/x' });
     return instance.request.mock.calls[0]![0] as { method: string };
@@ -363,7 +408,7 @@ describe('按 HTTP 方法创建请求', () => {
   it('createRequest 可直接指定任意方法', async () => {
     const instance = buildFakeInstance();
     mockCreate.mockReturnValueOnce(instance as unknown as AxiosInstance);
-    const run = createRequest(nextServiceCode(), 'PATCH');
+    const run = createRequest(nextServiceCode(), 'PATCH', withCapabilities());
     instance.request.mockResolvedValue({ data: null });
 
     await run({ url: '/x' });

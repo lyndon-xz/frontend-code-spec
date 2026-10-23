@@ -1,119 +1,38 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type Method } from 'axios';
+import type { AxiosInstance, Method } from 'axios';
 
-import { Environment } from '@/constants/environment';
-import { getEnvironment } from '@/utils/environment';
-
-import { analyticsReqInterceptor, analyticsResInterceptor } from './interceptors/analytics';
-import { authReqInterceptor } from './interceptors/auth';
-import { businessErrorInterceptor } from './interceptors/error/business';
-import { networkErrorInterceptor } from './interceptors/error/network';
-import { ssoInterceptor } from './interceptors/sso';
-import type { EnhancedRequestConfig, InstanceConfig } from './types/config';
-import { generateBaseUrl } from './utils/base-url';
+import { createCapabilitySet, requestIdFor } from './capability';
+import { openInstance } from './instance';
+import type { EnhancedRequestConfig } from './types/request/config';
+import type { CreateRequestOptions } from './types/request/options';
 import { registerDedupe } from './utils/dedupe';
 import { isCanceledError } from './utils/error';
 import { canRetry, delay, getRetryDelay } from './utils/retry';
-import { generateRequestId } from './utils/trace';
 
-/** 实例级可覆盖配置，同一 serviceCode 仅首次创建时生效 */
-export type RequestInstanceOptions = Pick<
-  AxiosRequestConfig,
-  'timeout' | 'withCredentials' | 'headers'
->;
-
-const DEFAULT_TIMEOUT_MS = 3000;
-const DEFAULT_HEADERS = { 'Content-Type': 'application/json' };
-
-const serviceInstances = new Map<string, AxiosInstance>();
-const serviceSignatures = new Map<string, string>();
-
-const warnOnConfigDrift = (serviceCode: string, signature: string) => {
-  if (getEnvironment() !== Environment.Development) {
-    return;
-  }
-  if (serviceSignatures.get(serviceCode) === signature) {
-    return;
-  }
-
-  console.warn(
-    `[request] serviceCode "${serviceCode}" 已用首次配置创建实例，本次不同的实例级配置将被忽略`,
-  );
-};
-
-const resolveServiceInstance = (config: InstanceConfig): AxiosInstance => {
-  const {
-    serviceCode,
-    timeout = DEFAULT_TIMEOUT_MS,
-    withCredentials = true,
-    headers,
-    reqInterceptors,
-    resInterceptors,
-    ...restConfig
-  } = config;
-
-  // eslint-disable-next-line @typescript-eslint/no-misused-spread -- AxiosHeaders 把每个头存成自有可枚举属性，展开不丢键，见 request.test.ts 的 AxiosHeaders 用例
-  const mergedHeaders = { ...DEFAULT_HEADERS, ...headers };
-
-  const signature = JSON.stringify({
-    timeout,
-    withCredentials,
-    headers: mergedHeaders,
-    restConfig,
-  });
-
-  const existing = serviceInstances.get(serviceCode);
-
-  if (existing) {
-    warnOnConfigDrift(serviceCode, signature);
-    return existing;
-  }
-
-  // 显式键顺序与上面的解构、签名对象保持一致，便于三处对照读；...restConfig 必须在前，否则会覆盖显式键
-  const instance = axios.create({
-    ...restConfig,
-    timeout,
-    withCredentials,
-    headers: mergedHeaders,
-    baseURL: generateBaseUrl(serviceCode),
-  });
-
-  reqInterceptors.forEach((interceptor) => {
-    const { onFulfilled, onRejected } = interceptor;
-
-    instance.interceptors.request.use(onFulfilled, onRejected);
-  });
-
-  resInterceptors.forEach((interceptor) => {
-    const { onFulfilled, onRejected } = interceptor;
-
-    instance.interceptors.response.use(onFulfilled, onRejected);
-  });
-
-  serviceInstances.set(serviceCode, instance);
-  serviceSignatures.set(serviceCode, signature);
-  return instance;
-};
-
-interface RetryContext {
+interface AttemptContext {
   instance: AxiosInstance;
   config: EnhancedRequestConfig;
   method: Method;
   signal?: EnhancedRequestConfig['signal'];
   maxRetries: number;
+  requestId?: string;
 }
 
-const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
-  const { instance, config, method, signal, maxRetries } = context;
-  // 循环外生成，保证重试共用同一个 requestId
-  const requestId = generateRequestId(method, config.url);
+const sendAttempt = async <T>(context: AttemptContext): Promise<T> => {
+  const { instance, config, method, signal, maxRetries, requestId } = context;
 
   for (let attempt = 0; ; attempt += 1) {
     const requestConfig = {
       ...config,
       method,
       signal,
-      __requestId: requestId,
-      __retriesLeft: maxRetries - attempt,
+      ...(requestId == null ? {} : { __requestId: requestId }),
+      /*
+       * 复制 retry，写入这一次之后还剩几次。count 仍是调用方传入的最多几次。
+       * 网络错误拦截器看剩余次数决定先不弹提示。调用方原来的对象不改。
+       */
+      ...(config.retry == null
+        ? {}
+        : { retry: { ...config.retry, retriesLeft: maxRetries - attempt } }),
     };
 
     try {
@@ -126,35 +45,20 @@ const sendWithRetry = async <T>(context: RetryContext): Promise<T> => {
       if (attempt >= maxRetries || !canRetry(error, method, retry)) {
         throw error;
       }
-      await delay(getRetryDelay(attempt + 1, retry), signal);
+      await delay(getRetryDelay(attempt + 1), signal);
     }
   }
 };
-
-// 响应拦截器顺序不可调：归一 → 登录态 → 业务码拆包 → 上报
-const resolveInstance = (
-  serviceCode: string,
-  options: RequestInstanceOptions = {},
-): AxiosInstance =>
-  resolveServiceInstance({
-    serviceCode,
-    ...options,
-    reqInterceptors: [analyticsReqInterceptor, authReqInterceptor],
-    resInterceptors: [
-      networkErrorInterceptor,
-      ssoInterceptor,
-      businessErrorInterceptor,
-      analyticsResInterceptor,
-    ],
-  });
 
 /** 剥离业务信封后只返回 data */
 export const createRequest = (
   serviceCode: string,
   method: Method,
-  options?: RequestInstanceOptions,
+  options: CreateRequestOptions,
 ) => {
-  const instance = resolveInstance(serviceCode, options);
+  const { capabilities, timeout, withCredentials, headers } = options;
+  const enabled = createCapabilitySet(capabilities);
+  const instance = openInstance(serviceCode, capabilities, { timeout, withCredentials, headers });
 
   return async <T = unknown>(config: EnhancedRequestConfig): Promise<T | null> => {
     const {
@@ -166,23 +70,31 @@ export const createRequest = (
       signal: userSignal,
       isErrorSwallowed = true,
     } = config;
-    // 调用方自带 signal 时不接管取消控制
+    // 调用方自带 signal 时不接管取消控制；未列入 dedupe 时忽略 isDeduped
     const dedupe =
-      isDeduped && userSignal == null
+      enabled.has('dedupe') && isDeduped && userSignal == null
         ? registerDedupe({ serviceCode, method, url, params, data })
         : undefined;
     const signal = userSignal ?? dedupe?.signal;
 
     try {
-      const maxRetries = retry?.count ?? 0;
+      const maxRetries = enabled.has('retry') ? (retry?.count ?? 0) : 0;
 
-      return await sendWithRetry<T>({ instance, config, method, signal, maxRetries });
+      return await sendAttempt<T>({
+        instance,
+        config,
+        method,
+        signal,
+        maxRetries,
+        requestId: requestIdFor(enabled, method, url),
+      });
     } catch (error) {
       /*
        * 取消不算失败，一律上抛：被同签名新请求取消时若也返回 null，调用方就分不清
        * 「这次没成功」和「这次已被更新的请求接替」，把它按失败渲染成空态是错的。
+       * 未列入 errorSwallow 时，其余错误也上抛。
        */
-      if (isErrorSwallowed && !isCanceledError(error)) {
+      if (enabled.has('errorSwallow') && isErrorSwallowed && !isCanceledError(error)) {
         return null;
       }
       throw error;
@@ -192,11 +104,11 @@ export const createRequest = (
   };
 };
 
-export const createGetRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+export const createGetRequest = (serviceCode: string, options: CreateRequestOptions) =>
   createRequest(serviceCode, 'GET', options);
-export const createPostRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+export const createPostRequest = (serviceCode: string, options: CreateRequestOptions) =>
   createRequest(serviceCode, 'POST', options);
-export const createPutRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+export const createPutRequest = (serviceCode: string, options: CreateRequestOptions) =>
   createRequest(serviceCode, 'PUT', options);
-export const createDeleteRequest = (serviceCode: string, options?: RequestInstanceOptions) =>
+export const createDeleteRequest = (serviceCode: string, options: CreateRequestOptions) =>
   createRequest(serviceCode, 'DELETE', options);

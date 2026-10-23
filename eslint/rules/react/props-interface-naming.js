@@ -1,6 +1,5 @@
+import { isFunctionValue } from '../../utils/create-prefix-rule.js';
 import { isExemptFile } from '../../utils/is-exempt-file.js';
-import { isFunctionValue } from '../../utils/is-function-value.js';
-import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
 
 /*
  * 改名要一次改到位：声明本身与本文件内所有引用都收进来。
@@ -35,7 +34,6 @@ export default {
     type: 'suggestion',
     docs: {
       description: 'Props 接口必须使用「组件名Props」命名格式',
-      url: ruleDocsUrl('props-interface-naming'),
     },
     fixable: 'code',
     schema: [],

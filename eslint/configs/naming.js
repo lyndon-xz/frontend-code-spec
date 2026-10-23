@@ -1,7 +1,7 @@
 import checkFile from 'eslint-plugin-check-file';
 
+import { SCRIPT_FILE_GLOBS, SRC_FILE_GLOBS, TS_FILE_GLOBS } from '../constants/source-globs.js';
 import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
-import { SRC_FILE_GLOBS } from '../utils/source-layout.js';
 
 const BOOLEAN_PREFIXES = ['is', 'should', 'has', 'can', 'did', 'will'];
 
@@ -13,7 +13,7 @@ const COLLECTION_SUFFIX = { regex: '(Array|List)$', match: false };
 
 export default [
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: TS_FILE_GLOBS,
     rules: {
       '@typescript-eslint/naming-convention': [
         'error',
@@ -146,7 +146,7 @@ export default [
   },
   {
     // 哪些文件豁免由规则内 isExemptFile 判定
-    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
+    files: SCRIPT_FILE_GLOBS,
     rules: {
       'custom/no-handle-prefix': 'error',
       'custom/no-generic-param-name': 'error',
@@ -158,7 +158,6 @@ export default [
     files: SRC_FILE_GLOBS,
     rules: {
       'custom/ref-suffix-naming': 'error',
-      'custom/status-field-naming': 'error',
       'custom/require-unit-suffix': 'error',
     },
   },
@@ -176,10 +175,10 @@ export default [
       'check-file/filename-blocklist': [
         'error',
         {
-          '**/{columns,form-config,utils,helpers,helper,common,misc,io,defaults,types,constants}.{ts,tsx}':
-            '<业务领域名>.ts',
-          '**/*-{radio,button,modal,dialog,drawer,popup,tooltip,type,enum,config,constant,interface,util,utils}.{ts,tsx}':
-            '<业务领域名>.ts',
+          '**/{columns,form-config,utils,helpers,helper,common,misc,io,defaults,types,constants}.{js,jsx,ts,tsx}':
+            '<业务领域名>',
+          '**/*-{radio,button,modal,dialog,drawer,popup,tooltip,type,enum,config,constant,interface,util,utils}.{js,jsx,ts,tsx}':
+            '<业务领域名>',
         },
         {
           errorMessage:

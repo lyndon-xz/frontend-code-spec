@@ -1,19 +1,18 @@
 import tseslint from 'typescript-eslint';
 
+import { TS_FILE_GLOBS } from '../constants/source-globs.js';
 import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
-
-const TS_FILES = ['**/*.ts', '**/*.tsx'];
 
 // 预设里的 base 块不带 files，不收窄就会把 TS 解析器挂到 .js 上
 const strictPresets = [
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-].map((config) => ({ ...config, files: TS_FILES }));
+].map((config) => ({ ...config, files: TS_FILE_GLOBS }));
 
 export default [
   ...strictPresets,
   {
-    files: TS_FILES,
+    files: TS_FILE_GLOBS,
     rules: {
       // 关闭原生规则，用 TS 版避免把枚举成员、类型参数误报成遮蔽
       'no-unused-vars': 'off',
@@ -47,11 +46,13 @@ export default [
         },
       ],
 
-      // 防 0 && 渲染陷阱
+      /*
+       * 纯 string、number 和可空 number 不当条件，0 被当成没有时会从渲染里消失。
+       * 可空 string 放行：当条件就是没有内容，不展示。
+       */
       '@typescript-eslint/strict-boolean-expressions': [
         'error',
         {
-          // 可空类型放行 truthiness；纯 string / number 仍禁，空串与 0 多半是合法值
           allowString: false,
           allowNumber: false,
           allowNullableObject: true,
@@ -87,7 +88,7 @@ export default [
   },
   {
     // 测试常用 as unknown as Mock 造桩，故从豁免列表取 glob 排除
-    files: TS_FILES,
+    files: TS_FILE_GLOBS,
     ignores: EXEMPT_GLOBS,
     rules: {
       // assertionStyle: never 始终放行 as const

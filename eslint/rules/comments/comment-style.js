@@ -1,5 +1,3 @@
-import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
-
 function isWithinExportDeclaration(node) {
   let current = node;
   while (current) {
@@ -149,7 +147,6 @@ export default {
     docs: {
       description:
         '根据导出语义强制注释风格：export 上方用 /** */，其余位置单行用 //、多行或多段堆叠用 /* */；注释须在目标代码上方独占一行',
-      url: ruleDocsUrl('comment-style'),
     },
     fixable: 'code',
     schema: [],

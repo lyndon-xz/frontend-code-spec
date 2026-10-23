@@ -1,6 +1,8 @@
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import sonarjs from 'eslint-plugin-sonarjs';
 
+import { SCRIPT_FILE_GLOBS } from '../constants/source-globs.js';
+
 export default [
   {
     // warn 不会让 CI 失败，故提到 error
@@ -9,7 +11,7 @@ export default [
     },
   },
   {
-    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
+    files: SCRIPT_FILE_GLOBS,
     plugins: {
       '@eslint-community/eslint-comments': eslintComments,
       sonarjs,

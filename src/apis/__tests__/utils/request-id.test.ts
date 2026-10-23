@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { generateRequestId } from '@/apis/utils/trace';
+import { generateRequestId } from '@/apis/utils/request-id';
 
 describe('generateRequestId', () => {
   afterEach(() => {

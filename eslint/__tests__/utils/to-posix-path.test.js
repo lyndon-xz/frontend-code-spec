@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toPosixPath } from '../../utils/to-posix-path.js';
+import { toPosixPath } from '../../utils/is-exempt-file.js';
 
 describe('toPosixPath', () => {
   it('把反斜杠归一为正斜杠', () => {

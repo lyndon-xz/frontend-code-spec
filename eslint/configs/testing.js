@@ -1,7 +1,7 @@
 import vitest from '@vitest/eslint-plugin';
 
+import { toErrorLevel } from '../utils/error-level.js';
 import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
-import { toErrorLevel } from '../utils/to-error-level.js';
 
 // 测试 glob 从豁免清单里取出，d.ts 与 config 不是测试文件
 const TEST_FILE_GLOBS = EXEMPT_GLOBS.filter(
@@ -19,7 +19,8 @@ export default [
       ...toErrorLevel(recommended.rules),
       'vitest/no-focused-tests': 'error',
       'vitest/no-identical-title': 'error',
-      'vitest/expect-expect': 'error',
+      // failJoin 内部调用 expect，汇总失败后再断言
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'failJoin'] }],
       'vitest/valid-title': 'error',
       'vitest/no-conditional-expect': 'error',
       'vitest/prefer-to-be': 'error',

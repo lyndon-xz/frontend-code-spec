@@ -1,6 +1,5 @@
 import { Environment } from '@/constants/environment';
 import { getEnvironment } from '@/utils/environment';
-import { createSwappable } from '@/utils/swappable';
 
 export enum RequestStatus {
   Success = 'success',
@@ -32,9 +31,8 @@ const noopSender: AnalyticsSender = () => undefined;
  */
 const passthroughSanitizer: AnalyticsSanitizer = (analyticsData) => analyticsData;
 
-/* eslint-disable no-console -- 开发环境的埋点观察通道，控制台输出即本函数的全部职责 */
+// 观察通道走 warn：log 会被构建剥离，warn 是本仓放行的告警出口
 const logToConsole = (analyticsData: AnalyticsData) => {
-  // 解构序对齐 AnalyticsData 的声明顺序；下面的打印顺序另按可读性排，不受此约束
   const {
     requestId,
     method,
@@ -46,35 +44,35 @@ const logToConsole = (analyticsData: AnalyticsData) => {
     startTimeMs,
     endTimeMs,
   } = analyticsData;
-  const duration = endTimeMs - startTimeMs;
 
-  console.group(`[埋点上报] ${method} ${url}`);
-  console.log('请求ID:', requestId);
-  console.log('请求时间:', new Date(startTimeMs).toLocaleString());
-  console.log('请求耗时:', `${duration}ms`);
-  console.log('请求状态:', status);
-  console.log('请求参数:', requestParams);
-
-  if (status === RequestStatus.Success) {
-    console.log('返回数据:', responseData);
-  } else {
-    console.log('错误信息:', errorMessage);
-  }
-
-  console.groupEnd();
+  console.warn(`[埋点上报] ${method} ${url}`, {
+    请求ID: requestId,
+    请求时间: new Date(startTimeMs).toLocaleString(),
+    请求耗时: `${endTimeMs - startTimeMs}ms`,
+    请求状态: status,
+    请求参数: requestParams,
+    ...(status === RequestStatus.Success ? { 返回数据: responseData } : { 错误信息: errorMessage }),
+  });
 };
-/* eslint-enable no-console -- 埋点观察通道到此为止 */
 
-const analyticsSenderSlot = createSwappable(noopSender);
-const analyticsSanitizerSlot = createSwappable(passthroughSanitizer);
+let sendAnalytics: AnalyticsSender = noopSender;
+let sanitizeAnalytics: AnalyticsSanitizer = passthroughSanitizer;
 
-export const setAnalyticsSender = analyticsSenderSlot.set;
+export const setAnalyticsSender = (sender: AnalyticsSender) => {
+  sendAnalytics = sender;
+};
 
-export const resetAnalyticsSender = analyticsSenderSlot.reset;
+export const resetAnalyticsSender = () => {
+  sendAnalytics = noopSender;
+};
 
-export const setAnalyticsSanitizer = analyticsSanitizerSlot.set;
+export const setAnalyticsSanitizer = (sanitizer: AnalyticsSanitizer) => {
+  sanitizeAnalytics = sanitizer;
+};
 
-export const resetAnalyticsSanitizer = analyticsSanitizerSlot.reset;
+export const resetAnalyticsSanitizer = () => {
+  sanitizeAnalytics = passthroughSanitizer;
+};
 
 /** 开发环境只打控制台（不脱敏，便于排查）；生产走脱敏后再交给注入的 sender */
 export const reportAnalytics = (analyticsData: AnalyticsData) => {
@@ -83,5 +81,5 @@ export const reportAnalytics = (analyticsData: AnalyticsData) => {
     return;
   }
 
-  analyticsSenderSlot.get()(analyticsSanitizerSlot.get()(analyticsData));
+  sendAnalytics(sanitizeAnalytics(analyticsData));
 };

@@ -7,7 +7,8 @@ export const networkErrorInterceptor: ResInterceptor = {
   onRejected: (error: unknown) => {
     const requestError = toRequestError(error);
     const { type, config, status, code, message: rawMessage } = requestError;
-    const { networkError, __retriesLeft: retriesLeft = 0, method, retry } = config ?? {};
+    const { networkError, method, retry } = config ?? {};
+    const retriesLeft = retry?.retriesLeft ?? 0;
 
     const { isSilent = false, customMessage } = networkError ?? {};
     const errorMessage = customMessage ?? rawMessage;

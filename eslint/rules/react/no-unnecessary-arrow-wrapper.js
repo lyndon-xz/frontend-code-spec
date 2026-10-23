@@ -1,5 +1,3 @@
-import { ruleDocsUrl } from '../../utils/rule-docs-url.js';
-
 /*
  * 只认「箭头体就是一个调用」的三种形态：表达式体、单语句块体、单 return 块体。
  * 其余形态（多语句、非调用表达式）不是纯包裹，取不到调用时返回 null。
@@ -39,7 +37,6 @@ export default {
     type: 'suggestion',
     docs: {
       description: '禁止不必要的箭头函数包裹（如 onClick={() => fn()} 应改为 onClick={fn}）',
-      url: ruleDocsUrl('no-unnecessary-arrow-wrapper'),
     },
     schema: [],
     messages: {

@@ -2,7 +2,12 @@ import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescrip
 import importX from 'eslint-plugin-import-x';
 import unicorn from 'eslint-plugin-unicorn';
 
-import { DEFAULT_SRC_DIR, SRC_FILE_GLOBS } from '../utils/source-layout.js';
+import {
+  DEFAULT_SRC_DIR,
+  JS_FILE_GLOBS,
+  SRC_FILE_GLOBS,
+  TS_FILE_GLOBS,
+} from '../constants/source-globs.js';
 
 const SHARED_IMPORT_RULES = {
   'unicorn/prefer-node-protocol': 'error',
@@ -29,10 +34,10 @@ const SHARED_IMPORT_RULES = {
 /** TS 要走 typescript resolver 才认得 @/ 别名，JS 用默认解析 */
 export default [
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: TS_FILE_GLOBS,
     settings: {
-      // import-x 默认只分析 .js 依赖，不列出 TS 扩展名时 no-cycle 会跳过 .ts/.tsx 之间的循环
-      'import-x/extensions': ['.ts', '.tsx', '.js'],
+      // import-x 默认只分析 .js 依赖，不列出其余扩展名时 no-cycle 会跳过它们之间的循环
+      'import-x/extensions': ['.ts', '.tsx', '.js', '.jsx'],
       'import-x/resolver-next': [
         createTypeScriptImportResolver({ alwaysTryTypes: true, project: './tsconfig.json' }),
       ],
@@ -45,7 +50,7 @@ export default [
     },
   },
   {
-    files: ['**/*.js'],
+    files: JS_FILE_GLOBS,
     plugins: {
       'import-x': importX,
       unicorn,
