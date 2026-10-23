@@ -13,6 +13,8 @@ const alias = {
 export default defineConfig({
   test: {
     coverage: {
+      // 用 istanbul 插桩。v8 会把 ESLint 原生加载的规则和测试里的导入收成两份，合并时把已覆盖的函数计成 0。
+      provider: 'istanbul',
       include: ['eslint/**/*.js', 'src/**/*.{ts,tsx}'],
       exclude: ['eslint/__tests__/**', 'src/**/__tests__/**'],
       thresholds: {

@@ -47,7 +47,7 @@ describe('js / jsx 生效范围', () => {
     expect(config.rules['@typescript-eslint/naming-convention']).toBeUndefined();
     expect(config.rules['custom/props-interface-naming']).toBeUndefined();
     expect(isError(config.rules['@typescript-eslint/no-explicit-any'])).toBe(false);
-  });
+  }, 60_000);
 
   it('src 下的 js 同样检查组件、文件名和模块边界', async () => {
     const component = await lint(
@@ -70,7 +70,7 @@ describe('js / jsx 生效范围', () => {
     const boundary = await lint("import { price } from '@/utils/price';\n", 'src/utils/tax.js');
 
     expect(ruleIds(boundary)).toContain('custom/import-path-boundary');
-  });
+  }, 60_000);
 
   it('工具目录里的 js 不套文件名黑名单和可访问性', async () => {
     const messages = await lint('export const level = 1;\n', 'eslint/utils/error-level.js');
@@ -78,12 +78,12 @@ describe('js / jsx 生效范围', () => {
 
     expect(ids).not.toContain('check-file/filename-blocklist');
     expect(ids).not.toContain('jsx-a11y-x/alt-text');
-  });
+  }, 60_000);
 
   it('tsx 仍检查 props 接口名', async () => {
     const config = await eslint.calculateConfigForFile('src/components/flight-card/index.tsx');
 
     expect(isError(config.rules['custom/props-interface-naming'])).toBe(true);
     expect(isError(config.rules['@typescript-eslint/naming-convention'])).toBe(true);
-  });
+  }, 60_000);
 });
