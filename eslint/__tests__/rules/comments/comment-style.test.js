@@ -21,6 +21,8 @@ ruleTester.run('comment-style', rule, {
     // 末尾注释后没有代码，按非导出位置处理
     'const a = 1;\n// 收尾说明\n',
     '/*\n * 多行说明\n * 第二行\n */\nconst a = 1;',
+    // 数组元素上方的多行说明不是导出文档注释，用普通块注释
+    'export default [\n  /*\n   * 数组元素的说明\n   */\n  value,\n];',
     // 内联参数块注释放行
     "foo(/* name */ 'bar');",
     '// eslint-disable-next-line no-console\nconsole.log(1);',
@@ -64,6 +66,12 @@ ruleTester.run('comment-style', rule, {
     {
       code: '/**\n * 说明\n */\nconst a = 1;',
       output: '/*\n * 说明\n */\nconst a = 1;',
+      errors: [{ messageId: 'internalMultiLine' }],
+    },
+    {
+      // 数组元素上方不属于导出声明，JSDoc 要改成普通块注释
+      code: 'export default [\n  /**\n   * 数组元素的说明\n   */\n  value,\n];',
+      output: 'export default [\n  /*\n   * 数组元素的说明\n   */\n  value,\n];',
       errors: [{ messageId: 'internalMultiLine' }],
     },
     {

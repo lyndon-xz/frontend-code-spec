@@ -5,14 +5,15 @@ function isWithinExportDeclaration(node) {
       return true;
     }
     /*
-     * 遇到函数体 / 对象体 / 类体 / 顶层即停止追溯，内部注释不被上层 export 语义传染；
-     * ClassBody 与 ObjectExpression 成对出现，保证导出类与导出对象的成员注释判定一致。
+     * 遇到函数体 / 对象体 / 数组体 / 类体 / 顶层即停止追溯，内部注释不被上层 export 语义传染；
+     * ClassBody、ObjectExpression 与 ArrayExpression 成对出现，保证导出类、导出对象与导出数组的成员注释判定一致。
      */
     if (
       current.type === 'FunctionDeclaration' ||
       current.type === 'FunctionExpression' ||
       current.type === 'ArrowFunctionExpression' ||
       current.type === 'ObjectExpression' ||
+      current.type === 'ArrayExpression' ||
       current.type === 'ClassBody' ||
       current.type === 'Program'
     ) {

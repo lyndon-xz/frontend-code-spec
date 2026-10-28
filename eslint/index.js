@@ -58,7 +58,7 @@ const customRules = {
 };
 
 export default [
-  /**
+  /*
    * 核心推荐集必须随包导出：业务仓只引本包时，若缺这一层，no-undef、no-debugger、
    * no-dupe-keys、no-unreachable 等基础错误全部静默。本仓自检曾靠根配置补上，掩盖了这个缺口。
    */
