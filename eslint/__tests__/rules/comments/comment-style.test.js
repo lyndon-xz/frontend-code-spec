@@ -23,6 +23,8 @@ ruleTester.run('comment-style', rule, {
     '/*\n * 多行说明\n * 第二行\n */\nconst a = 1;',
     // 数组元素上方的多行说明不是导出文档注释，用普通块注释
     'export default [\n  /*\n   * 数组元素的说明\n   */\n  value,\n];',
+    // 注释在 export 关键字上方，仍算导出文档注释
+    '/** 导出数组 */\nexport default [\n  value,\n];',
     // 内联参数块注释放行
     "foo(/* name */ 'bar');",
     '// eslint-disable-next-line no-console\nconsole.log(1);',
