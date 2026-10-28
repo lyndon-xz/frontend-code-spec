@@ -1,4 +1,28 @@
-function isWithinExportDeclaration(node) {
+/*
+ * 从注释下方那个节点开始判断：表达式（数组元素、对象属性、调用结果）不是声明，直接按非导出；
+ * 只有声明或声明成员才继续向上找它所属的 export。属性名是 Identifier，要看它的直接父节点。
+ * 函数体、对象体、数组体、类体与顶层是边界。
+ */
+function isDeclarationNode(node) {
+  return (
+    node.type.endsWith('Declaration') ||
+    node.type.endsWith('Statement') ||
+    node.type === 'TSPropertySignature' ||
+    node.type === 'TSMethodSignature' ||
+    node.type === 'TSEnumMember' ||
+    node.type === 'PropertyDefinition' ||
+    node.type === 'MethodDefinition'
+  );
+}
+
+function isDeclarationTarget(node) {
+  return isDeclarationNode(node) || (node.parent != null && isDeclarationNode(node.parent));
+}
+
+function isExportDocTarget(node) {
+  if (!node || !isDeclarationTarget(node)) {
+    return false;
+  }
   let current = node;
   while (current) {
     if (current.type === 'ExportNamedDeclaration' || current.type === 'ExportDefaultDeclaration') {
@@ -17,7 +41,7 @@ function isWithinExportDeclaration(node) {
       current.type === 'ClassBody' ||
       current.type === 'Program'
     ) {
-      break;
+      return false;
     }
     current = current.parent;
   }
@@ -271,7 +295,7 @@ export default {
 
           const isExport =
             isAttachedTo(tokenAfter, group[group.length - 1]) &&
-            isWithinExportDeclaration(
+            isExportDocTarget(
               sourceCode.getNodeByRangeIndex(tokenAfter ? tokenAfter.range[0] : comment.range[1]),
             );
 
