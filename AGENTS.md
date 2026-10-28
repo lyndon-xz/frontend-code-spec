@@ -39,6 +39,7 @@
 - 语义化版本；规则语义收紧、删除规则算 breaking。
 - `custom/*` 规则名不改、删除后不复用；废弃先标 `deprecated` 一个版本，下一版再删。
 - 业务仓按 git tag 安装，本仓不往 npm registry 发布。
+- 合并到 main 后按 `package.json` 的版本打 tag；tag 是业务仓安装的依据，未打 tag 的版本视为未发布。
 
 ## 开发规则
 
