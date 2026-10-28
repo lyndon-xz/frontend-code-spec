@@ -91,8 +91,11 @@ export default [
     files: TS_FILE_GLOBS,
     ignores: EXEMPT_GLOBS,
     rules: {
-      // assertionStyle: never 始终放行 as const
-      '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
+      // 允许 as 窄化到已声明类型；对象字面量的断言不放开，避免用 as Props 掩盖漏字段
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
+      ],
     },
   },
   {

@@ -56,12 +56,13 @@ describe('isExemptFile', () => {
   });
 
   describe('EXEMPT_GLOBS 与 isExemptFile 同源', () => {
-    it('覆盖三类豁免目录段与三类豁免文件名', () => {
+    it('覆盖三类豁免目录段与四类豁免文件名', () => {
       expect(EXEMPT_GLOBS).toEqual([
         '**/__tests__/**',
         '**/__mocks__/**',
         '**/mocks/**',
         '**/*.test.*',
+        '**/*.spec.*',
         '**/*.d.ts',
         '**/*.config.*',
       ]);
@@ -74,6 +75,7 @@ describe('isExemptFile', () => {
     it('每条文件名 glob 都对应一个 isExemptFile 认得的路径', () => {
       const sampleByGlob = {
         '**/*.test.*': 'a.test.ts',
+        '**/*.spec.*': 'a.spec.ts',
         '**/*.d.ts': 'a.d.ts',
         '**/*.config.*': 'a.config.js',
       };

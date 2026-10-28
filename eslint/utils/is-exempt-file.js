@@ -14,6 +14,7 @@ const EXEMPT_DIR_SEGMENTS = new Set(['__tests__', '__mocks__', 'mocks']);
  */
 const EXEMPT_FILENAME_KINDS = [
   { glob: '**/*.test.*', pattern: /\.test\.[cm]?[jt]sx?$/ },
+  { glob: '**/*.spec.*', pattern: /\.spec\.[cm]?[jt]sx?$/ },
   { glob: '**/*.d.ts', pattern: /\.d\.ts$/ },
   { glob: '**/*.config.*', pattern: /\.config\.[cm]?[jt]sx?$/ },
 ];

@@ -14,11 +14,11 @@
 - **判不了的，写成给 AI 照着写的约定**。`.agents/rules/` 只放工具判定不了、写代码时要照着做的判断，索引在 [AGENTS.md](./AGENTS.md)。
 - **约定长什么样，给一份能抄的实现**。`src/` 是范式样板，主体是一套完整的请求层：能力开关、实例复用、拦截器编排、重试与去重、错误归一与提示、埋点上报。它示范的是在这套规则约束下代码长什么样。
 
-仓库声明为 `private: true`，不发布 npm 包——它的定位是**源头**：业务仓库照它落地 lint 配置、对照它写代码。这套规则同时作用于仓库自身——根 `eslint.config.js` 直接引用 `eslint/index.js`，`src/` 与 `eslint/` 全量受约束，所以规则一改，立刻能在样板代码上验证是否讲得通。
+仓库声明为 `private: true`，不往 npm registry 发布——它的定位是**源头**：业务仓按 git tag 安装这套配置 (见[作为标准仓库](#-作为标准仓库))，再照本文档对齐写法。这套规则同时作用于仓库自身——根 `eslint.config.js` 直接引用 `eslint/index.js`，`src/` 与 `eslint/` 全量受约束，所以规则一改，立刻能在样板代码上验证是否讲得通。
 
 ## ✨ 特性
 
-- 🧩 **11 条自研规则**，只补社区规则缺的形态，每条都配 `RuleTester` 单测，规则语义有用例兜底而非靠描述。
+- 🧩 **12 条自研规则**，只补社区规则缺的形态，每条都配 `RuleTester` 单测，规则语义有用例兜底而非靠描述。
 - 🧵 **全链路 lint**：ESLint 管代码、Prettier 管格式、Stylelint 管样式、ls-lint 管文件名、zhlint 管中文排版、sort-package-json 管清单字段顺序，各管一段互不重叠。
 - 🛡️ **提交、推送双闸门**：`pre-commit` 走 lint-staged 增量修复，`pre-push` 跑与 CI 同款的全量校验，外加分支名与 commit message 校验。
 - 🌐 **请求层范式样板**：实例按 `serviceCode` 复用、拦截器顺序固定、重试与去重、凭证只发往本服务、错误静默与抛出策略，全部有单测覆盖。
@@ -96,31 +96,31 @@ pnpm verify
 
 `eslint/configs/` 按关注点分成 19 组，由 `eslint/index.js` 聚合后导出，同时挂载 ESLint、typescript-eslint、import-x、@eslint-react、react-hooks、jsx-a11y-x、no-unsanitized、eslint-comments、unicorn、sonarjs、regexp、promise、check-file、no-barrel-files、@vitest/eslint-plugin 的规则与本仓自研规则。typescript-eslint 的 `strictTypeChecked` 与 `stylisticTypeChecked`、react-hooks 的 `recommended-latest`、@eslint-react 的 `recommended-type-checked`、jsx-a11y-x 与 regexp 的 `recommended` 整套启用，预设里的 warn 一律按 error 生效：
 
-| 分组                | 关注点                                                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `declaration`       | 绑定与形参：`prefer-const`、`no-var`、参数不重赋值、不遮蔽、参数个数上限                                                                    |
-| `equality`          | 相等比较：`eqeqeq`，只放行和 `null` 的比较                                                                                                  |
-| `duplication`       | 函数体不要整段相同                                                                                                                          |
-| `strings`           | 全量替换用 `replaceAll`                                                                                                                     |
-| `spread`            | 没有作用的展开不要写                                                                                                                        |
-| `control-flow`      | 禁 Promise 链、对象带 `then` 会被当成 Promise、分支体带大括号、嵌套三元、`else return`、认知复杂度 15、可合并的 if、抛错带 `new` 与 message |
-| `logging`           | `console` 只放行 `warn` / `error`                                                                                                           |
-| `imports`           | 导入分组排序与组间空行、循环依赖、重复导入、内置模块写 `node:` 前缀、公共层不引用 `pages`                                                   |
-| `comments`          | 注释风格、不留被注释掉的代码；`eslint-disable` 必须点名规则、写 `-- 理由`、成对关闭，未使用即报                                             |
-| `destructuring`     | 解构位置：不在签名解构，模块级解构提到模块作用域                                                                                            |
-| `typescript`        | typescript-eslint 严格与风格预设，加类型导入风格、`strict-boolean-expressions`、断言收紧；测试文件放宽 `no-unsafe-*` 等 8 条                |
-| `naming`            | `naming-convention` 全量约定（布尔量带前缀且不接 `Not`，集合不挂 `Array` / `List` 后缀）、文件名黑名单，加自研命名规则                      |
-| `react`             | react-hooks 与 @eslint-react 推荐集（key、组件内定义组件、条件渲染泄漏等），加 Props 命名与箭头包裹约束                                     |
-| `structure`         | 模块边界：相对路径与 `@/` 别名、禁 barrel、默认导出方向                                                                                     |
-| `security`          | 禁 `eval` 与 `new Function`、`javascript:` URL、`dangerouslySetInnerHTML`，未净化内容不进 `innerHTML`                                       |
-| `accessibility`     | jsx-a11y-x 推荐集：替代文本、可聚焦性、键盘事件、ARIA 取值                                                                                  |
-| `restricted-syntax` | 受限语法：catch 不能为空或只打日志、src 不写死内网地址、`persist` 必须列白名单、不用 try 包 JSX                                             |
-| `rule-authoring`    | 写自研规则：regexp 推荐集，只对 `eslint/` 生效                                                                                              |
-| `testing`           | 测试：vitest 用法，禁聚焦与跳过、标题不重复、断言必达、用例统一用 `it`                                                                      |
+| 分组                | 关注点                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `declaration`       | 绑定与形参：`prefer-const`、`no-var`、参数不重赋值、不遮蔽、参数个数上限                                                                                                  |
+| `equality`          | 相等比较：`eqeqeq`，只放行和 `null` 的比较                                                                                                                                |
+| `duplication`       | 函数体不要整段相同                                                                                                                                                        |
+| `strings`           | 全量替换用 `replaceAll`；普通引号里写了 `${x}` 会原样显示                                                                                                                 |
+| `spread`            | 没有作用的展开不要写                                                                                                                                                      |
+| `control-flow`      | 禁原生 alert / confirm / prompt、Promise 链、对象带 `then` 会被当成 Promise、分支体带大括号、嵌套三元、`else return`、认知复杂度 15、可合并的 if、抛错带 `new` 与 message |
+| `logging`           | `console` 只放行 `warn` / `error`                                                                                                                                         |
+| `imports`           | 导入分组排序与组间空行、循环依赖、重复导入、内置模块写 `node:` 前缀、公共层不引用 `pages`                                                                                 |
+| `comments`          | 注释风格、不留被注释掉的代码；`eslint-disable` 必须点名规则、写 `-- 理由`、成对关闭，未使用即报                                                                           |
+| `destructuring`     | 解构位置：不在签名解构，模块级解构提到模块作用域                                                                                                                          |
+| `typescript`        | typescript-eslint 严格与风格预设，加类型导入风格、`strict-boolean-expressions`、断言只允许 `as` 窄化且禁对象字面量断言；测试文件放宽 `no-unsafe-*` 等 8 条                |
+| `naming`            | `naming-convention` 全量约定（布尔量带前缀且不接 `Not`，集合不挂 `Array` / `List` 后缀）、文件名黑名单，加自研命名规则                                                    |
+| `react`             | react-hooks 与 @eslint-react 推荐集（key、组件内定义组件、条件渲染泄漏等），加 Props 命名与箭头包裹约束                                                                   |
+| `structure`         | 模块边界：相对路径与 `@/` 别名、禁 barrel、默认导出方向                                                                                                                   |
+| `security`          | 禁 `eval` 与 `new Function`、`javascript:` URL、`dangerouslySetInnerHTML`，未净化内容不进 `innerHTML`                                                                     |
+| `accessibility`     | jsx-a11y-x 推荐集：替代文本、可聚焦性、键盘事件、ARIA 取值                                                                                                                |
+| `restricted-syntax` | 受限语法：catch 不能为空或只打日志、src 不写死内网地址、`persist` 必须列白名单、不用 try 包 JSX                                                                           |
+| `rule-authoring`    | 写自研规则：regexp 推荐集，只对 `eslint/` 生效                                                                                                                            |
+| `testing`           | 测试：vitest 用法，禁聚焦与跳过、标题不重复、断言必达、用例统一用 `it`                                                                                                    |
 
 分组按**关注点**而非语言名划分。这一点是有意的：如果存在一个叫 `javascript` 的分组，那么任何一条内置规则放进去都不别扭，边界就失效了——下次新增规则时两个分组都讲得通，等于没有标准。按关注点分，每条规则的落点只有一个答案。
 
-11 条自研规则如下，配置里的前缀统一为 `custom/`。作用写在规则的 `description` 里，写错时的原因写在报错信息里。社区已有等价规则的一律用社区版，表里只留社区版覆盖不到的规则，最后一列写明社区版缺的形态：
+12 条自研规则如下，配置里的前缀统一为 `custom/`。作用写在规则的 `description` 里，写错时的原因写在报错信息里。社区已有等价规则的一律用社区版，表里只留社区版覆盖不到的规则，最后一列写明社区版缺的形态：
 
 | 规则                               | 作用                                                                                                                              | 生效范围      | 社区版缺什么                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -135,6 +135,7 @@ pnpm verify
 | `no-unnecessary-arrow-wrapper`     | 禁多余的箭头包裹，`onClick={() => fn()}` 应改为 `onClick={fn}`；只报不修，去掉包裹会改变实收实参个数                              | tsx           | 没有针对 JSX 事件属性多余箭头包裹的规则                                                                                                                                                                                                                                                                                  |
 | `props-interface-naming`           | Props 接口必须命名为「组件名 + Props」；已导出的接口只报不修，改名会断掉导入方                                                    | tsx           | 没有把 Props 接口名与组件名绑定的规则                                                                                                                                                                                                                                                                                    |
 | `import-path-boundary`             | 同一模块用相对路径，跨模块用 `@/`。模块是 `src` 下第一级目录；`pages` 下每个子目录各算一个模块（`search` 与 `detail` 是两个模块） | `src/`        | `import-x/no-relative-parent-imports`、`no-relative-import-paths`、`boundaries` 只管一个方向或只看依赖关系；`no-restricted-imports` 要按目录逐块手写正则，新目录不受约束，也没有 autofix                                                                                                                                 |
+| `zustand-persist-partialize`       | zustand persist 必须用 partialize 或 whitelist 收窄持久化字段                                                                     | `src/`        | `no-restricted-syntax` 按函数名匹配 persist，会把非 zustand 的同名函数一并报错；社区没有按导入来源判定的规则                                                                                                                                                                                                             |
 
 以下社区规则替代了原自研规则：开启 `strict: true` 的 `promise/prefer-await-to-then` 替代 `no-promise-chain`，`@typescript-eslint/prefer-enum-initializers` 替代 `require-enum-initializer`，`check-file/filename-blocklist` 替代 `no-implementation-suffix-filename`，`no-barrel-files/no-barrel-files` 与 `check-file/no-index` 替代 `no-barrel`，`import-x/no-default-export` 替代 `no-ts-default-export`。
 
@@ -145,6 +146,52 @@ pnpm verify
 ## 开发规则与工具
 
 机器判得了的约定交给 ESLint、Stylelint 与 TypeScript，以 `pnpm verify` 的报错为准。工具判定不了、要照着写的约定在 [`.agents/rules/`](./.agents/rules/)，索引见 [AGENTS.md](./AGENTS.md)。
+
+## 🧷 作为标准仓库
+
+**接入方式**，二选一：
+
+```bash
+# 按版本安装（git tag 即版本，不依赖 npm registry）
+pnpm add -D github:lyndon-xz/frontend-code-spec#v3.2.0
+
+# 本地联调
+pnpm add -D link:../frontend-code-spec
+```
+
+业务仓的 `eslint.config.js` 只有两行：
+
+```js
+import spec from '@lyndon/frontend-code-spec';
+
+export default [...spec];
+```
+
+其余三段配置也随包导出，不必复制文件：
+
+```js
+// stylelint.config.js
+import spec from '@lyndon/frontend-code-spec/stylelint';
+
+export default spec;
+
+// prettier.config.js
+export { default } from '@lyndon/frontend-code-spec/prettier';
+```
+
+```bash
+# 文件名规范
+pnpm exec ls-lint --config node_modules/@lyndon/frontend-code-spec/ls-lint.yml
+```
+
+前置条件：Node `>=22.13`、ESLint `>=10`、TypeScript `>=5.6`；业务仓有 `src/` 目录，且 `@/` 别名指向它。分层与模块边界类规则按这个目录推断，条件不满足时相关规则不成立。不满足这些条件的仓库 (Vue / Svelte / React Native) 不适用本标准。浏览器兼容条款以业务仓的 `browserslist` 为准，未配置时相关条款判为不成立。
+
+契约与治理：
+
+- **[`standard.manifest.json`](./standard.manifest.json)**：机器可读入口，声明适用文件、覆盖维度、规则清单、审查目标仓库时可执行的只读命令。审查 skill 只认这份契约，新增或调整标准时改 manifest，不改 skill。
+- **[`.agents/rules/`](./.agents/rules/)**：工具判定不了、写代码时要照着做的条款。
+- **规则 ID 稳定**：`custom/*` 名称不改、删除后不复用；废弃规则先标 `deprecated` 一个版本，下一版再删。
+- **三处对齐**：规则文件、本 README 的规则表、manifest 的 `rules` 清单，改一处必须改另两处。
 
 ## 🌐 请求层范式
 

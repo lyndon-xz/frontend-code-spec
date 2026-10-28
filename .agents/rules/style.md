@@ -11,7 +11,7 @@ paths:
 
 为什么：为这三种反馈记一份脚本状态，要经过状态、事件和属性选择器，效果和一行伪类一样，还多一次渲染。
 
-```scss
+```text
 // ✅ 纯视觉反馈写在伪类上
 .card:hover {
   background: var(--card-hover);

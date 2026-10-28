@@ -25,7 +25,6 @@ const INDEX_ORDER = [
   'functions.md',
   'naming.md',
   'comments.md',
-  'secrets.md',
   'writes.md',
   'typescript.md',
   'react.md',

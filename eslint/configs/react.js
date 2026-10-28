@@ -33,6 +33,11 @@ export default [
     rules: {
       ...toErrorLevel(eslintReactPreset.rules),
       ...hooksDuplicates,
+      /*
+       * 与 custom/ref-suffix-naming 同判一处：社区版放行裸 ref，自研版要求 Ref 结尾且给出中文改法。
+       * 两条都开会在同一行报两次，保留更严的自研版。
+       */
+      '@eslint-react/naming-convention-ref-name': 'off',
     },
   },
   {

@@ -24,6 +24,8 @@ export default [
       'curly': ['error', 'all'],
 
       'no-nested-ternary': 'error',
+      // 原生 alert / confirm / prompt 会阻塞渲染线程且无法定制，统一走页面内的反馈组件
+      'no-alert': 'error',
       // 空 catch 由 restricted-syntax 组用一条带改法的提示报，这里不再重复报
       'no-empty': ['error', { allowEmptyCatch: true }],
       'no-else-return': ['error', { allowElseIf: false }],

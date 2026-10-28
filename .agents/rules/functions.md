@@ -14,8 +14,8 @@ const payable = (order: Order) => {
   const { total, discount } = order;
   return total - discount;
 };
-// ❌ 算金额的函数里顺手埋点
-const payable = async (order: Order) => {
+// ❌ 同样算金额，顺手埋点：副作用和计算混在一起，触发时机不再可控
+const payable = (order: Order) => {
   const { total, discount, id } = order;
   const amount = total - discount;
   report(id);
@@ -23,7 +23,7 @@ const payable = async (order: Order) => {
 };
 ```
 
-边界：判据是能不能用一句话概括，不是行数。
+边界：判据是能不能用一句话概括，不是行数；概括时需要用 “并且” “同时” “顺便” 接上第二个业务目标，就说明不止一件事。
 
 ## 2、一个函数只做编排，或只做细节
 
@@ -45,4 +45,4 @@ const submit = async (order: Order) => {
 };
 ```
 
-边界：编排函数的函数体是在调用步骤。细节留在那些步骤里。
+边界：编排函数的函数体是在调用步骤；出现运算、字符串模板或直接读写存储都算越层，细节留在那些步骤里。

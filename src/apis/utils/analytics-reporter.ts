@@ -47,7 +47,7 @@ const logToConsole = (analyticsData: AnalyticsData) => {
 
   console.warn(`[埋点上报] ${method} ${url}`, {
     请求ID: requestId,
-    请求时间: new Date(startTimeMs).toLocaleString(),
+    请求时间: new Date(startTimeMs).toLocaleString('zh-CN'),
     请求耗时: `${endTimeMs - startTimeMs}ms`,
     请求状态: status,
     请求参数: requestParams,

@@ -21,15 +21,6 @@ const CATCH_SELECTORS = [
   },
 ];
 
-const PERSIST_SELECTORS = [
-  {
-    selector:
-      "CallExpression[callee.name='persist'] > ObjectExpression:not(:has(> Property[key.name=/^(partialize|whitelist)$/]))",
-    message:
-      'persist 默认把整份状态写进存储，连加载态、错误、临时输入一起持久化：请用 partialize（或 whitelist）只列出需要持久化的字段',
-  },
-];
-
 const TRY_JSX_SELECTORS = [
   {
     selector: 'TryStatement > BlockStatement > ReturnStatement > :matches(JSXElement, JSXFragment)',
@@ -38,10 +29,13 @@ const TRY_JSX_SELECTORS = [
   },
 ];
 
-// 正则里的斜杠写成 \x2F：esquery 的正则字面量遇到 / 就结束
-const INTERNAL_HOST_PATTERN = String.raw`/localhost|127\.0\.0\.1|192\.168\.|^https?:\x2F\x2F10\./`;
+/*
+ * 只认整段就是本机/内网主机名的字符串：开头是可选的协议与 //，结尾是端口、路径或字符串结束。
+ * 不加两端锚点时，"localhost 无法访问" 这类提示文案也会被当成地址误报；172.16/12 与 169.254/16 一并覆盖。
+ */
+const INTERNAL_HOST_PATTERN = String.raw`/^(?:https?:)?(?:\x2F\x2F)?(?:localhost|\[::1\]|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3})(?::\d*)?(?:[\x2F?#]|$)/`;
 const INTERNAL_HOST_MESSAGE =
-  '内网与本机地址写死在源码里，换环境就会请求错地址：请从 src/apis/constants/host.ts 的环境映射或构建期注入的配置读取';
+  '内网与本机地址写死在源码里，换环境就会请求错地址：请从环境映射或构建期注入的配置读取';
 
 const INTERNAL_HOST_SELECTORS = [
   { selector: `Literal[value=${INTERNAL_HOST_PATTERN}]`, message: INTERNAL_HOST_MESSAGE },
@@ -54,7 +48,23 @@ const INTERNAL_HOST_SELECTORS = [
 // 这两个文件本身就是环境地址与本机判定的来源
 const HOST_SOURCE_FILES = ['src/apis/constants/host.ts', 'src/utils/environment.ts'];
 
-const TS_SELECTORS = [...CATCH_SELECTORS, ...PERSIST_SELECTORS, ...TRY_JSX_SELECTORS];
+const SECURITY_SELECTORS = [
+  {
+    selector: "CallExpression[callee.property.name='postMessage'] > Literal[value='*']",
+    message:
+      'postMessage 的目标源写成 * 时，任何页面都能收到消息：请填接收方确切的 origin，并在接收侧同样校验来源',
+  },
+];
+
+const I18N_SELECTORS = [
+  {
+    selector:
+      'CallExpression[callee.property.name=/^(toLocaleString|toLocaleDateString|toLocaleTimeString)$/][arguments.length=0]',
+    message: 'toLocaleXxx 不传 locale 时结果随运行环境变化：请显式传 locale，或统一走 i18n 工具',
+  },
+];
+
+const TS_SELECTORS = [...CATCH_SELECTORS, ...TRY_JSX_SELECTORS, ...SECURITY_SELECTORS];
 
 export default [
   {
@@ -74,7 +84,12 @@ export default [
     files: SRC_FILE_GLOBS,
     ignores: [...EXEMPT_GLOBS, ...HOST_SOURCE_FILES],
     rules: {
-      'no-restricted-syntax': ['error', ...TS_SELECTORS, ...INTERNAL_HOST_SELECTORS],
+      'no-restricted-syntax': [
+        'error',
+        ...TS_SELECTORS,
+        ...I18N_SELECTORS,
+        ...INTERNAL_HOST_SELECTORS,
+      ],
     },
   },
 ];

@@ -5,7 +5,7 @@ import { EXEMPT_GLOBS } from '../utils/is-exempt-file.js';
 
 // 测试 glob 从豁免清单里取出，d.ts 与 config 不是测试文件
 const TEST_FILE_GLOBS = EXEMPT_GLOBS.filter(
-  (glob) => glob.includes('__tests__') || glob.includes('.test.'),
+  (glob) => glob.includes('__tests__') || glob.includes('.test.') || glob.includes('.spec.'),
 );
 
 const recommended = vitest.configs.recommended;

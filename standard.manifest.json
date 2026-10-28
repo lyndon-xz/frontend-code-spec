@@ -1,0 +1,119 @@
+{
+  "manifestVersion": 1,
+  "name": "frontend-code-spec",
+  "version": "3.2.0",
+  "description": "前端写法标准：React/TypeScript 的可执行 ESLint 规则集，加工具判定不了的成文约定与请求层范式",
+  "entry": "AGENTS.md",
+  "dimensions": ["写法", "语法", "命名", "注释", "依赖与结构", "安全", "可访问性", "测试", "样式"],
+  "boundary": {
+    "stack": ["React 19", "TypeScript", "SCSS/CSS", "ESLint 10"],
+    "notAppliesTo": ["Vue", "Svelte", "React Native"],
+    "requires": [
+      "Node >= 22.13",
+      "ESLint >= 10",
+      "TypeScript >= 5.6",
+      "业务仓存在 src/ 目录且 @/ 别名指向它"
+    ],
+    "notes": "分层与模块边界类规则按 src/ 与 @/ 推断，这两个条件不满足时相关规则不成立，不是违规。"
+  },
+  "detection": {
+    "filePatterns": [
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.mjs",
+      "**/*.cjs",
+      "**/*.scss",
+      "**/*.css"
+    ],
+    "repoSignals": [
+      "package.json 依赖含 react 18 或 19",
+      "存在 eslint.config.js 或 .eslintrc*",
+      "存在 src/ 目录"
+    ]
+  },
+  "rules": [
+    {
+      "file": ".agents/rules/structure.md",
+      "covers": "值与依赖的归属、模块对外承诺、参数最小化",
+      "appliesTo": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/functions.md",
+      "covers": "函数职责与抽象层级",
+      "appliesTo": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/naming.md",
+      "covers": "抽取时机、命名语义与单复数",
+      "appliesTo": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/comments.md",
+      "covers": "注释补原因与前提，只写当前状态，不写历史与出处",
+      "appliesTo": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/writes.md",
+      "covers": "批量写入按项返回结果，重跑幂等",
+      "appliesTo": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/typescript.md",
+      "covers": "类型贴着业务对象、取值单源、入口收窄",
+      "appliesTo": ["**/*.ts", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/react.md",
+      "covers": "组件拆分时机与互斥分支的返回方式",
+      "appliesTo": ["**/*.jsx", "**/*.tsx"]
+    },
+    {
+      "file": ".agents/rules/style.md",
+      "covers": "伪类写法与样式块顺序",
+      "appliesTo": ["**/*.scss", "**/*.css"]
+    }
+  ],
+  "checks": [
+    {
+      "name": "lint",
+      "command": "npx eslint <files>",
+      "readonly": true,
+      "reviewDefault": true,
+      "requires": [
+        "eslint.config.js",
+        "eslint.config.mjs",
+        "eslint.config.cjs",
+        ".eslintrc.js",
+        ".eslintrc.cjs"
+      ],
+      "covers": "语法、命名、依赖边界与可访问性"
+    },
+    {
+      "name": "type-check",
+      "command": "npx tsc --noEmit",
+      "readonly": true,
+      "reviewDefault": true,
+      "requires": ["tsconfig.json"],
+      "covers": "类型安全"
+    },
+    {
+      "name": "style",
+      "command": "npx stylelint \"<files>\"",
+      "readonly": true,
+      "reviewDefault": true,
+      "requires": [".stylelintrc.js", ".stylelintrc.json", "stylelint.config.js"],
+      "covers": "样式规范"
+    },
+    {
+      "name": "filename",
+      "command": "npx ls-lint",
+      "readonly": true,
+      "reviewDefault": true,
+      "requires": [".ls-lint.yml"],
+      "covers": "文件与目录命名"
+    }
+  ],
+  "selfCheck": "pnpm verify"
+}

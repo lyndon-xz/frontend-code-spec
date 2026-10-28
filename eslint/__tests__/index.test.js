@@ -14,6 +14,7 @@ const EXPECTED_RULE_NAMES = [
   'no-unnecessary-arrow-wrapper',
   'props-interface-naming',
   'import-path-boundary',
+  'zustand-persist-partialize',
 ];
 
 describe('eslint 插件装配', () => {

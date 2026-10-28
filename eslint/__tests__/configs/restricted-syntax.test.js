@@ -73,34 +73,6 @@ describe('restricted-syntax：catch 处置', () => {
   });
 });
 
-describe('restricted-syntax：persist 白名单', () => {
-  const persistCall = (options) =>
-    `const persist = (creator, options) => [creator, options];\nexport const store = persist(() => ({}), ${options});\n`;
-
-  it('persist 的配置对象缺少 partialize 与 whitelist 时报', () => {
-    const messages = restrictedMessages(persistCall("{ name: 'hotel' }"), 'src/store/a.ts');
-
-    expect(messages).toHaveLength(1);
-    expect(messages[0].message).toContain('partialize');
-  });
-
-  it('带 partialize 或 whitelist 时不报', () => {
-    const partialize = persistCall("{ name: 'hotel', partialize: (state) => state }");
-    const whitelist = persistCall("{ name: 'hotel', whitelist: ['city'] }");
-
-    expect(restrictedMessages(partialize, 'src/store/b.ts')).toEqual([]);
-    expect(restrictedMessages(whitelist, 'src/store/c.ts')).toEqual([]);
-  });
-
-  it('src 下的 js 与 jsx 也报，工具目录里的 js 不报', () => {
-    const code = persistCall("{ name: 'hotel' }");
-
-    expect(restrictedMessages(code, 'src/store/a.js')).toHaveLength(1);
-    expect(restrictedMessages(code, 'src/store/a.jsx')).toHaveLength(1);
-    expect(restrictedMessages(code, 'eslint/d.js')).toEqual([]);
-  });
-});
-
 describe('restricted-syntax：try 包 JSX', () => {
   it('try 块直接 return JSX 元素或 Fragment 时报', () => {
     const element =

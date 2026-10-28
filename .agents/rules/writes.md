@@ -9,16 +9,20 @@ description: 规定批量写入按项给出结果，重跑会多出数据的写�
 为什么：一项失败就整批抛错，已经成功的会被重试再写一遍。只说部分失败，调用方不知道是哪一项。
 
 ```ts
-// ✅ 每一项都有自己的结果
-return items.map((item) => {
-  const { id, ok, reason } = item;
-  return { id, ok, reason };
-});
-// ❌ 第一项失败就抛错，其余结果被丢掉
-const failed = items.find((item) => item.ok === false);
-if (failed) {
-  throw new Error(failed.reason);
-}
+// ✅ 逐项写入，失败项保留自己的原因
+const results = await Promise.all(
+  items.map(async (item) => {
+    try {
+      await write(item);
+      return { id: item.id, ok: true };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'unknown';
+      return { id: item.id, ok: false, reason };
+    }
+  }),
+);
+// ❌ Promise.all 第一项失败就整批拒绝，其余结果被丢掉
+const results = await Promise.all(items.map((item) => write(item)));
 ```
 
 边界：这条只看返回值能不能点名每一项。

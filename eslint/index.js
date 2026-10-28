@@ -1,5 +1,4 @@
-import path from 'node:path';
-
+import js from '@eslint/js';
 import eslintReact from '@eslint-react/eslint-plugin';
 import importX from 'eslint-plugin-import-x';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -37,6 +36,7 @@ import requireUnitSuffix from './rules/naming/require-unit-suffix.js';
 import noUnnecessaryArrowWrapper from './rules/react/no-unnecessary-arrow-wrapper.js';
 import propsInterfaceNaming from './rules/react/props-interface-naming.js';
 import importPathBoundary from './rules/structure/import-path-boundary.js';
+import zustandPersistPartialize from './rules/structure/zustand-persist-partialize.js';
 
 /*
  * 键序与上方 import 顺序一致：那一侧由 import-x/order 强制字典序，是唯一稳定的排序依据。
@@ -54,9 +54,15 @@ const customRules = {
   'no-unnecessary-arrow-wrapper': noUnnecessaryArrowWrapper,
   'props-interface-naming': propsInterfaceNaming,
   'import-path-boundary': importPathBoundary,
+  'zustand-persist-partialize': zustandPersistPartialize,
 };
 
 export default [
+  /**
+   * 核心推荐集必须随包导出：业务仓只引本包时，若缺这一层，no-undef、no-debugger、
+   * no-dupe-keys、no-unreachable 等基础错误全部静默。本仓自检曾靠根配置补上，掩盖了这个缺口。
+   */
+  js.configs.recommended,
   {
     plugins: {
       'custom': { rules: customRules },
@@ -70,8 +76,8 @@ export default [
       parser: tseslint.parser,
       parserOptions: {
         projectService: true,
-        // 本文件位于 eslint/，项目根是上一级
-        tsconfigRootDir: path.resolve(import.meta.dirname, '..'),
+        // 配置可能被业务仓经包引用，项目根取执行 lint 的工作目录；本仓自检时即仓库根
+        tsconfigRootDir: process.cwd(),
         sourceType: 'module',
         ecmaVersion: 'latest',
         ecmaFeatures: {
